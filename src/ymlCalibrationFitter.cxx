@@ -707,19 +707,19 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
 				tmp << "slope_k" << kpix << "_b" << bucket;
-				slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; #entries", 200, -20, 20);
+				slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_conn_k" << kpix << "_b" << bucket;
-				slope_hist_conn[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution connected to sensor; Slope [ADC/fC]; #entries", 200, -20, 20);
+				slope_hist_conn[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution connected to sensor; Slope [ADC/fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_disc_k" << kpix << "_b" << bucket;
-				slope_hist_disc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution disconnected from sensor; Slope [ADC/fC]; #entries", 200, -20, 20);
+				slope_hist_disc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution disconnected from sensor; Slope [ADC/fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_0_127_k" << kpix << "_b" << bucket;
-				slope_hist_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution channels 0 to 127; Slope [ADC/fC]; #entries", 200, -20, 20);
+				slope_hist_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution channels 0 to 127; Slope [ADC/fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_residual_k" << kpix << "_b" << bucket;

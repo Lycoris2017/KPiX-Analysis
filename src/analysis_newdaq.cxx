@@ -166,9 +166,9 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   bucketFound[32][1024][4];  // variable that gives true if bucket has an entry (32 possible number of KPiX, 1024 channels per KPiX, 4 buckets per channel)
-	bool                   chanFound[32][1024]; // variable that gives true if a channel has entries
-	bool                   kpixFound[32]; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   bucketFound[24][1024][4];  // variable that gives true if bucket has an entry (24 possible number of KPiX, 1024 channels per KPiX, 4 buckets per channel)
+	bool                   chanFound[24][1024]; // variable that gives true if a channel has entries
+	bool                   kpixFound[24]; // variable that gives true if a kpix at the index n (0<=n<24) was found
 	uint                   x;
 	uint                   range;
 	uint                   value;
@@ -178,32 +178,27 @@ int main ( int argc, char **argv )
 	double                  tstamp;
 	string                 serial;
 	KpixSample::SampleType type;
-	TH1F                   	*hist[32][1024][4][2];  // #entries/ADC histograms per channel, bucket, kpix and histogram
-	TH1F			*hist_timed[32][1024][4][2]; //  #entries/time_of_event per channel, bucket, kpix and histogram
-	TH1F			*channel_time[32][1024][4][2];
-	TH1F			*channel_entries[32][5]; // ADC distribution Total number of events differed per bucket and kpix
-	TH1F			*left_strip_entries[32][5];
-	TH1F			*right_strip_entries[32][5];
-	TH1F			*timed_left_strip_entries[32][5];
-	TH1F			*timed_right_strip_entries[32][5];
-	TH1F			*channel_entries_timed[32][5]; // Time distribution Total number of events differed per bucket and kpix
-	TH1F			*channel_entries_no_strip[32][5]; 
-	TH1F            *fc_response_b0[32];
+	TH1F                   	*hist[24][1024][4][2];  // #entries/ADC histograms per channel, bucket, kpix and histogram
+	TH1F			*hist_timed[24][1024][4][2]; //  #entries/time_of_event per channel, bucket, kpix and histogram
+	TH1F			*channel_time[24][1024][4][2];
+	TH1F			*channel_entries[24][5]; // ADC distribution Total number of events differed per bucket and kpix
+	TH1F			*channel_entries_timed[24][5]; // Time distribution Total number of events differed per bucket and kpix
 	
-	TH1D			*trigger_difference[32]; //Time difference to an external timestamp
-	TH1D			*trigger_diff_connected[32]; //Time difference to an external timestamp
-	TH1D			*trigger_diff_disconnected[32]; //Time difference to an external timestamp
-	TH1F			*channel_entries_no_monster[32][5];
-	TH1F			*times_kpix[32][5];
-	TH1F			*times_kpix_monster[32][5];
-	TH1F			*times_kpix_no_monster[32][5];
-	TH1F			*trig_count[32][5];
-	TH1F                    *hist_buck_sum[32][1024];
+	TH1F			*left_strip_entries[24][5];
+	TH1F			*right_strip_entries[24][5];
+	TH1F			*timed_left_strip_entries[24][5];
+	TH1F			*timed_right_strip_entries[24][5];
+
 	
-	TH1F 			*unique_times[32];
+	TH1D			*trigger_difference[24]; //Time difference to an external timestamp
+	TH1F			*times_kpix[24][5];
+	TH1F			*trig_count[24][5];
+	TH1F         	*hist_buck_sum[24][1024];
 	
-	TH2F			*kpix_entries_left[32][5];
-	TH2F			*kpix_entries_right[32][5];
+	TH1F 			*unique_times[24];
+	
+	TH2F			*kpix_entries_left[24][5];
+	TH2F			*kpix_entries_right[24][5];
 	
 	
 	
@@ -232,7 +227,7 @@ int main ( int argc, char **argv )
 	ofstream 		channel_file_adc_mean;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[32][1024] = {1}; //ADD buckets later.
+	double					calib_slope[24][1024] = {1}; //ADD buckets later.
 	int						calibration_check = 0;
 	
 	
@@ -245,17 +240,17 @@ int main ( int argc, char **argv )
 	pixel_mapping(pixel_kpix);
 	
 	
-	int 					num_of_channels[32] = {0};
-	TH1F*					acq_num_ext[32];
+	int 					num_of_channels[24] = {0};
+	TH1F*					acq_num_ext[24];
 	
-	TH1F* 					AssignedChannelHist_Total[32];
+	TH1F* 					AssignedChannelHist_Total[24];
 	std::vector<int>        monster_channels;
 	
 	
 	const int               monster_finder_limit = 100;
-	std::vector<int>        monster_cycles[32];
+	std::vector<int>        monster_cycles[24];
 	
-	int monster_counter[32] = {0}; // kpix monster counter
+	int monster_counter[24] = {0}; // kpix monster counter
 	//for (int i = 0; i < 1000; i++)
 	//{
 	//	cout << "Strip mapping result, kpix #" << i << " is equal to strip #" << kpix2strip.at(i) << endl;
@@ -382,9 +377,9 @@ int main ( int argc, char **argv )
 	rFile->cd(); // move into root folder base
 	FolderName.str("");
 	FolderName << "General";
-	rFile->mkdir(FolderName.str().c_str()); // produce a sub folder with name of variable FolderName
-	TDirectory *General_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
-	General_folder->cd(); // move into subdirectory
+	//rFile->mkdir(FolderName.str().c_str()); // produce a sub folder with name of variable FolderName
+	//TDirectory *General_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
+	//General_folder->cd(); // move into subdirectory
 	
 	
 	//////////////////////////////////////////
@@ -435,7 +430,7 @@ int main ( int argc, char **argv )
 		//cout << "Timestamp of Event #" << event.eventNumber() << " = " << event.timestamp() << endl;
 		//cout << "Timestamp of Event #" << acqCount << " = " << event.timestamp() << endl;
 		
-		int cycle_time_local[32][8192] = {0}; //list for each kpix that is part of improved monster finder
+		int cycle_time_local[24][8192] = {0}; //list for each kpix that is part of improved monster finder
 		//if ( acqCount < 10)
 		//{
 		//cout << "DEBUG: EVENTNUMBER " << event.eventNumber() << endl;
@@ -463,7 +458,7 @@ int main ( int argc, char **argv )
 				}
 				//cout << "KPIX: " << kpix << endl;
 				//cout << "Channel: " << channel << endl;
-				kpixFound[0] = false; // for some reason the system finds a kpix in slot 0
+				// for some reason the system finds a kpix in slot 0
 			}
 		}
 		else 
@@ -475,7 +470,7 @@ int main ( int argc, char **argv )
 		
 		}
 		
-		//for (int kpix = 0; kpix<32; kpix++){
+		//for (int kpix = 0; kpix<24; kpix++){
 		  //if (kpixFound[kpix]) {
 		    //int monster_check = 0;
 		    //for (int i = 0; i < 8192; ++i){
@@ -508,22 +503,22 @@ int main ( int argc, char **argv )
 	int cycle_checking;  // Program crashes when more than ~1700 cycles are checked maybe a memory issues, therefore the checking will have a maximum of 1000
 	if (acqCount < 1000) cycle_checking = acqCount/10.0;
 	else cycle_checking = 1000;
-	TH1F* 					AssignedChannelHist[32][cycle_checking];
-	TH1F* 					trigger_difference_per_acq[32][cycle_checking];
-	TH1F*					cycle_time[32][cycle_checking];
+	TH1F* 					AssignedChannelHist[24][cycle_checking];
+	TH1F* 					trigger_difference_per_acq[24][cycle_checking];
+	TH1F*					cycle_time[24][cycle_checking];
 	TH1F*					cycle_time_ext[cycle_checking];
 	FolderName.str("");
 	FolderName << "Acquisition_Cycles";
-	General_folder->mkdir(FolderName.str().c_str());
-	TDirectory *gen_cycle_folder = General_folder->GetDirectory(FolderName.str().c_str());
-	rFile->cd(gen_cycle_folder->GetPath());
+	//General_folder->mkdir(FolderName.str().c_str());
+	//TDirectory *gen_cycle_folder = General_folder->GetDirectory(FolderName.str().c_str());
+	//rFile->cd(gen_cycle_folder->GetPath());
 	for (int cycles = 0; cycles < cycle_checking; cycles++) // produce subfolders per cycle
 	{
 		FolderName.str("");
 		FolderName << "Cycle_" << cycles;
-		gen_cycle_folder->mkdir(FolderName.str().c_str());
-		TDirectory *cycles_folder = gen_cycle_folder->GetDirectory(FolderName.str().c_str());
-		cycles_folder->cd();
+		//gen_cycle_folder->mkdir(FolderName.str().c_str());
+		//TDirectory *cycles_folder = gen_cycle_folder->GetDirectory(FolderName.str().c_str());
+		//cycles_folder->cd();
 		tmp.str("");
 		tmp << "time_distribution_external" << "_evt_" << cycles;
 		cycle_time_ext[cycles] = new TH1F(tmp.str().c_str(), "time_distribution_external; time [#bunch_clk_count]; #entries/#acq.cycles", 8192, -0.5, 8191.5);
@@ -541,7 +536,7 @@ int main ( int argc, char **argv )
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
 
-	for (kpix = 0; kpix < 32; kpix++) //looping through all possible kpix
+	for (kpix = 0; kpix < 24; kpix++) //looping through all possible kpix
 	{
 		//
 		//cout << "DEBUG test " << kpixFound[kpix] << endl;
@@ -550,21 +545,15 @@ int main ( int argc, char **argv )
 			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
 			FolderName.str("");
 			FolderName << "KPiX_" << kpix;
-			rFile->mkdir(FolderName.str().c_str());
-			TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
-			kpix_folder->cd();
+			//rFile->mkdir(FolderName.str().c_str());
+			//TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
+			//kpix_folder->cd();
 			tmp.str("");
 			tmp << "Channel_entries_k" << kpix << "_total";
 			channel_entries[kpix][4] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 			tmp.str("");
-			tmp << "Channel_entries_k" << kpix << "_total_no_monster";
-			channel_entries_no_monster[kpix][4] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
-			tmp.str("");
 			tmp << "Channel_entries_k" << kpix << "_total_timed";
 			channel_entries_timed[kpix][4] = new TH1F(tmp.str().c_str(), "Channel_Entries_timed; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
-			tmp.str("");
-			tmp << "Channel_entries_k" << kpix << "_total_no_strip";
-			channel_entries_no_strip[kpix][4] = new TH1F(tmp.str().c_str(), "Channel_Entries_no_strip; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 			tmp.str("");
 			tmp << "Left_Strip_entries_k" << kpix << "_total";
 			left_strip_entries[kpix][4] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
@@ -581,38 +570,23 @@ int main ( int argc, char **argv )
 			tmp << "timestamp_kpix_k" << kpix  << "_total";
 			times_kpix[kpix][4] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
 			tmp.str("");
-			tmp << "timestamp_kpix_k" << kpix  << "_monster_total";
-			times_kpix_monster[kpix][4] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
-			tmp.str("");
-			tmp << "timestamp_kpix_k" << kpix  << "_no_monster_total";
-			times_kpix_no_monster[kpix][4] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
-			tmp.str("");
 			tmp << "trig_count_k" << kpix << "_total";
 			trig_count[kpix][4]  = new TH1F (tmp.str().c_str(), "trig_count;  #triggered channels; #entries/#acq.cycles",1024, -0.5, 1023.5);
 			tmp.str("");
 			tmp << "ext_time_diff_k" << kpix;
 			trigger_difference[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
-			tmp.str("");
-			tmp << "ext_time_diff_con_k" << kpix;
-			trigger_diff_connected[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
-			tmp.str("");
-			tmp << "ext_time_diff_discon_k" << kpix;
-			trigger_diff_disconnected[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
-			tmp.str("");
-			tmp << "assigned_channels_k" << kpix << "_total";
-			AssignedChannelHist_Total[kpix] = new TH1F (tmp.str().c_str(), "assigned_channels_per_ext_trig;   #assigned_channels; #entries/#acq.cycles",40, -0.5, 39.5);
-	
+			
 			tmp.str("");
 			tmp << "acq_num_ext_k" << kpix;
 			acq_num_ext[kpix] = new TH1F(tmp.str().c_str(), "acq_num_ext; #triggers/acq._cycle; #entries/#acq.cycles",5, -0.5, 4.5);
 			
 			tmp.str("");
 			tmp << "kpix_entries_left_k" << kpix << "_total";
-			kpix_entries_left[kpix][4] = new TH2F ("kpix_entries_left", "kpix_entries_left; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
+			kpix_entries_left[kpix][4] = new TH2F (tmp.str().c_str(), "kpix_entries_left; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
 			
 			tmp.str("");
 			tmp << "kpix_entries_right_k" << kpix << "_total";
-			kpix_entries_right[kpix][4] = new TH2F ("kpix_entries_right", "kpix_entries_right; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
+			kpix_entries_right[kpix][4] = new TH2F (tmp.str().c_str(), "kpix_entries_right; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
 			
 			tmp.str("");
 			tmp << "unique_times_k" << kpix;
@@ -623,15 +597,12 @@ int main ( int argc, char **argv )
 			{
 				FolderName.str("");
 				FolderName << "bucket_" << bucket;
-				kpix_folder->mkdir(FolderName.str().c_str());
-				TDirectory *gen_buckets_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-				rFile->cd(gen_buckets_folder->GetPath());
+				//kpix_folder->mkdir(FolderName.str().c_str());
+				//TDirectory *gen_buckets_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+				//rFile->cd(gen_buckets_folder->GetPath());
 				tmp.str("");
 				tmp << "Channel_entries_k" << kpix << "_b" << bucket;
 				channel_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
-				tmp.str("");
-				tmp << "Channel_entries_k" << kpix << "_b" << bucket << "_no_strip";
-				channel_entries_no_strip[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries_no_strip; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 				tmp.str("");
 				tmp << "left_strip_entries_k" << kpix << "_b" << bucket;
 				left_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
@@ -651,70 +622,39 @@ int main ( int argc, char **argv )
 				tmp << "Channel_entries_k" << kpix <<  "_b" << bucket << "_timed";
 				channel_entries_timed[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries_timed; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 				tmp.str("");
-				tmp << "Channel_entries_k" << kpix << "_b" << bucket << "_no_monster";
-				channel_entries_no_monster[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
-				tmp.str("");
 				tmp << "timestamp_kpix_k" << kpix << "_b" << bucket;
 				times_kpix[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
-				tmp.str("");
-				tmp << "timestamp_kpix_monster_k" << kpix << "_b" << bucket;
-				times_kpix_monster[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
 				tmp.str("");
 				tmp << "trig_count_k" << kpix << "_b" << bucket ;
 				trig_count[kpix][bucket]  = new TH1F(tmp.str().c_str(), "trig_count;  #triggered channels; #entries/#acq.cycles",1024, -0.5,1023.5);
 				tmp.str("");
-				tmp << "timestamp_kpix_k" << kpix << "_b" << bucket << "_no_monster";
-				times_kpix_no_monster[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
-				
-				tmp.str("");
 				tmp << "kpix_entries_left_k" << kpix << "_bucket_" << bucket;
-				kpix_entries_left[kpix][bucket] = new TH2F ("kpix_entries_left", "kpix_entries_left; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
-				
+				kpix_entries_left[kpix][bucket] = new TH2F (tmp.str().c_str(), "kpix_entries_left; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
 				tmp.str("");
 				tmp << "kpix_entries_right_k" << kpix << "_bucket_" << bucket;
-				kpix_entries_right[kpix][bucket] = new TH2F ("kpix_entries_right", "kpix_entries_right; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
+				kpix_entries_right[kpix][bucket] = new TH2F (tmp.str().c_str(), "kpix_entries_right; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
 				
 				
 			}
 			FolderName.str("");
 			FolderName << "cycles";
-			kpix_folder->mkdir(FolderName.str().c_str());
-			TDirectory *cycle_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-			rFile->cd(cycle_folder->GetPath());
-			for (int cycles = 0; cycles < cycle_checking; cycles++)
-			{
-				FolderName.str("");
-				FolderName << "cycle_" << cycles;
-				cycle_folder->mkdir(FolderName.str().c_str());
-				TDirectory *cycles_folder = cycle_folder->GetDirectory(FolderName.str().c_str());
-				cycles_folder->cd();
-				tmp.str("");
-				tmp << "time_distribution_k" << kpix << "_evt_" << cycles;
-				cycle_time[kpix][cycles] = new TH1F(tmp.str().c_str(), "time_distribution; time [#bunch_clk_count]; #entries", 8192, -0.5, 8191.5);
-				tmp.str("");
-				tmp << "assigned_channels_k" << kpix << "_evt_" << cycles;
-				AssignedChannelHist[kpix][cycles]  = new TH1F (tmp.str().c_str(), "assigned_channels_per_ext_trig;  external_trigger_number; #assigned_channels ",100, -0.5, 99.5);
-				tmp.str("");
-				tmp << "trigger_difference_k" << kpix << "_evt_" << cycles;
-				trigger_difference_per_acq[kpix][cycles]  = new TH1F (tmp.str().c_str(), "trigger_difference;  #entries/#acq.cycles; #Delta T [BunchClkCount] ",8001, -0.5, 1000.5);
-				//tmp.str("");
-				//tmp << "assigned_number_k" << kpix << "_evt_" << cycles;
-				//AssignedNumberHist[kpix][cycles]  = new TH1F (tmp.str().c_str(), "assigned_NumberOfChannel_per_ext_trig;  #same_assignement; #entries/#acq.cycles",40,0,40);
-			}
+			//kpix_folder->mkdir(FolderName.str().c_str());
+			//TDirectory *cycle_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+			//rFile->cd(cycle_folder->GetPath());
 			FolderName.str("");
 			FolderName << "Strips_and_Channels";
-			kpix_folder->mkdir(FolderName.str().c_str());
-			TDirectory *channels_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-			rFile->cd(channels_folder->GetPath());
+			//kpix_folder->mkdir(FolderName.str().c_str());
+			//TDirectory *channels_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+			//rFile->cd(channels_folder->GetPath());
 			for (channel = 0; channel < 1024; channel++)
 			{
 				if (chanFound[kpix][channel])
 				{
 					FolderName.str("");
 					FolderName << "strip_" << kpix2strip_left.at(channel) << "_channel_" << channel;
-					channels_folder->mkdir(FolderName.str().c_str());
-					TDirectory *channel_folder = channels_folder->GetDirectory(FolderName.str().c_str());
-					rFile->cd(channel_folder->GetPath());
+					//channels_folder->mkdir(FolderName.str().c_str());
+					//TDirectory *channel_folder = channels_folder->GetDirectory(FolderName.str().c_str());
+					//rFile->cd(channel_folder->GetPath());
 	
 					tmp.str("");
 					tmp << "hist" << "_s" << dec << kpix2strip_left.at(channel);
@@ -739,9 +679,9 @@ int main ( int argc, char **argv )
 	
 							FolderName.str("");
 							FolderName << "bucket_" << bucket;
-							channel_folder->mkdir(FolderName.str().c_str());
-							TDirectory *buckets_folder = channel_folder->GetDirectory(FolderName.str().c_str());
-							rFile->cd(buckets_folder->GetPath());
+							//channel_folder->mkdir(FolderName.str().c_str());
+							//TDirectory *buckets_folder = channel_folder->GetDirectory(FolderName.str().c_str());
+							//rFile->cd(buckets_folder->GetPath());
 							if (calibration_check == 1)
 							{
 								tmp.str("");  //set stringstream tmp to an empty string	
@@ -852,8 +792,8 @@ int main ( int argc, char **argv )
 		cycle_num++;
 		if ( cycle_num > skip_cycles_front)
 		{
-			double 	trigger_counter[32] = {0}; // fill the entire list of trigger_counter with 0
-			vector<int> trigger_times[32];
+			double 	trigger_counter[24] = {0}; // fill the entire list of trigger_counter with 0
+			vector<int> trigger_times[24];
 			
 			for (x=0; x < event.count(); x++)  //within the binary file go through each event
 			{
@@ -878,6 +818,10 @@ int main ( int argc, char **argv )
 						cycle_time_ext[cycle_num_ext]->Fill(time);
 					}
 				}
+				//if (kpixFound[kpix])
+				//{
+					//cout << "KPiX found at " << kpix << endl;
+				//}
 				if ( type == 0 ) // If event is of type KPiX data
 				{
 					channel_entries[kpix][bucket]->Fill(channel, weight);
@@ -888,58 +832,34 @@ int main ( int argc, char **argv )
 					
 					kpix_entries_right[kpix][4]->Fill(channel/32, 31-channel%32, weight);
 					kpix_entries_right[kpix][bucket]->Fill(channel/32, 31-channel%32, weight);
-					////if (channel != 395 && channel != 375 && channel != 429 && channel != 333) //DIRTY FIX FOR PRC, GET RID OF IT AGAIN
-					////{
-						//left_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), weight);
-						//left_strip_entries[kpix][4]->Fill(kpix2strip_left.at(channel), weight);
-					////}
-					
-					//right_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
-					//right_strip_entries[kpix][4]->Fill(kpix2strip_right.at(channel), weight);
-					
-					//times_kpix[kpix][bucket]->Fill(tstamp, weight);
-					//times_kpix[kpix][4]->Fill(tstamp, weight);
-					//trigger_counter[kpix] = trigger_counter[kpix] + (1.0/num_of_channels[kpix]);
-					//if (kpix2strip_left.at(channel) == 9999)
+					//if (channel != 395 && channel != 375 && channel != 429 && channel != 333) //DIRTY FIX FOR PRC, GET RID OF IT AGAIN
 					//{
-						//channel_entries_no_strip[kpix][bucket]->Fill(channel,weight);
-						//channel_entries_no_strip[kpix][4]->Fill(channel,weight);
-					//}
-					//if (find(monster_cycles[kpix].begin(), monster_cycles[kpix].end(), event.eventNumber()) != monster_cycles[kpix].end())
-					//{
-						//times_kpix_monster[kpix][bucket]->Fill(tstamp, weight);
-						//times_kpix_monster[kpix][4]->Fill(tstamp, weight);
-					//}
-					//else
-					//{
-						//channel_entries_no_monster[kpix][bucket]->Fill(channel, weight);
-						//channel_entries_no_monster[kpix][4]->Fill(channel, weight);
-						//times_kpix_no_monster[kpix][bucket]->Fill(tstamp, weight);
-						//times_kpix_no_monster[kpix][4]->Fill(tstamp, weight);
-					//}
-					//if (cycle_num < cycle_checking)		
-					//{
-						//cycle_time[kpix][cycle_num]->Fill(tstamp);
+						left_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), weight);
+						left_strip_entries[kpix][4]->Fill(kpix2strip_left.at(channel), weight);
 					//}
 					
-					////cout << find(trigger_times[kpix].begin(), trigger_times[kpix].end(), tstamp) << endl;
-					//if (find(trigger_times[kpix].begin(), trigger_times[kpix].end(), tstamp) == trigger_times[kpix].end() || trigger_times[kpix].empty())
-					//{
-						////cout <<"test"<< endl;
-						//trigger_times[kpix].push_back(tstamp);
+					right_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
+					right_strip_entries[kpix][4]->Fill(kpix2strip_right.at(channel), weight);
+					
+					times_kpix[kpix][bucket]->Fill(tstamp, weight);
+					times_kpix[kpix][4]->Fill(tstamp, weight);
+					trigger_counter[kpix] = trigger_counter[kpix] + (1.0/num_of_channels[kpix]);
+					if (cycle_num < cycle_checking)		
+					{
+						cycle_time[kpix][cycle_num]->Fill(tstamp);
+					}
+					
+					//cout << find(trigger_times[kpix].begin(), trigger_times[kpix].end(), tstamp) << endl;
+					if (find(trigger_times[kpix].begin(), trigger_times[kpix].end(), tstamp) == trigger_times[kpix].end() || trigger_times[kpix].empty())
+					{
+						//cout <<"test"<< endl;
+						trigger_times[kpix].push_back(tstamp);
 						
-					//}
+					}
 					
 				}	
 			}
-	
-		
-			//if (trigger_counter[26] > 4) cout << trigger_counter[26] << endl;
-			if (kpixFound[26]) acq_num_ext[26]->Fill(trigger_counter[26]); // trigger counting for monster check
-			if (kpixFound[28]) acq_num_ext[28]->Fill(trigger_counter[28]);
-			if (kpixFound[30]) acq_num_ext[30]->Fill(trigger_counter[30]);
-			//cout << trigger_times[26].size() << endl;
-			for (int i = 0; i<32; ++i)
+			for (int i = 0; i<24; ++i)
 			{
 				if (kpixFound[i])
 				{
@@ -958,29 +878,29 @@ int main ( int argc, char **argv )
 	dataRead.close(); // close file as we have looped through it and are now at the end
 	dataRead.open(argv[1]); //open file again to start from the beginning
 	
-	//int two_coincidence = 0;
-	//int three_coincidence = 0;
-	//int extern_trigger_id={0};
+	int two_coincidence = 0;
+	int three_coincidence = 0;
+	int extern_trigger_id={0};
 	
 	
-	//cycle_num = 0;
+	cycle_num = 0;
 	
 	
 	//while ( dataRead.next(&event) )
-		//{
+	//{
 		//cycle_num++;
 		//if ( cycle_num > skip_cycles_front)
 		//{
 			//std::vector<double> time_ext;
-			//std::vector<int> channel_hits[32];
-			//std::vector<int> timestamp[32];
-			//std::vector<int> adc_value[32];
-			//std::vector<double> time_diff_kpix_ext[32];
-			//std::vector<int> AssignedTrigger[32];
-			//std::vector<pair<double, double>> time_coincident_hits[32];
+			//std::vector<int> channel_hits[24];
+			//std::vector<int> timestamp[24];
+			//std::vector<int> adc_value[24];
+			//std::vector<double> time_diff_kpix_ext[24];
+			//std::vector<int> AssignedTrigger[24];
+			//std::vector<pair<double, double>> time_coincident_hits[24];
 			
 			////std::vector<int> Assignment_number;
-			//int num_trig_count[32][5] = {0};
+			//int num_trig_count[24][5] = {0};
 		
 			////cout << " NEW EVENT " << endl;
 			//for (x=0; x < event.count(); x++)
@@ -1098,14 +1018,6 @@ int main ( int argc, char **argv )
 							//AssignedTrigger[kpix].push_back(assigned_number);
 							//beam_ext_time_diff->Fill(trig_diff, weight);
 							//trigger_difference[kpix]->Fill(trig_diff, weight);
-							//if (kpix2strip_left.at(channel)!=9999)
-							//{
-								//trigger_diff_connected[kpix]->Fill(trig_diff,weight);
-							//}
-							//else
-							//{
-								//trigger_diff_disconnected[kpix]->Fill(trig_diff,weight);	
-							//}
 							//if((trig_diff >= 0.0 )  && (trig_diff  <= 3.0) )
 							//{
 								//if (calibration_check == 1)
@@ -1136,7 +1048,7 @@ int main ( int argc, char **argv )
 				//}
 				////cout << "DEBUG time size" << time_ext.size() << endl;
 			//}
-			//for (kpix = 0; kpix < 32; kpix++)
+			//for (kpix = 0; kpix < 24; kpix++)
 			//{
 				//if (kpixFound[kpix])
 				//{
@@ -1153,7 +1065,7 @@ int main ( int argc, char **argv )
 				////if (cycle_num < 1000) AssignedNumberHist[kpix][cycle_num]->Fill(Assignment_number.at(k));
 			////}
 			//ExtTrigPerCycle->Fill(time_ext.size());
-			//for (int kpix = 0; kpix<32; ++kpix)
+			//for (int kpix = 0; kpix<24; ++kpix)
 			//{
 				//if (kpixFound[kpix])
 				//{
@@ -1205,65 +1117,65 @@ int main ( int argc, char **argv )
 		
 	//}
 	
-	//for (int kpix = 0; kpix<32; ++kpix)
-		//{
-			//if (kpixFound[kpix])
-			//{
-				//for (int channel = 0; channel < 1024; ++channel)
-				//{
-					//if (chanFound[kpix][channel])
-					//{
-						//for (int bucket = 0; bucket<4; ++bucket)
-						//{
-							//if (bucketFound[kpix][channel][bucket])
-							//{
-								 //hist[kpix][channel][bucket][0]->GetMean();
-								 ////hist[kpix][channel][bucket][0]->Fit("gaus","q");
-							//}
+	for (int kpix = 0; kpix<24; ++kpix)
+		{
+			if (kpixFound[kpix])
+			{
+				for (int channel = 0; channel < 1024; ++channel)
+				{
+					if (chanFound[kpix][channel])
+					{
+						for (int bucket = 0; bucket<4; ++bucket)
+						{
+							if (bucketFound[kpix][channel][bucket])
+							{
+								 hist[kpix][channel][bucket][0]->GetMean();
+								 //hist[kpix][channel][bucket][0]->Fit("gaus","q");
+							}
 							
-						//}
-					//}
-				//}
+						}
+					}
+				}
 				
-			//}
-		//}
+			}
+		}
 	
 	
 	
-	//cout <<  endl << "Full coincidence of sensors with external trigger: " << full_coincidence_channel_entries->GetEntries() << endl;
-	//cout << "Three coincidence of sensors: " << three_coincidence << endl;
-	//cout << "Two coincidence of sensors: " << two_coincidence << endl;
+	cout <<  endl << "Full coincidence of sensors with external trigger: " << full_coincidence_channel_entries->GetEntries() << endl;
+	cout << "Three coincidence of sensors: " << three_coincidence << endl;
+	cout << "Two coincidence of sensors: " << two_coincidence << endl;
 	
-	//cout << endl <<  "An event is currently classified as a monster if the amount of triggers one acquisition clock within a cycle is above " << monster_finder_limit << endl;
-	//cout << "_______________________________________________________________" << endl;
+	cout << endl <<  "An event is currently classified as a monster if the amount of triggers one acquisition clock within a cycle is above " << monster_finder_limit << endl;
+	cout << "_______________________________________________________________" << endl;
 	
-	//ofstream emptybinfile;
-	//emptybinfile.open ("emptybinfile.txt");
+	ofstream emptybinfile;
+	emptybinfile.open ("emptybinfile.txt");
 	
   
 	
-	//for (kpix = 0; kpix < 32; kpix++)
-	//{
-		//if (kpixFound[kpix])
-		//{
-			//cout << "Number of monster events in " << kpix << " = " << monster_counter[kpix] << endl;
-			//cout << "Number of normed monster events in " << kpix << " = " << monster_counter[kpix]*weight << endl;
-			//cout << "Number of entries in KPiX" << kpix << " = " << channel_entries[kpix][4]->GetEntries() << endl << endl;
-			//cout << "Number of NORMED entries in KPiX" << kpix << " = " << (channel_entries[kpix][4]->GetEntries())*weight << endl << endl;
+	for (kpix = 0; kpix < 24; kpix++)
+	{
+		if (kpixFound[kpix])
+		{
+			cout << "Number of monster events in " << kpix << " = " << monster_counter[kpix] << endl;
+			cout << "Number of normed monster events in " << kpix << " = " << monster_counter[kpix]*weight << endl;
+			cout << "Number of entries in KPiX" << kpix << " = " << channel_entries[kpix][4]->GetEntries() << endl << endl;
+			cout << "Number of NORMED entries in KPiX" << kpix << " = " << (channel_entries[kpix][4]->GetEntries())*weight << endl << endl;
 			
-			//for (int bin = 1; bin < 1025; bin++)  // bin 0 is the underflow, therefore need to start counting at 1. Bin == channel_address+1
-			//{
-				//if (channel_entries[kpix][4]->GetBinContent(bin) == 0 && emptybinfile.is_open()) 
-				//{
-					//emptybinfile << bin-1 << endl;
-				//}
-				//else if (!emptybinfile.is_open()) cout << "error" << endl;
-			//}
-		//}	
+			for (int bin = 1; bin < 1025; bin++)  // bin 0 is the underflow, therefore need to start counting at 1. Bin == channel_address+1
+			{
+				if (channel_entries[kpix][4]->GetBinContent(bin) == 0 && emptybinfile.is_open()) 
+				{
+					emptybinfile << bin-1 << endl;
+				}
+				else if (!emptybinfile.is_open()) cout << "error" << endl;
+			}
+		}	
 		
-	//}	
-	//cout << "Saved the empty bins to file /home/lycoris-dev/Desktop/emptybinfile.txt" << endl ;
-	//emptybinfile.close();
+	}	
+	cout << "Saved the empty bins to file /home/lycoris-dev/Desktop/emptybinfile.txt" << endl ;
+	emptybinfile.close();
 	
 	
 	//for (int k = 0; k < 1024; k++)

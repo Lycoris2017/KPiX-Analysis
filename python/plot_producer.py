@@ -569,7 +569,7 @@ parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  90
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
-parser.add_argument('-q', '--newdaq', dest='newdaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
+parser.add_argument('-q', '--newdaq', dest='newdaq', default=True, help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
 parser.add_argument('-f', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 args = parser.parse_args()
@@ -604,11 +604,11 @@ filename_list = []
 for root_file in args.file_in:
 	root_file_list.append(ROOT.TFile(root_file))
 	
-	if (args.newdaq):
+	#if (args.newdaq is True):
 		#print "HUH"
-		filename_list.append(root_file[root_file.find('/data_')+1:root_file.rfind('.dat')+1])
-	else:
-		filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
+	filename_list.append(root_file[root_file.find('testbeam201905/')+15:root_file.rfind('.dat')+1])
+	#else:
+		#filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
 print filename_list
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
@@ -616,7 +616,7 @@ for x in root_file_list:
 if ('elab' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
 elif ('tb' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/testbeam201902/'
+	folder_loc = '/home/lycoris-dev/Documents/testbeamPCMAG201904_05/'
 ##-----------------	
 ##general output
 #print args.color
