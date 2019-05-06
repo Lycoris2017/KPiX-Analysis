@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 // Modification history :
 // 05/29/2012: created
+// 04/05/2019: Modified for new DAQ board data stream -- Mengqing
 //-----------------------------------------------------------------------------
 #ifndef __KPIX_SAMPLE_H__
 #define __KPIX_SAMPLE_H__
@@ -38,7 +39,8 @@ class KpixSample {
       enum SampleType {
          Data        = 0,
          Temperature = 1,
-         Timestamp   = 2
+         Timestamp   = 2,
+	 Runtime     = 3
       };
 
    private:
@@ -185,6 +187,19 @@ class KpixSample {
       */
       SampleType getSampleType();
 
+
+      /*
+	New Data Time stamp structure -- Mengqing
+       */
+      uint getGlobalTime(); // runtime in Timestamp sample
+      uint getBunchCount(); // TimeStamp bunch clock count
+      uint getSubCount(); // the 8 sub counts under 1 bunch count
+
+      /*
+	New RunTime structure -- Mengqing
+       */
+
+      
 };
 
 #endif

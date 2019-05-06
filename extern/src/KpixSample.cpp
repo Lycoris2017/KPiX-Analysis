@@ -115,3 +115,28 @@ KpixSample::SampleType KpixSample::getSampleType() {
    return(ret);
 }
 
+
+// ExtTs runtime -- last 32 bits of the FPGA clock counter
+uint KpixSample::getGlobalTime() {
+  // 63-32 bits
+  uint ret;
+  ret = data_[1];
+  return(ret);
+}
+
+
+// ExtTs bunchcount -- TimeStamp signal happened inside the 0-8191 BunchClkCount
+uint KpixSample::getBunchCount() {
+  // 15-3 bits
+  uint ret;
+  ret = (data_[0]>>3) & 0xFFF;
+  return(ret);
+}
+
+// ExtTs bunchcount -- TimeStamp signal happened inside the 0-8191 BunchClkCount
+uint KpixSample::getSubCount() {
+  // 2-0 bits
+  uint ret;
+  ret = (data_[0] & 0x3);
+  return(ret);
+}
