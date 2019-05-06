@@ -180,6 +180,11 @@ int main ( int argc, char **argv )
 	uint                   bucket;
 	double                  tstamp;
 	string                 serial;
+	
+	
+	uint 					subCount;
+	double 					bunchClk;
+	
 	KpixSample::SampleType type;
 	TH1F                   	*hist[kpix_checking][1024][bucket_checking];  // #entries/ADC histograms per channel, bucket, kpix and histogram
 	TH1F			*hist_timed[kpix_checking][1024][bucket_checking]; //  #entries/time_of_event per channel, bucket, kpix and histogram
@@ -187,10 +192,8 @@ int main ( int argc, char **argv )
 	TH1F			*channel_entries[kpix_checking][bucket_checking+1]; // ADC distribution Total number of events differed per bucket and kpix
 	TH1F			*channel_entries_timed[kpix_checking][bucket_checking+1]; // Time distribution Total number of events differed per bucket and kpix
 	
-	TH1F			*left_strip_entries[kpix_checking][bucket_checking+1];
-	TH1F			*right_strip_entries[kpix_checking][bucket_checking+1];
-	TH1F			*timed_left_strip_entries[kpix_checking][bucket_checking+1];
-	TH1F			*timed_right_strip_entries[kpix_checking][bucket_checking+1];
+	TH1F			*strip_entries[kpix_checking][bucket_checking+1];
+	TH1F			*timed_strip_entries[kpix_checking][bucket_checking+1];
 
 	
 	TH1D			*trigger_difference[kpix_checking]; //Time difference to an external timestamp
@@ -477,7 +480,7 @@ int main ( int argc, char **argv )
 	//////////////////////////////////////////
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
-
+	
 	for (kpix = 0; kpix < kpix_checking; kpix++) //looping through all possible kpix
 	{
 		//
@@ -486,18 +489,19 @@ int main ( int argc, char **argv )
 		{
 			if ( kpix%2 == 0 )
 			{
+				
 				rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
 				FolderName.str("");
-				FolderName << "KPiX_left" << kpix;
+				FolderName << "KPiX_left_" << kpix;
 				rFile->mkdir(FolderName.str().c_str());
 				TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
 				kpix_folder->cd();
 				tmp.str("");
 				tmp << "Left_Strip_entries_k" << kpix << "_total";
-				left_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
+				strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
 				tmp.str("");
 				tmp << "timed_left_strip_entries_k" << kpix << "_total";
-				timed_left_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
+				timed_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#ext_signals", 920,-0.5, 919.5);
 				tmp.str("");
 				tmp << "Channel_entries_k" << kpix << "_total";
 				channel_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
@@ -527,10 +531,10 @@ int main ( int argc, char **argv )
 					channel_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 					tmp.str("");
 					tmp << "left_strip_entries_k" << kpix << "_b" << bucket;
-					left_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
+					strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
 					tmp.str("");
 					tmp << "timed_left_strip_entries_k" << kpix << "_b" << bucket;
-					timed_left_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
+					timed_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
 					
 					
 					
@@ -681,7 +685,7 @@ int main ( int argc, char **argv )
 			{
 				rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
 				FolderName.str("");
-				FolderName << "KPiX_right" << kpix;
+				FolderName << "KPiX_right_" << kpix;
 				rFile->mkdir(FolderName.str().c_str());
 				TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
 				kpix_folder->cd();
@@ -689,11 +693,11 @@ int main ( int argc, char **argv )
 				
 				tmp.str("");
 				tmp << "Right_Strip_entries_k" << kpix << "_total";
-				right_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
+				strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
 				
 				tmp.str("");
 				tmp << "timed_right_strip_entries_k" << kpix << "_total";
-				timed_right_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
+				timed_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#ext_signals", 920, 919.5, 1839.5);
 				tmp.str("");
 				tmp << "Channel_entries_k" << kpix << "_total";
 				channel_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
@@ -722,10 +726,10 @@ int main ( int argc, char **argv )
 					channel_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
 					tmp.str("");
 					tmp << "timed_right_strip_entries_k" << kpix << "_b" << bucket;
-					timed_right_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
+					timed_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
 					tmp.str("");
 					tmp << "right_strip_entries_k" << kpix << "_b" << bucket;
-					right_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
+					strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
 					
 					
 					
@@ -884,6 +888,7 @@ int main ( int argc, char **argv )
 	dataRead.open(argv[1]); //open binary file
 	int cycle_num = 0;
 	int cycle_num_ext = -1;
+	int ext_trig_count = 0;
 	
 	while ( dataRead.next(&event) ) //loop through binary file event structure until end of file
 	{
@@ -896,27 +901,26 @@ int main ( int argc, char **argv )
 			for (x=0; x < event.count(); x++)  //within the binary file go through each event
 			{
 					////// Get sample
-				sample  = event.sample(x);  // check event subtructure
-				kpix    = sample->getKpixAddress();
-				channel = sample->getKpixChannel();
-				bucket  = sample->getKpixBucket();
-				value   = sample->getSampleValue();
-				type    = sample->getSampleType();
-				tstamp  = sample->getSampleTime();
-				range   = sample->getSampleRange();
+				sample   = event.sample(x);  // check event subtructure
+				kpix     = sample->getKpixAddress();
+				channel  = sample->getKpixChannel();
+				bucket   = sample->getKpixBucket();
+				value    = sample->getSampleValue();
+				type     = sample->getSampleType();
+				tstamp   = sample->getSampleTime();
+				range    = sample->getSampleRange();
+				         
+				bunchClk = sample->getBunchCount();
+				subCount = sample->getSubCount();
 				if (kpix < kpix_checking && bucket < bucket_checking)
 				{
 					if (type == 2) //if type of event is ==2, the event is of type external timestamp
 					{
-						//cout << cycle_num << endl;
-						//cout << cycle_num_ext << endl;
+						
 						if (x == 0) cycle_num_ext++;
-						double time = tstamp + double(value * 0.125);
-						if (cycle_num_ext < cycle_checking) 
-						{
-							//cout << cycle_num_ext <<  " " << time << endl;
-							cycle_time_ext[cycle_num_ext]->Fill(time);
-						}
+						double time = bunchClk + double(subCount * 0.125);
+						ext_trig_count++;
+					
 					}
 					//if (kpixFound[kpix])
 					//{
@@ -929,14 +933,14 @@ int main ( int argc, char **argv )
 						
 						if (kpix % 2 == 0)
 						{
-							left_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), weight);
-							left_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_left.at(channel), weight);
+							strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), weight);
+							strip_entries[kpix][bucket_checking]->Fill(kpix2strip_left.at(channel), weight);
 						}
 						
 						if (kpix % 2 == 1)
 						{
-							right_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
-							right_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_right.at(channel), weight);
+							strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
+							strip_entries[kpix][bucket_checking]->Fill(kpix2strip_right.at(channel), weight);
 							
 						}
 						times_kpix[kpix][bucket]->Fill(tstamp, weight);
@@ -998,13 +1002,14 @@ int main ( int argc, char **argv )
 				tstamp  = sample->getSampleTime();
 				range   = sample->getSampleRange();
 		
-		
+				bunchClk = sample->getBunchCount();
+				subCount = sample->getSubCount();
 		
 		
 		
 				if (type == 2)// If event is of type external timestamp
 				{
-					double time = tstamp + double(value * 0.125);
+					double time = bunchClk + double(subCount * 0.125);
 					time_external->Fill(time, weight);
 					time_ext.push_back(time);
 					//cout << "DEBUG: channel in timestmap = " << channel << endl;
@@ -1073,11 +1078,16 @@ int main ( int argc, char **argv )
 									channel_entries_total_timed->Fill(channel, weight);
 									channel_entries_timed[kpix][bucket]->Fill(channel, weight);
 									channel_entries_timed[kpix][bucket_checking]->Fill(channel, weight);
-									timed_left_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), weight);
-									timed_right_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
-									timed_left_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_left.at(channel), weight);
-									timed_right_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_right.at(channel), weight);
-									
+									if (kpix%2 == 0)
+									{
+										timed_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), 1.0/ext_trig_count);
+										timed_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_left.at(channel), 1.0/ext_trig_count);
+									}
+									else
+									{
+										timed_strip_entries[kpix][bucket_checking]->Fill(kpix2strip_right.at(channel), 1.0/ext_trig_count);
+										timed_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), 1.0/ext_trig_count);
+									}
 									time_coincident_hits[kpix].push_back(make_pair(kpix2strip_left.at(channel), tstamp));
 								}
 								//cout << "DEBUG " << trig_diff << endl;

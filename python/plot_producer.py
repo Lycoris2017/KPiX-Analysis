@@ -527,7 +527,7 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-mystyle.SetOptStat(1111)
+mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #
 ##marker settings

@@ -81,9 +81,13 @@ void loopdir(TDirectory* dir, string histname)
 		else
 		{
 			string keyname = key->GetName();
-			size_t found = keyname.find(histname);
-			if (found == 0) 
+			
+			int found = keyname.find(histname);
+			int found_bucket = keyname.find("b0");
+			int found2 = keyname.find("DAC");
+			if (found != -1 && found2 == -1 && found_bucket != -1) 
 			{
+				//cout << "Found histogram named " << keyname << endl; 
 				TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
 				calib_graph->SetName(key->GetName());
 				calib_graphs.push_back(calib_graph);
@@ -115,6 +119,9 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
+	int kpix_checking = 12;
+	int bucket_checking = 4;
+	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
 	FILE*                  f_skipped_cycles;
@@ -123,9 +130,9 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   bucketFound[32][1024][4];  // variable that gives true if bucket has an entry (32 possible number of KPiX, 1024 channels per KPiX, 4 buckets per channel)
-	bool                   chanFound[32][1024]; // variable that gives true if a channel has entries
-	bool                   kpixFound[32]; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   bucketFound[kpix_checking][1024][bucket_checking];  // variable that gives true if bucket has an entry (32 possible number of KPiX, 1024 channels per KPiX, 4 buckets per channel)
+	bool                   chanFound[kpix_checking][1024]; // variable that gives true if a channel has entries
+	bool                   kpixFound[kpix_checking]; // variable that gives true if a kpix at the index n (0<=n<32) was found
 	uint                   range;
 	uint                   value;
 	uint                   kpix;
@@ -134,7 +141,8 @@ int main ( int argc, char **argv )
 	double                  tstamp;
 	string                 serial;
 	KpixSample::SampleType type;
-	TH1F                   	*hist[32][1024][4][2];  // #entries/ADC histograms per channel, bucket, kpix and histogram
+	TH1F                   	*hist[kpix_checking][1024][bucket_checking];  // #entries/ADC histograms per channel, bucket, kpix and histogram
+	TH1F					*baseline_RMS[kpix_checking][bucket_checking];
 	
 	
 	// Stringstream initialization for histogram naming
@@ -157,7 +165,7 @@ int main ( int argc, char **argv )
 	ofstream               debug;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[32][1024] = {1}; //ADD buckets later.
+	double					calib_slope[kpix_checking][1024] = {1}; //ADD buckets later.
 	int						calibration_check = 0;
 
 	
@@ -212,7 +220,7 @@ int main ( int argc, char **argv )
 				//cout << "Channel Number = " << channel << endl;
 				
 				calib_slope[kpix][channel] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
+				cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
 				
 			}
 		}
@@ -279,7 +287,6 @@ int main ( int argc, char **argv )
 					bucketFound[kpix][channel][bucket] = true;
 					
 				}
-				kpixFound[0] = false; // for some reason the system finds a kpix in slot 0
 			}
 		}
 		else 
@@ -305,13 +312,15 @@ int main ( int argc, char **argv )
 	dataRead.close();
 	
 	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
-	double weight = 1.0/acqProcessed;
+	double weight = 1.0;//acqProcessed;
 	
 	//////////////////////////////////////////
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
 
-	for (kpix = 0; kpix < 32; kpix++) //looping through all possible kpix
+
+
+	for (kpix = 0; kpix < kpix_checking; kpix++) //looping through all possible kpix
 	{
 		//
 		//cout << "DEBUG test " << kpixFound[kpix] << endl;
@@ -323,6 +332,12 @@ int main ( int argc, char **argv )
 			rFile->mkdir(FolderName.str().c_str());
 			TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
 			kpix_folder->cd();
+			
+			tmp.str("");
+			tmp << "baseline_RMS" << kpix << "_0";
+			baseline_RMS[kpix][0] = new TH1F(tmp.str().c_str(), "baseline_RMS; Charge (fC);   #channels", 1000, 0, 4);
+			
+			
 			FolderName.str("");
 			FolderName << "Channels";
 			kpix_folder->mkdir(FolderName.str().c_str());
@@ -338,7 +353,7 @@ int main ( int argc, char **argv )
 					TDirectory *channel_folder = channels_folder->GetDirectory(FolderName.str().c_str());
 					rFile->cd(channel_folder->GetPath());
 
-					for (bucket = 0; bucket < 4; bucket++)
+					for (bucket = 0; bucket < bucket_checking; bucket++)
 					{
 						if (bucketFound[kpix][channel][bucket])
 						{
@@ -361,7 +376,7 @@ int main ( int argc, char **argv )
 								tmp_units << "_b" << dec << bucket; // add _b$bucket
 								tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
 								tmp_units << "; Charge (fC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
-								hist[kpix][channel][bucket][0] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(), 16000, -0.5, 3999.5);
+								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(), 16000, -0.5, 3999.5);
 								
 								
 							}
@@ -378,7 +393,7 @@ int main ( int argc, char **argv )
 								tmp_units << "_b" << dec << bucket; // add _b$bucket
 								tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
 								tmp_units << "; Charge (ADC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
-								hist[kpix][channel][bucket][0] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);	
+								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);	
 							}
 						}
 					}
@@ -428,22 +443,24 @@ int main ( int argc, char **argv )
 				{
 					if (calibration_check == 1)
 					{
-						hist[kpix][channel][bucket][0]->Fill(double(value)/calib_slope[kpix][channel] , weight);
-						
+						double charge = value/calib_slope[kpix][channel];
+						//if (kpix == 6 && channel == 672) cout << charge << " " << bucket << endl;
+						hist[kpix][channel][bucket]->Fill(charge , weight);
+							
 						
 					}
 					else
 					{
-						hist[kpix][channel][bucket][0]->Fill(value, weight);
+						hist[kpix][channel][bucket]->Fill(value, weight);
 						
 					}
-					if (bucket == 0 && kpix == 19)
-					{
-						if (cycle_num == 1)
-						{
-							myfile << "Itrn = " << event.eventNumber() << " j = " << setw(4) << channel << " k = " << bucket << "  ida=" << kpix << "  x= " << setw(4) << value << " z=" << tstamp << endl; 
-						}
-					}
+					//if (bucket == 0 && kpix == 19)
+					//{
+						//if (cycle_num == 1)
+						//{
+							//myfile << "Itrn = " << event.eventNumber() << " j = " << setw(4) << channel << " k = " << bucket << "  ida=" << kpix << "  x= " << setw(4) << value << " z=" << tstamp << endl; 
+						//}
+					//}
 					
 				}
 				//cout << "DEBUG time size" << time_ext.size() << endl;
@@ -459,39 +476,46 @@ int main ( int argc, char **argv )
 		}
 	}
 	myfile.close();
-	for (int kpix = 0; kpix<32; ++kpix)
+	for (int kpix = 0; kpix < kpix_checking; ++kpix)
 	{
 		if (kpixFound[kpix])
 		{
+			
 			for (int channel = 0; channel < 1024; ++channel)
 			{
 				if (chanFound[kpix][channel])
 				{
-					for (int bucket = 0; bucket<4; ++bucket)
+					baseline_RMS[kpix][0]->Fill(hist[kpix][channel][0]->GetRMS(), weight);
+					for (int bucket = 0; bucket < bucket_checking; ++bucket)
 					{
 						if (bucketFound[kpix][channel][bucket])
 						{
-							 //cout << "KPIX=" << kpix << "  Channel=" << channel << "  Bucket=" << bucket << "       Mean = " <<  hist[kpix][channel][bucket][0]->GetMean() << endl;
-							double mean = hist[kpix][channel][bucket][0]->GetMean();
-							double RMS = hist[kpix][channel][bucket][0]->GetRMS();
-							int firstbin = hist[kpix][channel][bucket][0]->FindFirstBinAbove(0);
-							int lastbin = hist[kpix][channel][bucket][0]->FindLastBinAbove(0);
+							 //cout << "KPIX=" << kpix << "  Channel=" << channel << "  Bucket=" << bucket << "       Mean = " <<  hist[kpix][channel][bucket]->GetMean() << endl;
+							double mean = hist[kpix][channel][bucket]->GetMean();
+							double RMS = hist[kpix][channel][bucket]->GetRMS();
+							//int firstbin = mean-20*RMS; //hist[kpix][channel][bucket]->FindFirstBinAbove(0);
+							//int lastbin = mean+20*RMS; //hist[kpix][channel][bucket]->FindLastBinAbove(0);
+							//hist[kpix][channel][bucket]->GetXaxis()->SetRangeUser(firstbin, lastbin);
+							double overflow = hist[kpix][channel][bucket]->GetBinContent(16001);
+							double underflow = hist[kpix][channel][bucket]->GetBinContent(0);
 							
-							if (calib_slope[kpix][channel] > 1 && calib_slope[kpix][channel] < 15) hist[kpix][channel][bucket][0]->GetXaxis()->SetRangeUser(firstbin, lastbin);
-							double overflow = hist[kpix][channel][bucket][0]->GetBinContent(8001);
-							if ( hist[kpix][channel][bucket][0]->GetBinContent(8001) > 0)
+							if ( overflow > 0)
 							{
 								cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << "     overflow content = " << overflow << endl;
 							}
-							if (mean != 0 && RMS > 0.1)
+							if ( underflow > 0)
 							{
+								cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << "     underflow content = " << underflow << endl;
+							}
+							//if (mean != 0 && RMS > 0.1)
+							//{
 							 
-								hist[kpix][channel][bucket][0]->Fit("gaus","Rq", "", mean-RMS, mean+RMS );
+								//hist[kpix][channel][bucket]->Fit("gaus","Rq", "", mean-RMS, mean+RMS );
 								
-								//TF1 *gaussfit = hist[kpix][channel][bucket][0]->GetFunction("gaus");
+								//TF1 *gaussfit = hist[kpix][channel][bucket]->GetFunction("gaus");
 								//cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << endl;
 								//cout << "Chisquare = " << gaussfit->GetChisquare()/gaussfit->GetNDF() << endl;
-							}
+							//}
 							
 							
 							
