@@ -48,6 +48,7 @@
 
 #include "kpixmap.h"
 #include "kpix_left_and_right.h"
+#include "TBFunctions.h"
 using namespace std;
 
 
@@ -181,6 +182,7 @@ int main ( int argc, char **argv )
 	double                  tstamp;
 	string                 serial;
 	
+	double 					y;
 	
 	uint 					subCount;
 	double 					bunchClk;
@@ -194,6 +196,9 @@ int main ( int argc, char **argv )
 	
 	TH1F			*strip_entries[kpix_checking][bucket_checking+1];
 	TH1F			*timed_strip_entries[kpix_checking][bucket_checking+1];
+	
+	TH1F			*y_entries[kpix_checking][bucket_checking+1];
+	TH1F			*timed_y_entries[kpix_checking][bucket_checking+1];
 
 	
 	TH1D			*trigger_difference[kpix_checking]; //Time difference to an external timestamp
@@ -201,7 +206,7 @@ int main ( int argc, char **argv )
 	TH1F			*trig_count[kpix_checking][bucket_checking+1];
 	
 	
-	
+	cout << "DEBUG : 1" << endl;
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -340,6 +345,7 @@ int main ( int argc, char **argv )
 	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
 	//goodTimes       	= 0;
 	
+	cout << "DEBUG : 2" << endl;
 	
 	// Open root file
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
@@ -444,6 +450,7 @@ int main ( int argc, char **argv )
 	}
 	range = 0;
 	
+	cout << "DEBUG : 3" << endl;
 	
 	int cycle_checking;  // Program crashes when more than ~1700 cycles are checked maybe a memory issues, therefore the checking will have a maximum of 1000
 	
@@ -487,6 +494,8 @@ int main ( int argc, char **argv )
 		//cout << "DEBUG test " << kpixFound[kpix] << endl;
 		if (kpixFound[kpix]) //checking if kpix exists
 		{
+			
+			
 			if ( kpix%2 == 0 )
 			{
 				
@@ -502,6 +511,16 @@ int main ( int argc, char **argv )
 				tmp.str("");
 				tmp << "timed_left_strip_entries_k" << kpix << "_total";
 				timed_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#ext_signals", 920,-0.5, 919.5);
+				
+				tmp.str("");
+				tmp << "y_entries_k" << kpix << "_total";
+				y_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+				
+				tmp.str("");
+				tmp << "timed_y_entries_k" << kpix << "_total";
+				timed_y_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "timed_y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+				
+				
 				tmp.str("");
 				tmp << "Channel_entries_k" << kpix << "_total";
 				channel_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
@@ -536,6 +555,14 @@ int main ( int argc, char **argv )
 					tmp << "timed_left_strip_entries_k" << kpix << "_b" << bucket;
 					timed_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
 					
+					
+					tmp.str("");
+					tmp << "y_entries_k" << kpix << "_b" << bucket;
+					y_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+					
+					tmp.str("");
+					tmp << "timed_y_entries_k" << kpix << "_b" << bucket;
+					timed_y_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "timed_y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
 					
 					
 					tmp.str("");
@@ -698,6 +725,16 @@ int main ( int argc, char **argv )
 				tmp.str("");
 				tmp << "timed_right_strip_entries_k" << kpix << "_total";
 				timed_strip_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#ext_signals", 920, 919.5, 1839.5);
+				
+				tmp.str("");
+				tmp << "y_entries_k" << kpix << "_total";
+				y_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+				
+				tmp.str("");
+				tmp << "timed_y_entries_k" << kpix << "_total";
+				timed_y_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "timed_y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+				
+				
 				tmp.str("");
 				tmp << "Channel_entries_k" << kpix << "_total";
 				channel_entries[kpix][bucket_checking] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
@@ -731,6 +768,14 @@ int main ( int argc, char **argv )
 					tmp << "right_strip_entries_k" << kpix << "_b" << bucket;
 					strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
 					
+					
+					tmp.str("");
+					tmp << "y_entries_k" << kpix << "_b" << bucket;
+					y_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
+					
+					tmp.str("");
+					tmp << "timed_y_entries_k" << kpix << "_b" << bucket;
+					timed_y_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "timed_y_positional_Entries; y/#mum; #entries/#acq.cycles", 1840,-0.5, 92000.5);
 					
 					
 					tmp.str("");
@@ -882,6 +927,8 @@ int main ( int argc, char **argv )
 		}
 	}
 	
+	cout << "DEBUG : 4" << endl;
+	
 	////////////////////////////////////////////
 	//// Data read for all events for detailed look into single event structure
 	////////////////////////////////////////////
@@ -912,6 +959,18 @@ int main ( int argc, char **argv )
 				         
 				bunchClk = sample->getBunchCount();
 				subCount = sample->getSubCount();
+				
+				int strip = 9999;
+				if (kpix%2 == 0) // if left kpix
+				{
+					strip = kpix2strip_left.at(channel);
+				}
+				else  // if right kpix
+				{
+					strip  = kpix2strip_right.at(channel);
+				}
+				y = yParameter(strip, kpix); //testbeam parameter
+				
 				if (kpix < kpix_checking && bucket < bucket_checking)
 				{
 					if (type == 2) //if type of event is ==2, the event is of type external timestamp
@@ -930,6 +989,10 @@ int main ( int argc, char **argv )
 					{
 						channel_entries[kpix][bucket]->Fill(channel, weight);
 						channel_entries[kpix][bucket_checking]->Fill(channel, weight);
+						
+						
+						y_entries[kpix][bucket]->Fill(y, weight);
+						y_entries[kpix][bucket_checking]->Fill(y, weight);
 						
 						if (kpix % 2 == 0)
 						{
@@ -968,7 +1031,7 @@ int main ( int argc, char **argv )
 	int three_coincidence = 0;
 	int extern_trigger_id={0};
 	
-	
+	cout << "DEBUG : 5" << endl;
 	cycle_num = 0;
 	
 	
@@ -1005,7 +1068,16 @@ int main ( int argc, char **argv )
 				bunchClk = sample->getBunchCount();
 				subCount = sample->getSubCount();
 		
-		
+				int strip = 9999;
+				if (kpix%2 == 0) // if left kpix
+				{
+					strip = kpix2strip_left.at(channel);
+				}
+				else  // if right kpix
+				{
+					strip  = kpix2strip_right.at(channel);
+				}
+				y = yParameter(strip, kpix); //Testbeam parameter
 		
 				if (type == 2)// If event is of type external timestamp
 				{
@@ -1078,6 +1150,10 @@ int main ( int argc, char **argv )
 									channel_entries_total_timed->Fill(channel, weight);
 									channel_entries_timed[kpix][bucket]->Fill(channel, weight);
 									channel_entries_timed[kpix][bucket_checking]->Fill(channel, weight);
+									
+									timed_y_entries[kpix][bucket]->Fill(y, weight);
+									timed_y_entries[kpix][bucket_checking]->Fill(y, weight);
+									 
 									if (kpix%2 == 0)
 									{
 										timed_strip_entries[kpix][bucket]->Fill(kpix2strip_left.at(channel), 1.0/ext_trig_count);
@@ -1112,7 +1188,7 @@ int main ( int argc, char **argv )
 					
 				}
 			}	
-		
+		cout << "DEBUG : 6" << endl;
 		
 			//////////////////////////////////////////
 			// Triggering efficiency and coincidence calculation, takes a lot of time.
@@ -1208,7 +1284,7 @@ int main ( int argc, char **argv )
 	}	
 	cout << "Saved the empty bins to file /home/lycoris-dev/Desktop/emptybinfile.txt" << endl ;
 	emptybinfile.close();
-	
+	cout << "DEBUG : 7" << endl;
 	
 	//for (int k = 0; k < 1024; k++)
 	//{

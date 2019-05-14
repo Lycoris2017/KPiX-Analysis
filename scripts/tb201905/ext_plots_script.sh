@@ -2,7 +2,45 @@
 #files0215=(/scratch/data/testbeam201902/2019_02_15_11_22_33.bin /scratch/data/testbeam201902/2019_02_15_11_26_40.bin /scratch/data/testbeam201902/2019_02_15_11_30_22.bin /scratch/data/testbeam201902/2019_02_15_11_32_50.bin)
 #files0213=(/scratch/data/testbeam201902/2019_02_13_13_42_33.bin /scratch/data/testbeam201902/2019_02_13_13_46_28.bin  /scratch/data/testbeam201902/2019_02_13_15_37_39.bin /scratch/data/testbeam201902/2019_02_13_13_39_57.bin /scratch/data/testbeam201902/2019_02_13_13_36_34.bin /scratch/data/testbeam201902/2019_02_13_13_33_12.bin /scratch/data/testbeam201902/2019_02_13_13_28_11.bin /scratch/data/testbeam201902/2019_02_13_13_24_39.bin /scratch/data/testbeam201902/2019_02_13_13_19_57.bin /scratch/data/testbeam201902/2019_02_13_12_14_12.bin /scratch/data/testbeam201902/2019_02_13_12_10_35.bin /scratch/data/testbeam201902/2019_02_13_12_00_47.bin /scratch/data/testbeam201902/2019_02_13_11_56_38.bin)
 
-files=(/scratch/data/testbeam201905/Data_runs/Run_20190504_225322.dat /scratch/data/testbeam201905/Data_runs/Run_20190505_094624.dat /scratch/data/testbeam201905/Data_runs/Run_20190505_100835.dat )
+files=(/scratch/data/testbeam201905/Data_runs/Run_20190505_113435.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_113435.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_121902.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_121902.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_125110.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_130524.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_133249.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_135207.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_135952.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_143637.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_145353.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_150111.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_153442.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_154212.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_160444.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_161533.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_163916.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_164842.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_171322.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_172837.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_180052.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_180652.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_183051.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_183051.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_184618.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_185353.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_192841.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_193859.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_201615.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_200442.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_204838.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_205604.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_211922.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_212658.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_214958.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_221221.dat)
+
+
+
 file2=/scratch/data/testbeam201905/Data_runs/Run_20190504_225553.dat
 file3=/scratch/data/testbeam201905/Data_runs/Run_20190504_225931.dat
 

@@ -308,6 +308,7 @@ int main ( int argc, char **argv ) {
 	TH1F				*slope_vs_right_strip[24][4];
 	TH1F				*slope_vs_left_strip[24][4];
 	TH1F				*RMSfC_vs_channel[24][4];
+	
   
   
   
@@ -411,6 +412,7 @@ int main ( int argc, char **argv ) {
 	fitCalib -> SetParameter( 1, 15); // slope
 	
 	
+	
 	////// Open data file +++++++++++++++++++++
 	if ( argc != 2 ) {
 		cout << "\nUsage: \ncalibrationFitter data_file \n\n";
@@ -480,7 +482,7 @@ int main ( int argc, char **argv ) {
 	dataRead.open(argv[2]);*/
 	// end - work in progress - wmq - Apr 11 2018
 	
-	
+	TH1F *calib_fluctuate = new TH1F("calib_fluctuate", "calib_fluctuate; Charge [ADC]; #entries", 8192, -0.5, 8191.5);
 	
 	
 	
@@ -571,12 +573,17 @@ int main ( int argc, char **argv ) {
 					
 					// Injection
 					else if ( calState == "Inject" && calDac != minDac ) {
-						if ( channel == calChannel ) chanData[kpix][channel][bucket][range]->addCalibPoint(calDac, value);
+						if ( channel == calChannel ) 
+						{
+							chanData[kpix][channel][bucket][range]->addCalibPoint(calDac, value);
+							if (kpix == 0 && bucket == 0) calib_fluctuate->Fill(value);
+						}
 						else{
 							if ( chanData[kpix][calChannel][bucket][range] != NULL )
 							chanData[kpix][calChannel][bucket][range]->addNeighborPoint(channel, calDac, value);
 							else cout<< "\n [Warn] Super Weird to check channel = "<< channel << endl;
 						}
+						
 					}
 				}
 				else {
@@ -975,8 +982,8 @@ for (kpix=0; kpix<24; kpix++)
 							// Range is valid
 							if ( chanData[kpix][channel][bucket][range] != NULL ) 
 							{
-								chanData[kpix][channel][bucket][range]->computeCalib(chargeError[range]);
 								
+								chanData[kpix][channel][bucket][range]->computeCalib(chargeError[range]);
 					
 								// Create calibration graph
 								grCount = 0;
@@ -988,10 +995,9 @@ for (kpix=0; kpix<24; kpix++)
 									{
 										//cout << " Number of CalDacCounts for DAC " << x << " is " << chanData[kpix][channel][bucket][range]->calibCount[x] << endl;
 										
-										
-										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));
 										grDAC[grCount]  = x;
+										
 										grY[grCount]    = chanData[kpix][channel][bucket][range]->calibMean[x];
 										grYErr[grCount] = chanData[kpix][channel][bucket][range]->calibError[x];
 										grXErr[grCount] = 0;

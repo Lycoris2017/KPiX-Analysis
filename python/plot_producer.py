@@ -115,7 +115,7 @@ def hist_plotter():
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
 		drawing_option = args.draw_option.replace('same', 'NOSTACK') #exchange the same with a NOSTACK as I am using THStack
-		c1 = ROOT.TCanvas( args.output_name, 'Test', 1200, 900 )
+		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
 		
@@ -170,10 +170,25 @@ def hist_plotter():
 				x_axis.SetRangeUser(x_low, x_high)
 				print 'Number of normed Entries in range = ', obj.Integral()
 				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
-			if 9999 not in args.yaxisrange:
+			
+			
+			if 9999 in args.yaxisrange:
+				if (y_low is None):
+					y_low = obj.FindFirstBinAbove(0,2)-10
+				elif (y_low > obj.FindFirstBinAbove(0,2)-10):
+					y_low = obj.FindFirstBinAbove(0,2)-10
+				if (y_high is None):
+					y_high = obj.FindLastBinAbove(0,2)+10
+				elif (y_high < obj.FindLastBinAbove(0,2)+10):
+					y_high = obj.FindLastBinAbove(0,2)+10
+				if (y_high > obj.GetNbinsY()):  #avoids overflow bin
+					y_high = obj.GetNbinsY()
+				if (y_low <= 0): #avoids underflow bin
+					y_low = 1
+				y_axis.SetRange(y_low, y_high)
+			else:
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
-				print 'test'
 				y_axis.SetRangeUser(y_low, y_high) 
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
@@ -258,6 +273,13 @@ def hist_plotter():
 			##------------------
 			##loop through the histograms, get all parameters and adjust the xrange
 			#ROOT.gROOT.SetBatch(1)
+			
+			x_title = None
+			y_title = None
+			x_low = None
+			x_high = None
+			y_low = None
+			y_high = None
 			c1 = ROOT.TCanvas( 'test', 'Test', 1200,900 ) #
 			obj = histogram.ReadObj()
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
@@ -284,7 +306,21 @@ def hist_plotter():
 				x_axis.SetRangeUser(x_low, x_high)
 				print 'Number of normed Entries in range = ', obj.Integral()
 				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
-			if 9999 not in args.yaxisrange:
+			if 9999 in args.yaxisrange:
+				if (y_low is None):
+					y_low = obj.FindFirstBinAbove(0,2)-10
+				elif (y_low > obj.FindFirstBinAbove(0,2)-10):
+					y_low = obj.FindFirstBinAbove(0,2)-10
+				if (y_high is None):
+					y_high = obj.FindLastBinAbove(0,2)+10
+				elif (y_high < obj.FindLastBinAbove(0,2)+10):
+					y_high = obj.FindLastBinAbove(0,2)+10
+				if (y_high > obj.GetNbinsY()):  #avoids overflow bin
+					y_high = obj.GetNbinsY()
+				if (y_low <= 0): #avoids underflow bin
+					y_low = 1
+				y_axis.SetRange(y_low, y_high)
+			else:
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
 				y_axis.SetRangeUser(y_low, y_high)
@@ -572,6 +608,7 @@ parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose 
 parser.add_argument('-q', '--newdaq', dest='newdaq', default=True, help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
 parser.add_argument('-f', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
+parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()

@@ -18,7 +18,23 @@ files=(/scratch/data/testbeam201905/Data_runs/Run_20190505_115706.dat
 /scratch/data/testbeam201905/Data_runs/Run_20190505_163133.dat
 /scratch/data/testbeam201905/Data_runs/Run_20190505_165605.dat
 /scratch/data/testbeam201905/Data_runs/Run_20190505_170528.dat
-/scratch/data/testbeam201905/Data_runs/Run_20190505_172140.dat)
+/scratch/data/testbeam201905/Data_runs/Run_20190505_172140.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_175332.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_181637.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_182346.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_183918.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_183918.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_190055.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_192134.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_194638.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_202335.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_195639.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_204113.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_210404.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_211206.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_213817.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_215704.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_220458.dat)
 
 calibration=/scratch/data/testbeam201905/Data_runs/Calibration_20190504_230648.dat.ymlcalib.root
 

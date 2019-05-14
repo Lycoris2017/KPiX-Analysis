@@ -120,7 +120,7 @@ int main ( int argc, char **argv )
 	KpixSample             *sample;   //
 	
 	int kpix_checking = 12;
-	int bucket_checking = 4;
+	int bucket_checking = 1;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -142,7 +142,11 @@ int main ( int argc, char **argv )
 	string                 serial;
 	KpixSample::SampleType type;
 	TH1F                   	*hist[kpix_checking][1024][bucket_checking];  // #entries/ADC histograms per channel, bucket, kpix and histogram
-	TH1F					*baseline_RMS[kpix_checking][bucket_checking];
+	//TH1F					*baseline_RMS[kpix_checking][bucket_checking];
+	TH2F					*noise_correlation12[kpix_checking];
+	TH2F					*noise_correlation13[kpix_checking];
+	TH2F					*noise_correlation23[kpix_checking];
+	TH2F					*noise_correlation12_3[kpix_checking];
 	
 	
 	// Stringstream initialization for histogram naming
@@ -333,9 +337,22 @@ int main ( int argc, char **argv )
 			TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
 			kpix_folder->cd();
 			
+			//tmp.str("");
+			//tmp << "baseline_RMS_k" << kpix << "_b0";
+			//baseline_RMS[kpix][0] = new TH1F(tmp.str().c_str(), "baseline_RMS; Charge (fC);   #channels", 1000, 0, 4);
 			tmp.str("");
-			tmp << "baseline_RMS" << kpix << "_0";
-			baseline_RMS[kpix][0] = new TH1F(tmp.str().c_str(), "baseline_RMS; Charge (fC);   #channels", 1000, 0, 4);
+			tmp << "noise_correlation12_k" << kpix << "_b0";
+			noise_correlation12[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1};  channel_{2}", 500, -0.5, 499.5, 500, -0.5, 499.5);
+			tmp.str("");
+			tmp << "noise_correlation13_k" << kpix << "_b0";
+			noise_correlation13[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1};  channel_{3}", 500, -0.5, 499.5, 500, -0.5, 499.5);
+			tmp.str("");
+			tmp << "noise_correlation23_k" << kpix << "_b0";
+			noise_correlation23[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{2};  channel_{3}", 500, -0.5, 499.5, 500, -0.5, 499.5);
+			
+			tmp.str("");
+			tmp << "noise_correlation12_3_k" << kpix << "_b0";
+			noise_correlation12_3[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1}-channel_{3};  channel_{2}-channel_{3}", 1000, -50.5, 49.5, 1000, -50.5, 49.5);
 			
 			
 			FolderName.str("");
@@ -379,6 +396,8 @@ int main ( int argc, char **argv )
 								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(), 16000, -0.5, 3999.5);
 								
 								
+								
+								
 							}
 							else
 							{
@@ -395,6 +414,8 @@ int main ( int argc, char **argv )
 								tmp_units << "; Charge (ADC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
 								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);	
 							}
+							
+							
 						}
 					}
 				}
@@ -425,6 +446,7 @@ int main ( int argc, char **argv )
 		if ( cycle_num > skip_cycles_front)
 		{
 		
+			uint channel_adc[kpix_checking][1024];
 			//cout << " NEW EVENT " << endl;
 			for (uint x=0; x < event.count(); x++)
 			{
@@ -441,30 +463,49 @@ int main ( int argc, char **argv )
 		
 				if ( type == KpixSample::Data ) // If event is of type KPiX data
 				{
-					if (calibration_check == 1)
+					if (bucket < bucket_checking)
 					{
-						double charge = value/calib_slope[kpix][channel];
-						//if (kpix == 6 && channel == 672) cout << charge << " " << bucket << endl;
-						hist[kpix][channel][bucket]->Fill(charge , weight);
+						if (calibration_check == 1)
+						{
+							double charge = value/calib_slope[kpix][channel];
+							//if (kpix == 6 && channel == 672) cout << charge << " " << bucket << endl;
+							hist[kpix][channel][bucket]->Fill(charge , weight);
+								
 							
+						}
+						else
+						{
+							hist[kpix][channel][bucket]->Fill(value, weight);
+							
+						}
 						
-					}
-					else
-					{
-						hist[kpix][channel][bucket]->Fill(value, weight);
+						if (bucket == 0)
+						{
+							channel_adc[kpix][channel] = value;
+						}
 						
-					}
-					//if (bucket == 0 && kpix == 19)
-					//{
-						//if (cycle_num == 1)
+						//if (bucket == 0 && kpix == 19)
 						//{
-							//myfile << "Itrn = " << event.eventNumber() << " j = " << setw(4) << channel << " k = " << bucket << "  ida=" << kpix << "  x= " << setw(4) << value << " z=" << tstamp << endl; 
+							//if (cycle_num == 1)
+							//{
+								//myfile << "Itrn = " << event.eventNumber() << " j = " << setw(4) << channel << " k = " << bucket << "  ida=" << kpix << "  x= " << setw(4) << value << " z=" << tstamp << endl; 
+							//}
 						//}
-					//}
-					
+						
+					}
 				}
 				//cout << "DEBUG time size" << time_ext.size() << endl;
-			}	
+			}
+			for (int k = 0; k < kpix_checking; ++k) 
+			{
+				noise_correlation12[k]->Fill(channel_adc[k][312], channel_adc[k][624]);
+				noise_correlation13[k]->Fill(channel_adc[k][312], channel_adc[k][899]);
+				noise_correlation23[k]->Fill(channel_adc[k][624], channel_adc[k][899]);
+				//cout << "Value : " << channel_adc[k][312]-channel_adc[k][899] << endl;
+				noise_correlation12_3[k]->Fill(channel_adc[k][312]-channel_adc[k][899], channel_adc[k][624]-channel_adc[k][899]);
+			}
+			
+			
 			////   Show progress
 			filePos  = dataRead.pos();
 			currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
@@ -485,7 +526,7 @@ int main ( int argc, char **argv )
 			{
 				if (chanFound[kpix][channel])
 				{
-					baseline_RMS[kpix][0]->Fill(hist[kpix][channel][0]->GetRMS(), weight);
+					//baseline_RMS[kpix][0]->Fill(hist[kpix][channel][0]->GetRMS(), weight);
 					for (int bucket = 0; bucket < bucket_checking; ++bucket)
 					{
 						if (bucketFound[kpix][channel][bucket])
