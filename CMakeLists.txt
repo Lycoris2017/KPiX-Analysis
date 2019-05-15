@@ -172,9 +172,13 @@ add_executable(analysisExternal ${PROJECT_SOURCE_DIR}/src/analysisExternal.cxx)
 target_link_libraries(analysisExternal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysisExternal)
 
-add_executable(pedestal ${PROJECT_SOURCE_DIR}/src/pedestal.cxx)
-target_link_libraries(pedestal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS pedestal)
+#add_executable(analysisExternal_tree ${PROJECT_SOURCE_DIR}/src/analysisExternal_tree.cxx)
+#target_link_libraries(analysisExternal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS analysisExternal_tree)
+
+#add_executable(pedestal ${PROJECT_SOURCE_DIR}/src/pedestal.cxx)
+#target_link_libraries(pedestal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS pedestal)
 
 add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)

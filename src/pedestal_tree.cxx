@@ -31,6 +31,7 @@
 #include <TGraphErrors.h>
 #include <TGraph.h>
 #include <TStyle.h>
+#include <TTree.h>
 #include <TVector.h>
 #include <TKey.h>
 #include <TClass.h>
@@ -47,6 +48,7 @@
 #include <stdlib.h>
 
 #include "kpixmap.h"
+#include "TBFunctions.h"
 #include "kpix_left_and_right.h"
 using namespace std;
 
@@ -58,7 +60,6 @@ vector<TGraphErrors*> calib_graphs; //needed for current loopdir
 //////////////////////////////////////////
 // Functions
 //////////////////////////////////////////
-
 
 void loopdir(TDirectory* dir, string histname)
 {
@@ -141,13 +142,7 @@ int main ( int argc, char **argv )
 	double                  tstamp;
 	string                 serial;
 	KpixSample::SampleType type;
-	TH1F                   	*hist[kpix_checking][1024][bucket_checking];  // #entries/ADC histograms per channel, bucket, kpix and histogram
-	//TH1F					*baseline_RMS[kpix_checking][bucket_checking];
-	TH2F					*noise_correlation12[kpix_checking];
-	TH2F					*noise_correlation13[kpix_checking];
-	TH2F					*noise_correlation23[kpix_checking];
-	TH2F					*noise_correlation12_3[kpix_checking];
-	
+	TTree*					pedestal;
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -245,7 +240,7 @@ int main ( int argc, char **argv )
 	
 	// Create output names
 	tmp.str("");
-	tmp << argv[1] << ".pedestal.root";
+	tmp << argv[1] << ".tree_pedestal.root";
 	outRoot = tmp.str();
 	
 	
@@ -262,58 +257,25 @@ int main ( int argc, char **argv )
 	
 	
 	// Open root file
+	double pedestal_median, pedestal_MAD;
+	int kpix_num, channel_num1, bucket_num;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
-	
-	
-	
-	
-	while ( dataRead.next(&event) ) // event read to check for filled channels and kpix to reduce number of empty histograms.
-	{
-		acqCount++;
-		if (acqCount > skip_cycles_front)
-		{
-			acqProcessed++;
-			for (uint x=0; x < event.count(); x++)
-			{
+	 
+	pedestal = new TTree("pedestal_tree", "A ROOT Tree");
+	pedestal->Branch("pedestal_median", &pedestal_median, "pedestal_median/D");
+	pedestal->Branch("kpix_num", &kpix_num, "kpix_num/I");
+	pedestal->Branch("channel_num", &channel_num1, "channel_num1/I:");
+	pedestal->Branch("bucket_num", &bucket_num, "bucket_num/I");
+	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
 		
-				//// Get sample
-				sample  = event.sample(x);
-				kpix    = sample->getKpixAddress();
-				tstamp  = sample->getSampleTime();
-				channel = sample->getKpixChannel();
-				bucket  = sample->getKpixBucket();
-				type    = sample->getSampleType();
-				if ( type == KpixSample::Data )
-				{
-					kpixFound[kpix]          = true;
-					chanFound[kpix][channel] = true;
-					bucketFound[kpix][channel][bucket] = true;
-					
-				}
-			}
-		}
-		else 
-		{
-			auto byte = event.count();
-			auto train = event.eventNumber();
-			if (f_skipped_cycles!=NULL)
-			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
-		
-		}
-		
-	}
 	
-	if (f_skipped_cycles!=NULL)  {
-		fclose( f_skipped_cycles);
-		cout << endl;
-		cout << "Wrote skipped cycles to " << outtxt << endl;
-		cout << endl;
-	}
+	
+	
+
 	range = 0;
 	
 	
-	dataRead.close();
 	
 	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
 	double weight = 1.0;//acqProcessed;
@@ -324,104 +286,7 @@ int main ( int argc, char **argv )
 
 
 
-	for (kpix = 0; kpix < kpix_checking; kpix++) //looping through all possible kpix
-	{
-		//
-		//cout << "DEBUG test " << kpixFound[kpix] << endl;
-		if (kpixFound[kpix]) //checking if kpix exists
-		{
-			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
-			FolderName.str("");
-			FolderName << "KPiX_" << kpix;
-			rFile->mkdir(FolderName.str().c_str());
-			TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
-			kpix_folder->cd();
-			
-			//tmp.str("");
-			//tmp << "baseline_RMS_k" << kpix << "_b0";
-			//baseline_RMS[kpix][0] = new TH1F(tmp.str().c_str(), "baseline_RMS; Charge (fC);   #channels", 1000, 0, 4);
-			tmp.str("");
-			tmp << "noise_correlation12_k" << kpix << "_b0";
-			noise_correlation12[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1};  channel_{2}", 500, -0.5, 499.5, 500, -0.5, 499.5);
-			tmp.str("");
-			tmp << "noise_correlation13_k" << kpix << "_b0";
-			noise_correlation13[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1};  channel_{3}", 500, -0.5, 499.5, 500, -0.5, 499.5);
-			tmp.str("");
-			tmp << "noise_correlation23_k" << kpix << "_b0";
-			noise_correlation23[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{2};  channel_{3}", 500, -0.5, 499.5, 500, -0.5, 499.5);
-			
-			tmp.str("");
-			tmp << "noise_correlation12_3_k" << kpix << "_b0";
-			noise_correlation12_3[kpix] = new TH2F(tmp.str().c_str(), "noise_correlation; channel_{1}-channel_{3};  channel_{2}-channel_{3}", 1000, -50.5, 49.5, 1000, -50.5, 49.5);
-			
-			
-			FolderName.str("");
-			FolderName << "Channels";
-			kpix_folder->mkdir(FolderName.str().c_str());
-			TDirectory *channels_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-			rFile->cd(channels_folder->GetPath());
-			for (channel = 0; channel < 1024; channel++)
-			{
-				if (chanFound[kpix][channel])
-				{
-					FolderName.str("");
-					FolderName << "Channel_" << channel;
-					channels_folder->mkdir(FolderName.str().c_str());
-					TDirectory *channel_folder = channels_folder->GetDirectory(FolderName.str().c_str());
-					rFile->cd(channel_folder->GetPath());
-
-					for (bucket = 0; bucket < bucket_checking; bucket++)
-					{
-						if (bucketFound[kpix][channel][bucket])
-						{
-							// Naming of histograms and generating of histograms
 	
-							FolderName.str("");
-							FolderName << "bucket_" << bucket;
-							channel_folder->mkdir(FolderName.str().c_str());
-							TDirectory *buckets_folder = channel_folder->GetDirectory(FolderName.str().c_str());
-							rFile->cd(buckets_folder->GetPath());
-							if (calibration_check == 1)
-							{
-								tmp.str("");  //set stringstream tmp to an empty string	
-								tmp << "hist_fc" << "_c" << dec << setw(4) << setfill('0') << channel;
-								tmp << "_b" << dec << bucket; // add _b$bucket
-								tmp << "_k" << dec << kpix; // add _k$kpix to stringstream
-							
-								tmp_units.str(""); //set stringstream decribing histogram units to an empty string
-								tmp_units << "hist_fc" << "_c" << dec << setw(4) << setfill('0') << channel;
-								tmp_units << "_b" << dec << bucket; // add _b$bucket
-								tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
-								tmp_units << "; Charge (fC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
-								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(), 16000, -0.5, 3999.5);
-								
-								
-								
-								
-							}
-							else
-							{
-								tmp.str("");  //set stringstream tmp to an empty string
-								
-								tmp << "hist" << "_c" << dec << setw(4) << setfill('0') << channel;
-								tmp << "_b" << dec << bucket; // add _b$bucket
-								tmp << "_k" << dec << kpix; // add _k$kpix to stringstream
-		
-								tmp_units.str(""); //set stringstream decribing histogram units to an empty string
-								tmp_units << "hist" << "_c" << dec << setw(4) << setfill('0') << channel;
-								tmp_units << "_b" << dec << bucket; // add _b$bucket
-								tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
-								tmp_units << "; Charge (ADC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
-								hist[kpix][channel][bucket] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);	
-							}
-							
-							
-						}
-					}
-				}
-			}
-		}
-	}
 	
 	//////////////////////////////////////////
 	// Data read for all events for detailed look into single event structure
@@ -436,13 +301,15 @@ int main ( int argc, char **argv )
 	
 	cycle_num = 0;
 	ofstream myfile;
-	myfile.open("/scratch/data/dieter.txt");
-	
+	vector<double> pedestal_results[kpix_checking][1024][bucket_checking];
 	
 	while ( dataRead.next(&event) )
 	{
 		cycle_num++;
 		//cout << "KPiX event Number: " << event.eventNumber() << endl;
+		
+		
+		
 		if ( cycle_num > skip_cycles_front)
 		{
 		
@@ -468,42 +335,19 @@ int main ( int argc, char **argv )
 						if (calibration_check == 1)
 						{
 							double charge = value/calib_slope[kpix][channel];
-							//if (kpix == 6 && channel == 672) cout << charge << " " << bucket << endl;
-							hist[kpix][channel][bucket]->Fill(charge , weight);
-								
+
 							
-						}
-						else
-						{
-							hist[kpix][channel][bucket]->Fill(value, weight);
+							pedestal_results[kpix][channel][bucket].push_back(charge);
+							
 							
 						}
 						
-						if (bucket == 0)
-						{
-							channel_adc[kpix][channel] = value;
-						}
-						
-						//if (bucket == 0 && kpix == 19)
-						//{
-							//if (cycle_num == 1)
-							//{
-								//myfile << "Itrn = " << event.eventNumber() << " j = " << setw(4) << channel << " k = " << bucket << "  ida=" << kpix << "  x= " << setw(4) << value << " z=" << tstamp << endl; 
-							//}
-						//}
 						
 					}
 				}
 				//cout << "DEBUG time size" << time_ext.size() << endl;
 			}
-			for (int k = 0; k < kpix_checking; ++k) 
-			{
-				noise_correlation12[k]->Fill(channel_adc[k][312], channel_adc[k][624]);
-				noise_correlation13[k]->Fill(channel_adc[k][312], channel_adc[k][899]);
-				noise_correlation23[k]->Fill(channel_adc[k][624], channel_adc[k][899]);
-				//cout << "Value : " << channel_adc[k][312]-channel_adc[k][899] << endl;
-				noise_correlation12_3[k]->Fill(channel_adc[k][312]-channel_adc[k][899], channel_adc[k][624]-channel_adc[k][899]);
-			}
+			
 			
 			
 			////   Show progress
@@ -517,55 +361,22 @@ int main ( int argc, char **argv )
 		}
 	}
 	myfile.close();
-	for (int kpix = 0; kpix < kpix_checking; ++kpix)
+	for (int kpix = 0; kpix < kpix_checking ; kpix++)
 	{
-		if (kpixFound[kpix])
+		for (int channel = 0; channel < 1024 ; channel++)
 		{
-			
-			for (int channel = 0; channel < 1024; ++channel)
+			for (int bucket = 0; bucket < bucket_checking ; bucket++)
 			{
-				if (chanFound[kpix][channel])
-				{
-					//baseline_RMS[kpix][0]->Fill(hist[kpix][channel][0]->GetRMS(), weight);
-					for (int bucket = 0; bucket < bucket_checking; ++bucket)
-					{
-						if (bucketFound[kpix][channel][bucket])
-						{
-							 //cout << "KPIX=" << kpix << "  Channel=" << channel << "  Bucket=" << bucket << "       Mean = " <<  hist[kpix][channel][bucket]->GetMean() << endl;
-							double mean = hist[kpix][channel][bucket]->GetMean();
-							double RMS = hist[kpix][channel][bucket]->GetRMS();
-							//int firstbin = mean-20*RMS; //hist[kpix][channel][bucket]->FindFirstBinAbove(0);
-							//int lastbin = mean+20*RMS; //hist[kpix][channel][bucket]->FindLastBinAbove(0);
-							//hist[kpix][channel][bucket]->GetXaxis()->SetRangeUser(firstbin, lastbin);
-							double overflow = hist[kpix][channel][bucket]->GetBinContent(16001);
-							double underflow = hist[kpix][channel][bucket]->GetBinContent(0);
-							
-							if ( overflow > 0)
-							{
-								cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << "     overflow content = " << overflow << endl;
-							}
-							if ( underflow > 0)
-							{
-								cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << "     underflow content = " << underflow << endl;
-							}
-							//if (mean != 0 && RMS > 0.1)
-							//{
-							 
-								//hist[kpix][channel][bucket]->Fit("gaus","Rq", "", mean-RMS, mean+RMS );
-								
-								//TF1 *gaussfit = hist[kpix][channel][bucket]->GetFunction("gaus");
-								//cout << "KPiX Number = " << kpix << "    Channel Number = " << channel << "     Bucket Number = " << bucket << endl;
-								//cout << "Chisquare = " << gaussfit->GetChisquare()/gaussfit->GetNDF() << endl;
-							//}
-							
-							
-							
-						}
-						
-					}
-				}
+
+					pedestal_median = median(pedestal_results[kpix][channel][bucket]);
+					pedestal_MAD = MAD(pedestal_results[kpix][channel][bucket]);
+					channel_num1 = channel;
+					kpix_num = kpix;
+					bucket_num = bucket;
+					//cout << "Median is " << pedestal_median << endl;
+					pedestal->Fill();
+
 			}
-			
 		}
 	}
 
