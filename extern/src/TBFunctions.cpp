@@ -35,20 +35,37 @@ double yParameter(double strip, int kpix)
 	}
 }
 
+double yParameterSensor(double strip, int sensor)
+{
+
+	if (sensor == 0 || sensor == 3 || sensor == 4) // kpix side showing towards beam movement beam side  KPIX >  < Beam
+	{
+		return 50*(-strip+1840);
+	}
+	else  // kpix side in direction of beam movement KPIX < < BEAM
+	{
+		return 50*strip;
+	}
+}
+
 double median(vector<double> &v)
 {
     size_t n = v.size() / 2;
-    if (v.size()%2 == 0)
+    if (n != 0)
     {
-		nth_element(v.begin(), v.begin()+n, v.end());
-		nth_element(v.begin(), v.begin()+n-1, v.end());
-		return (v[n]+v[n-1])/2;
+		if (v.size()%2 == 0)
+		{
+			nth_element(v.begin(), v.begin()+n, v.end());
+			nth_element(v.begin(), v.begin()+n-1, v.end());
+			return (v[n]+v[n-1])/2;
+		}
+		else
+		{
+			nth_element(v.begin(), v.begin()+n, v.end());
+			return v[n];
+		}
 	}
-	else
-	{
-		 nth_element(v.begin(), v.begin()+n, v.end());
-		 return v[n];
-	 }
+	else return 0;
 }
 
 double MAD(vector<double> &v)

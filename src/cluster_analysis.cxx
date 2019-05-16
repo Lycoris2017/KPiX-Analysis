@@ -1,11 +1,11 @@
 //-----------------------------------------------------------------------------
-// File          : analysis.cpp
+// File          : analysisExternal.cxx
 // Author        : Uwe Kraemer (orig. Ryan Herbst) <uwe.kraemer@desy.de>
 // Created       : 06/28/2017
 // Project       : KPiX Analysis
 //-----------------------------------------------------------------------------
 // Description :
-// General analysis of KPiX data.
+// Analysis of external triggering KPiX Data.
 //-----------------------------------------------------------------------------
 // Copyright (c) 2012 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
@@ -14,6 +14,7 @@
 // 05/30/2012: created
 // 06/28/2017: large scale rewrite of original calibrationFitter.cpp
 // 22/03/2018: clean up ecal plots and add strip plots by <mengqing.wu@desy.de>
+// 24/09/2018: Branch off of original analysis.cxx to better focus on external trigger data.
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -48,7 +49,9 @@
 
 #include "kpixmap.h"
 #include "kpix_left_and_right.h"
-#include "cluster.h"
+#include "clustr.h"
+#include "PacMan.h"
+#include "TBFunctions.h"
 using namespace std;
 
 
@@ -61,6 +64,32 @@ vector<TH1F*> pedestal_hists;
 // Functions
 //////////////////////////////////////////
 
+//double median(vector<double> &v)
+//{
+    //size_t n = v.size() / 2;
+    //if (v.size()%2 == 0)
+    //{
+		//nth_element(v.begin(), v.begin()+n, v.end());
+		//nth_element(v.begin(), v.begin()+n-1, v.end());
+		//return (v[n]+v[n-1])/2;
+	//}
+	//else
+	//{
+		 //nth_element(v.begin(), v.begin()+n, v.end());
+		 //return v[n];
+	 //}
+//}
+
+//double MAD(vector<double> &v)
+//{
+	//double med = median(v);
+	//vector<double> deviation;
+	//for (auto const i:v)
+	//{
+		//deviation.push_back(fabs(i - med));
+	//}
+	//return median(deviation);
+//}
 
 
 void loopdir(TDirectory* dir, string histname)
@@ -85,26 +114,36 @@ void loopdir(TDirectory* dir, string histname)
 		{
 			string keyname = key->GetName();
 			string keytype = key->GetClassName();
-			size_t found_object = keyname.find(histname);
-			size_t found_type = keytype.find("TH1");
-			if (found_type != 0)
+			
+			
+			if (int(histname.find("pedestal") != -1))
 			{
-				
-				if (found_object == 0) 
+				int found2 = keyname.find("_b0");
+				if (int(keytype.find("TH1") != -1))
 				{
-					TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
-					calib_graph->SetName(key->GetName());
-					calib_graphs.push_back(calib_graph);
+					if (int( keyname.find("hist_fc_") != -1) && found2 != -1)
+					{
+						//cout << "Pedestal name " << keyname << endl;
+						TH1F *pedestal_hist = (TH1F*)key->ReadObj();
+						pedestal_hist->SetName(key->GetName());
+						pedestal_hists.push_back(pedestal_hist);
+					}
 				}
 			}
-			else
+			else if ( int(histname.find("calib") != -1))
 			{
-				if (found_object == 0) 
+				if (int(keytype.find("TH1") == -1) && int(keyname.find("b0") != -1))
 				{
-					TH1F *pedestal_hist = (TH1F*)key->ReadObj();
-					pedestal_hist->SetName(key->GetName());
-					pedestal_hists.push_back(pedestal_hist);
+					
+					if (int(keyname.find("calib") != -1) && int(keyname.find("DAC") == -1)) 
+					{
+						//cout << "Calibration name " << keyname << endl;
+						TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
+						calib_graph->SetName(key->GetName());
+						calib_graphs.push_back(calib_graph);
+					}
 				}
+			
 			}
 		}
 	}
@@ -112,30 +151,9 @@ void loopdir(TDirectory* dir, string histname)
 
 
 
+
 // Coincidence function void coincidence(int* time_list1, int* time_list2, int* time_list3, int* channel_list1, int* channel_list2, int* channel_list3)
 
-
-void addDoubleToXml ( ofstream *xml, uint indent, string variable, Double_t value ) { //xml output function
-	uint x;
-	
-	if ( !(value != value) ) {
-		for (x=0; x < indent; x++) *xml << " ";
-		*xml << "<" << variable << ">";
-		*xml << value;
-		*xml << "</" << variable << ">";
-		*xml << endl;
-	}
-}
-
-void addStringToXml ( ofstream *xml, uint indent, string variable, string value ) { //xml output function
-	uint x;
-	
-	for (x=0; x < indent; x++) *xml << " ";
-	*xml << "<" << variable << ">";
-	*xml << value;
-	*xml << "</" << variable << ">";
-	*xml << endl;
-}
 
 double smallest_time_diff( vector<double> ext_list, int int_value)
 {
@@ -165,11 +183,17 @@ int main ( int argc, char **argv )
 	// Class declaration and histogram initialization
 	//////////////////////////////////////////
 	
+	cout << "CURRENTLY USING VERSION FOR NEWDAQ FOR OLD DAQ NEED TO EXCHANGE /Run WITH /20 !" << endl;
+	
+	
 	DataRead               dataRead;  //kpix event classes used for analysis of binary date
 	off_t                  fileSize;  //
 	off_t                  filePos;   //
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
+	
+	int bucket_checking = 1;
+	int  kpix_checking = 12;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -179,29 +203,39 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   kpixFound[32]; // variable that gives true if a kpix at the index n (0<=n<32) was found
-	bool                   chanFound[32][1024];
+	bool                   kpixFound[kpix_checking]; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   chanFound[kpix_checking][1024];
 	uint                   x;
 	uint                   value;
 	uint                   kpix;
+	uint                   sensor;
 	uint                   channel;
 	uint                   bucket;
 	double                  tstamp;
+	uint 					subCount;
+	double 					bunchClk;
+	
+	double 					y;
+	
+	int 					datacounter	= 0;
+	
 	string                 serial;
-	KpixSample::SampleType type;
+	KpixSample::SampleType type;	
+
+
+
 	
-	cluster chargecluster;
+	TH1F				*fc_response_medCM_subtracted[kpix_checking];
 	
-	int cluster_size = 4;
-	int clusters = 1024/cluster_size;
+	TH1F 				*cluster_position[kpix_checking/2][3];
+	//TH1F 				*cluster_charge[kpix_checking];
+	//TH1F 				*cluster_size[kpix_checking];
 	
-	TH1F 					*left_strip_entries[32];
-	TH1F                   	*hist[32][1024];
-	TH1F                   	*hist_cluster_position; 
-	TH1F                   	*hist_cluster_charge; 
-	TH1F 					*cluster_entries[32];
 	
-	TH1F 					*left_strip_entries_map;
+	//TH2F				*cluster_correlation[kpix_checking][kpix_checking-1];
+	TH1F				*cluster_offset[kpix_checking/2][kpix_checking/2-1];
+	
+	TH1F				*noise_distribution[kpix_checking];
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -211,6 +245,7 @@ int main ( int argc, char **argv )
 	
 	stringstream			FolderName;
 	
+	ofstream				claus_file;
 	ofstream               xml;
 	ofstream               csv;
 	uint                   acqCount; // acquisitionCount
@@ -223,10 +258,11 @@ int main ( int argc, char **argv )
 	ofstream               debug;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[32][1024] = {1}; //ADD buckets later.
-	double					pedestal[32][1024] = {1};
-	int						calibration_check = 0;
+	double					calib_slope[24][1024] = {1}; //ADD buckets later.
 	
+	double					pedestal_MedMAD[24][1024][4][2] = {0};
+	int						calibration_check = 0;
+	//int						pedestal_check = 0;
 	
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;
@@ -243,14 +279,15 @@ int main ( int argc, char **argv )
 	//////////////////////////////////////////
 	
 	// Data file is the first and only arg
-	if ( argc != 2 && argc!= 3) {
+	if (argc < 4) {
 	cout << "Usage: ./analysis data_file [skip_cycles_front (int)]||[read calibration input file (char)] \n";
 	return(1);
 	}
-	
+	//cout << "DEBUG: 1" << endl;
 	char* end;
-	// skip first few cycles or read in calibration data file:
-	if ( argc == 3 ) {
+	
+	
+	if ( argc >= 4 ) {
 		//cout << "Even more debug " << strtol(argv[2], &end, 10) << endl;
 		if (strtol(argv[2], &end, 10) != 0 )
 		{
@@ -267,63 +304,75 @@ int main ( int argc, char **argv )
 			skip_cycles_front = 0;
 			TFile *calibration_file = TFile::Open(argv[2]);
 			calibration_check = 1;
-			loopdir(calibration_file, "calib_");
-			loopdir(calibration_file, "hist_");
+			loopdir(calibration_file, "calib");
+			
+			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
+			
 			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
 			{
 				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
 				
 				string calib_name         = calib_graphs[i]->GetName();
-				
+				//cout << calib_name << endl;
 				size_t kpix_num_start     = calib_name.find("_k")+2;
 				size_t channel_num_start  = calib_name.find("_c")+2;
 				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
 				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
 				
+				//cout << kpix_num_start << endl;
+				//cout << kpix_num_length << endl;
+				//
+				//cout << channel_num_start << endl;
+				//cout << channel_num_length << endl;
+				
 			    string channel_string = calib_name.substr(channel_num_start, channel_num_length);
 			    string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
 			    
-			    int kpix_num = stoi(kpix_string);
-			    int channel_num = stoi(channel_string);
-				
-				//cout << "KPiX Number = " << kpix << endl;
-				//cout << "Channel Number = " << channel << endl;
-				
-				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
-				
-			}
-			
-			for (unsigned int i = 0; i<pedestal_hists.size(); ++i)
-			{
-				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
-				
-				string pedestal_name         = pedestal_hists[i]->GetName();
-				
-				size_t kpix_num_start     = pedestal_name.find("_k")+2;
-				size_t channel_num_start  = pedestal_name.find("_c")+2;
-				size_t kpix_num_length       = pedestal_name.length() - kpix_num_start;
-				size_t channel_num_length    = pedestal_name.find("_b") - channel_num_start;
-				
-			    string channel_string = pedestal_name.substr(channel_num_start, channel_num_length);
-			    string kpix_string = pedestal_name.substr(kpix_num_start, kpix_num_length);
+			   //cout << "Channel Number = " <<  channel_string << endl;
+			   //cout << "KPiX Number = " << kpix_string << endl;
 			    
-			    //cout << "Channel Number = " <<  channel_string << endl;
-			   // cout << "KPiX Number = " << kpix_string << endl;
 			    
 			    int kpix_num = stoi(kpix_string);
 			    int channel_num = stoi(channel_string);
 				
 				//cout << "KPiX Number = " << kpix_num << endl;
 				//cout << "Channel Number = " << channel_num << endl;
-				//cout << "Parameter 0 " << pedestal_hists[i]->GetFunction("gaus")->GetParameter(0) << endl;
-				//cout << "Parameter 1 " << pedestal_hists[i]->GetFunction("gaus")->GetParameter(1) << endl;
-				//cout << "Parameter 2 " << pedestal_hists[i]->GetFunction("gaus")->GetParameter(2) << endl;
-				pedestal[kpix_num][channel_num] = pedestal_hists[i]->GetFunction("gaus")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
+				
+				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
+				//cout << "Slope of KPiX " << kpix_num << " and channel " << channel_num << " is " <<  calib_slope[kpix_num][channel_num] << endl;
 				
 			}
 			
+			cout << " -- Reading " << argv[3] << " as pedestal subtraction input file." << endl;
+			skip_cycles_front = 0;
+			TFile *pedestal_file = TFile::Open(argv[3]);
+
+			TTree* pedestal_tree = (TTree*)pedestal_file->Get("pedestal_tree");
+			
+			
+			int kpix_num, channel_num, bucket_num;
+			double pedestal_median, pedestal_MAD;
+			
+			pedestal_tree->SetBranchAddress("pedestal_median", &pedestal_median);
+			pedestal_tree->SetBranchAddress("kpix_num", &kpix_num);
+			pedestal_tree->SetBranchAddress("channel_num", &channel_num);
+			pedestal_tree->SetBranchAddress("bucket_num", &bucket_num);
+			pedestal_tree->SetBranchAddress("pedestal_MAD", &pedestal_MAD);
+			
+			long int nentries = pedestal_tree->GetEntries();
+			for (long int i = 0; i < nentries; ++i)
+			{
+				pedestal_tree->GetEntry(i);
+				pedestal_MedMAD[kpix_num][channel_num][bucket_num][0] = pedestal_median;
+				pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] = pedestal_MAD;
+			}
+			
+			
+			
+			gROOT->GetListOfFiles()->Remove(calibration_file);
+			calibration_file->Close();
+			gROOT->GetListOfFiles()->Remove(pedestal_file);
+			pedestal_file->Close();
 			
 		}
 		
@@ -331,10 +380,12 @@ int main ( int argc, char **argv )
 	}
 	
 	
-	
+	//cout << "DEBUG: 2" << endl;
 	//////////////////////////////////////////
 	// Open Data file
 	//////////////////////////////////////////
+	
+	
 	
 	if ( ! dataRead.open(argv[1])  ) {
 		cout << "Error opening data file " << argv[1] << endl;
@@ -342,8 +393,18 @@ int main ( int argc, char **argv )
 	}
 	
 	// Create output names
+	string pedestalname = argv[3];
+	string outname = argv[1];
+	
+	
+	size_t name_start  = pedestalname.find("/Run") + 1;
+	size_t name_length = pedestalname.find(".dat") - name_start;
+	
+	pedestalname = pedestalname.substr(name_start, name_length);
+	
+	cout << "Name of output file is " <<  pedestalname << endl;
 	tmp.str("");
-	tmp << argv[1] << "_cluster.root";
+	tmp << argv[1] << "_" << pedestalname << ".pedestal.tree_external.root";
 	outRoot = tmp.str();
 	
 	
@@ -366,24 +427,19 @@ int main ( int argc, char **argv )
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
 	
-	
-	//////////////////////////////////////////
-	// Single unique histogram generation
-	//////////////////////////////////////////
-	
-	TH2F *cluster_position_vs_charge = new TH2F ("cluster position vs charge", "Cluster position vs charge; Strip position;  Charge (fC)", 410,-0.5,919.5, 20,-0.5,299.5);
-	TH2F *position_vs_charge = new TH2F ("position vs charge", "position vs charge; Strip position;  Charge (fC)", 230,-0.5,919.5, 160,-0.5,159.5);
-	TH2F *position_vs_corrcharge = new TH2F ("position vs corrected charge", "position vs corrected charge; Strip position;  Charge (fC)", 230,-0.5,919.5, 40,-0.5,39.5);
-	TH1F *charge_sum_position = new TH1F ("charge_sum_position" , "charge_sum_position; Strip position; Charge Sum (fC)", 410, -0.5, 919.5);
-	
+	std::map<int, double> common_modes_median[kpix_checking];
 	while ( dataRead.next(&event) ) // event read to check for filled channels and kpix to reduce number of empty histograms.
 	{
 		acqCount++;		
-		int cycle_time_local[32][8192] = {0}; //list for each kpix that is part of improved monster finder
+		int cycle_time_local[kpix_checking][8192] = {0}; //list for each kpix that is part of improved monster finder
+		
+		
 
 		if (acqCount > skip_cycles_front)
 		{
 			acqProcessed++;
+			vector<double> vec_corr_charge[kpix_checking];
+			
 			for (x=0; x < event.count(); x++)
 			{
 		
@@ -393,17 +449,65 @@ int main ( int argc, char **argv )
 				tstamp  = sample->getSampleTime();
 				channel = sample->getKpixChannel();
 				bucket  = sample->getKpixBucket();
+				value   = sample->getSampleValue();
 				type    = sample->getSampleType();
+				
+				//cout << type <<endl;
+				
 				if ( type == KpixSample::Data )
 				{
+					if (kpix == 13 || kpix ==16) cout << "Found KPIX " << kpix << endl;
 					kpixFound[kpix]          = true;
 					chanFound[kpix][channel] = true;
 					cycle_time_local[kpix][int(tstamp)]+=1;
 					
+					if (bucket == 0)
+					{
+						//cout << "Test" << endl;
+						if (calibration_check == 1)
+						{
+							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
+							{
+								double charge_value = double(value)/calib_slope[kpix][channel];
+								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+							
+							
+							//if (calib_slope[kpix][channel] > 1 && calib_slope[kpix][channel] < 30)
+							//{
+								
+								vec_corr_charge[kpix].push_back(corrected_charge_value_median);
+								
+								
+								
+								
+
+								//if (CM2[kpix]/hitcounter[kpix] > 2)
+								//{
+								//cout << "KPiX Number = " << kpix << "        cycle number = " << acqProcessed << "             channel = " << channel << "                  charge value = " << charge_value << "                 pedestal_gauss = " << pedestal_gauss[kpix][channel][0] <<  "            common mode = " <<  CM2[kpix]/hitcounter[kpix] << endl;
+								//if (channel == 373) cout << "KPiX Number = " << kpix << "       channel = " << channel << "                  pedestal median = " << pedestal_median[kpix][channel][0] << endl;
+								
+								//}
+								
+							}
+						}
+					}
+					
+					
 				}
 				//cout << "KPIX: " << kpix << endl;
 				//cout << "Channel: " << channel << endl;
-				kpixFound[0] = false; // for some reason the system finds a kpix in slot 0
+				
+			}
+			for (int k = 0; k < kpix_checking ; k++)
+			{
+				if (vec_corr_charge[k].size() != 0)
+				{
+					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
+					//cout << "Common mode median of KPiX " << k << " is " << median(vec_corr_charge[k]) << endl;
+					//}
+					
+					//cout << "KPiX Number = " << kpix <<  "            common mode mean calculated = " << CM2[k]/hitcounter[k] <<  "            common mode median calculated = " << median(vec_corr_charge[k]) << endl;
+				}
 			}
 		}
 		else 
@@ -414,7 +518,6 @@ int main ( int argc, char **argv )
 			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
 		
 		}
-		
 	}
 	
 	if (f_skipped_cycles!=NULL)  {
@@ -424,24 +527,23 @@ int main ( int argc, char **argv )
 		cout << endl;
 	}
 	
-	
+	//cout << "DEBUG: 3" << endl;
+	//cout << tstamp << endl;
 	dataRead.close();
-	double weight = 1.0/acqProcessed;
+	double weight = 1.0;//acqProcessed;
+	
+	
 	
 	//////////////////////////////////////////
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
-
-	tmp.str("");
-	tmp << "Left_Strip_entries_map_k_total";
-	left_strip_entries_map = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
-
-	hist_cluster_charge = new TH1F("hist_fc_cluster","hist_fc_cluster; Clustered Charge (fC); #entries/#acq.cycles",2730, -0.5,545.5);
-	hist_cluster_position = new TH1F("hist_cluster","hist_cluster; Cluster Position (Strip Address); #entries/#acq.cycles",920, -0.5,919.5);
+	
+	int response_bins = 440;
+	double response_xmin = -20.5;
+	double response_xmax = 19.5;
 	
 	
-
-	for (kpix = 0; kpix < 32; kpix++) //looping through all possible kpix
+	for (sensor = 0; sensor < kpix_checking/2; sensor++) //looping through all possible kpix
 	{
 		//
 		//cout << "DEBUG test " << kpixFound[kpix] << endl;
@@ -449,82 +551,78 @@ int main ( int argc, char **argv )
 		{
 			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
 			FolderName.str("");
-			FolderName << "KPiX_" << kpix;
+			FolderName << "Sensor_" << sensor;
 			rFile->mkdir(FolderName.str().c_str());
-			TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
-			kpix_folder->cd();
+			TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
+			sensor_folder->cd();
 			
-			
-			tmp.str("");
-			tmp << "Left_Strip_entries_k_" << kpix << "_total";
-			left_strip_entries[kpix] = new TH1F(tmp.str().c_str(), "Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
-			
-			
-			
-			tmp.str("");
-			tmp << "Cluster_entries_k_" << kpix << "_total";
-			cluster_entries[kpix] = new TH1F(tmp.str().c_str(), "Cluster_Entries; Cluster_address; #entries/#acq.cycles", 256,-0.5, 255);
-			
-			FolderName.str("");
-			FolderName << "Strips_and_Channels";
-			kpix_folder->mkdir(FolderName.str().c_str());
-			TDirectory *channels_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-			rFile->cd(channels_folder->GetPath());
-			
-			for (channel = 0; channel < 1024; channel++)
+			for (int s = sensor+1; s < kpix_checking/2; ++s)
 			{
-				if (chanFound[kpix][channel])
-				{
-					
-					
-					tmp.str("");  //set stringstream tmp to an empty string	
-					tmp << "hist_fc" << "_s" << dec <<  kpix2strip_left.at(channel);
-					tmp << "_c" << dec << setw(4) << setfill('0') << channel;
-					tmp << "_k" << dec << kpix; // add _k$kpix to stringstream
-					
-					tmp_units.str(""); //set stringstream decribing histogram units to an empty string
-					tmp_units << "hist_fc" << "_s" << dec <<  kpix2strip_left.at(channel);
-					tmp_units << "_c" << dec << setw(4) << setfill('0') << channel;
-					tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
-					tmp_units << "; Charge (fC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
-					hist[kpix][channel] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),2730, -0.5,545.5);	
-					
-					
-				}
+				tmp.str("");
+				tmp << "cluster_offset_sens" << sensor << "_to_sens" << s << "_b0";
+				cluster_offset[sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -5000.5, 4999.5);
 			}
-			//FolderName.str("");
-			//FolderName << "Clusters";
-			//kpix_folder->mkdir(FolderName.str().c_str());
-			//TDirectory *cluster_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-			//rFile->cd(cluster_folder->GetPath());
+			
+			
+			tmp.str("");
+			tmp << "cluster_position0_k" << kpix << "_b0";
+			cluster_position[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position0; #mum; #Entries", 1840,-0.5, 92000.5);
+			tmp.str("");
+			tmp << "cluster_position1_k" << kpix << "_b0";
+			cluster_position[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position1; #mum; #Entries", 1840,-0.5, 92000.5);
+			tmp.str("");
+			tmp << "cluster_position2_k" << kpix << "_b0";
+			cluster_position[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position2; #mum; #Entries", 1840,-0.5, 92000.5);
+			
+			
+			
 
+			for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
+			{
+				kpix = (sensor*2)+k;
+				FolderName.str("");
+				FolderName << "KPiX_" << kpix;
+				sensor_folder->mkdir(FolderName.str().c_str());
+				TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
+				rFile->cd(kpix_folder->GetPath());
+				
+				tmp.str("");
+				tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
+				fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+			}
 		}
 	}
-	
 	//////////////////////////////////////////
-	// Data read for all events for detailed look into single event structure
+	// Data read for all events for detailed look
 	//////////////////////////////////////////
-
 	dataRead.open(argv[1]); //open file again to start from the beginning
+	
+	claus_file.open("claus_file.txt");
 	
 	
 	int cycle_num = 0;
 	
+	double cluster_cut = 1.0;
 	
+	std::vector<double> corrected_charge_vec[kpix_checking][1024];
 	while ( dataRead.next(&event) )
 	{
 		cycle_num++;
+		int check = 0;
 		if ( cycle_num > skip_cycles_front)
 		{
 			
 			
 			std::vector<double> time_ext;
-			std::map<int, vector<pair<int, double>>> timed_spacecharge;
 			
 			
+			std::map<int, double> cluster_events_after_cut[kpix_checking/2];
+
+			double channel_charge[kpix_checking][1024];
+
 			//cout << "Beginning a new EVENT" << endl;
-			
 			//cout << " NEW EVENT " << endl;
+			
 			for (x=0; x < event.count(); x++)
 			{
 				//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
@@ -536,118 +634,146 @@ int main ( int argc, char **argv )
 				value   = sample->getSampleValue();
 				type    = sample->getSampleType();
 				tstamp  = sample->getSampleTime();
-
+				int sensor = kpix/2;
+				bunchClk = sample->getBunchCount();
+				subCount = sample->getSubCount();
+				
+				//channel to strip assignment.
+				int strip = 9999;
+				if (kpix%2 == 0) // if left kpix
+				{
+					strip = kpix2strip_left.at(channel);
+				}
+				else  // if right kpix
+				{
+					strip  = kpix2strip_right.at(channel);
+				}
+				y = yParameter(strip, kpix); //Testbeam position parameter. Already adjusted for flipped sensors and kpix 1/2 position. Not for the stereo angle
 		
 				if (type == 2)// If event is of type external timestamp
 				{
-					double time = tstamp + double(value * 0.125);
+					double time = bunchClk + double(subCount * 0.125);
 					time_ext.push_back(time);
-					//cout << "DEBUG: channel in timestmap = " << channel << endl;
-					//cout << "DEBUG: bucket in timestmap = " << bucket << endl;
+
 				}
-		
-		
+				
+				
+
+				
 				if ( type == KpixSample::Data ) // If event is of type KPiX data
 				{
-		
 					
-						
-					int cluster = kpix2strip_left.at(channel)/cluster_size;
+					if (sample->getEmpty()) cout << "Event is empty and I am analysing it" << endl;
+					else check = 1;
+
 					//cout << tstamp << endl;
 					if (bucket == 0)
 					{
-						left_strip_entries[kpix]->Fill(kpix2strip_left.at(channel), weight);
-						cluster_entries[kpix]->Fill(cluster, weight);
-						
-						int timestamp = tstamp;
-						
+						//cout << "Test" << endl;
 						if (calibration_check == 1)
 						{
-							
-							//cout << calib_slope[kpix][channel]/pow(10,15) << endl;
-							
-							
-							
-							if (calib_slope[kpix][channel]/pow(10,15) > 1 && calib_slope[kpix][channel]/pow(10,15) < 15 && kpix2strip_left.at(channel) != 9999 && pedestal[kpix][channel] < 1000 && pedestal[kpix][channel] > 100) // Filter out channels with horrible calibration and non connected channels.
+							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
 							{
-								double charge_value = double(value)/calib_slope[kpix][channel]*pow(10,15);
-								double corrected_charge_value = charge_value - ( pedestal[kpix][channel] /calib_slope[kpix][channel]*pow(10,15) );
-								//cout << "Charge value : " << charge_value << endl;
-								//cout << "Corrected charge value : " << corrected_charge_value << endl;
-								//cout << "Pedestal : " << pedestal[kpix][channel]/(calib_slope[kpix][channel]/pow(10,15)) << endl;
 								
-								hist[kpix][channel]->Fill(charge_value, weight);
+								//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
+								double charge_value = double(value)/calib_slope[kpix][channel];
 								
-								if (kpix == 26)
+								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+								
+								double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+								
+								channel_charge[kpix][channel] = charge_CM_corrected;
+								corrected_charge_vec[kpix][channel].push_back(charge_CM_corrected);
+								
+								//// ========= Event cut ============
+
+								if (kpix == 0) claus_file << cycle_num << " " << channel << " " << value << " " << charge_value << " " << corrected_charge_value_median << " " << charge_CM_corrected << endl;
+
+								fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected, weight);
+								
+								if ( charge_CM_corrected > cluster_cut) 
 								{
-									//timed_spacecharge[timestamp][kpix2strip_left.at(channel)] = charge_value;
-									timed_spacecharge[timestamp].push_back(make_pair(kpix2strip_left.at(channel), charge_value));
-									position_vs_charge->Fill(kpix2strip_left.at(channel), charge_value, weight);
-									position_vs_corrcharge->Fill(kpix2strip_left.at(channel), corrected_charge_value, weight);
-									
-									charge_sum_position->Fill(kpix2strip_left.at(channel), charge_value);
-									
+									cluster_events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
 								}
 							}
-							
-							
-							
 						}
 					}
-
-					
-					//double trig_diff = smallest_time_diff(time_ext, tstamp); //Calculation of minimal difference is done in a function for cleanup
-					
-					
 				}
+				
+				
 
 			}
-			//cout << " Next Event " << endl;
-			for (auto& cor_charge : timed_spacecharge )
+			if (check == 1) //if event is not empty
 			{
-				std::vector<int> space;
-				std:;vector<double> charge;
-				sort(cor_charge.second.begin(), cor_charge.second.end());
-				
-				for (auto& space_charge : cor_charge.second)
+				clustr Cluster[kpix_checking/2];  // Another Cluster class variable
+				std::vector<clustr> multi_cluster[kpix_checking/2];
+				for (int sensor = 0; sensor < kpix_checking/2; sensor++)
 				{
-					space.push_back(space_charge.first);
-					charge.push_back(space_charge.second);
-				}
-				//chargecluster.construct(space, charge);
-				hist_cluster_charge->Fill(chargecluster.charge, weight);
-				hist_cluster_position->Fill(chargecluster.position, weight);
-				cluster_position_vs_charge->Fill(chargecluster.position, chargecluster.charge, weight);
+					if ( cluster_events_after_cut[sensor].size() != 0)
+					{
+						
+						//cout << "===================" << endl;
+						//cout << "Starting new PacMan" << endl;
+						//cout << "===================" << endl;
+						//cout << endl;
+						clustr Input;
+						Input.Elements = cluster_events_after_cut[sensor];
+						int num_of_clusters = 0;
+						while (Input.Elements.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 4)
+						{
+							PacMan NomNom;
+							NomNom.Eater(Input, Input.MaxCharge(), 9999);
+							if (num_of_clusters == 0)
+							{
+								cluster_position[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+								//cluster_charge[sensor]->Fill(NomNom.getClusterCharge());
+								//cluster_size[sensor]->Fill(NomNom.getElementssize());
+							}
+							cluster_position[sensor][1]->Fill(NomNom.getClusterCoG());
+							//cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge()); //currently misusing the buckets
+							//cluster_size[sensor][1]->Fill(NomNom.getElementssize());
+							multi_cluster[sensor].push_back(NomNom.getCluster());
+							num_of_clusters++;
+						}
+						//cout << "Number of Clusters in the event for KPIX " << KPIX << " = " << num_of_clusters << endl;
+						//cout << "Cluster CoG = " << Cluster[KPIX].CoG << " : NomNom CoG = " << NomNom.getClusterCoG() << endl;
+						//cout << "Cluster Charge = " << Cluster[KPIX].Charge << " : NomNom Charge = " << NomNom.getClusterCharge() << endl;
+					}
+					
 				
-				//cout << "Cluster Position " << chargecluster.position << endl;
-				//cout << "Cluster Charge " << chargecluster.charge << endl;
+				}
+				
+				for (int sensor1 = 0; sensor1 < kpix_checking/2; sensor1++)
+				{
+					for (int sensor2 = sensor1+1; sensor2 < kpix_checking/2; sensor2++)
+					{
+						for (auto const& s1 : multi_cluster[sensor1])
+						{
+							for (auto const& s2 : multi_cluster[sensor2])
+							{
+								double clstroffset  = yParameterSensor(s1.CoG, sensor1) - yParameterSensor(s2.CoG, sensor2);
+								//cout << "Cluster offset is " << clstroffset << endl;
+								cluster_offset[sensor1][sensor2]->Fill(clstroffset);
+							}
+						}
+					}
+				}
 				
 			}
-				
-					
-			
+		datacounter++;
 			
 		}	
-			////   Show progress
-			filePos  = dataRead.pos();
-			currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
-			if ( currPct != lastPct ) 
-			{
-				cout << "\rReading File: " << currPct << " %      " << flush;
-				lastPct = currPct;
-			}
+		
+		////   Show progress
+		filePos  = dataRead.pos();
+		currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
+		if ( currPct != lastPct ) 
+		{
+			cout << "\rReading File: " << currPct << " %      " << flush;
+			lastPct = currPct;
+		}
 		
 	}
-	
-	//cout <<  endl << "Full coincidence of sensors with external trigger: " << full_coincidence_channel_entries->GetEntries() << endl;
-	//cout << "Three coincidence of sensors: " << three_coincidence << endl;
-	//cout << "Two coincidence of sensors: " << two_coincidence << endl;
-	
-	//cout << endl <<  "An event is currently classified as a monster if the amount of triggers one acquisition clock within a cycle is above " << monster_finder_limit << endl;
-	//cout << "_______________________________________________________________" << endl;
-	
-
-	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
 	cout << endl;
@@ -655,7 +781,7 @@ int main ( int argc, char **argv )
 	rFile->Write();
 	gROOT->GetListOfFiles()->Remove(rFile); //delete cross links that make production of subfolder structure take forever
 	rFile->Close();
-	
+	claus_file.close();
 	
 	
 	dataRead.close();

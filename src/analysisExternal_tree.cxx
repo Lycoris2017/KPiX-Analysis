@@ -574,7 +574,6 @@ int main ( int argc, char **argv )
 	double response_xmax = 19.5;
 	
 	
-	
 	for (kpix = 0; kpix < kpix_checking; kpix++) //looping through all possible kpix
 	{
 		//
