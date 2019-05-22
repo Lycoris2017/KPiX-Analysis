@@ -1351,7 +1351,6 @@ int main ( int argc, char **argv )
 							if (corrected_charge_vec[kpix][channel][bucket].size() != 0)
 							{
 								noise_distribution[kpix][bucket]->Fill(1.4826*MAD(corrected_charge_vec[kpix][channel][bucket]));
-								noise_distribution[kpix][bucket_checking]->Fill(1.4826*MAD(corrected_charge_vec[kpix][channel][bucket]));
 							}
 						}
 					}

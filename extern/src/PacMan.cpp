@@ -46,7 +46,7 @@ clustr PacMan::getCluster()
 void PacMan::Eater(clustr& PACMAN, int element, int oldelement) 
 {
 	//cout << "DEBUG PACMAN: 1 " << endl;
-	if (PACMAN.Elements.count(element) != 0)
+	if (PACMAN.Elements.count(element) != 0) //if the current element exists
 	{
 	
 		std::map<int,double>::iterator begin = PACMAN.Elements.begin();
@@ -71,7 +71,7 @@ void PacMan::Eater(clustr& PACMAN, int element, int oldelement)
 				//cout << "Down" << endl;
 				PacMan::Eater(PACMAN, element-1, element); // keep moving down
 			}
-			if (oldelement + 1 == element) // if we came here by moving down
+			if (oldelement + 1 == element) // if we came here by moving up
 			{
 				//cout << "DEBUG PACMAN: 2.2.2 " << endl;
 				//cout << "Up" << endl;

@@ -34,8 +34,7 @@ def arrangeStats(hists, statBoxW, statBoxH, name):
 
 		tconst = statBox.GetLineWith(h.GetName());
 		listOfLines.Remove(tconst);
-
-
+		
 		myt = ROOT.TLatex(0,0,name[len(hists)-i-1]);
 		myt.SetTextFont(42);
 		myt.SetTextColor(h.GetLineColor());
@@ -285,6 +284,7 @@ def hist_plotter():
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
+			ROOT.TGaxis.SetMaxDigits(3)
 			c1.cd()
 			#print obj.GetEntries()
 			##------------------
@@ -387,6 +387,7 @@ def graph_plotter():
 			#print 'Number of entries =', obj.GetEntries()
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
+			
 			##------------------
 			##adjust the xrange
 			obj.SetLineColor(args.color[counter-1])
@@ -539,6 +540,7 @@ mystyle.SetTitleOffset(0.87,"yz")
 mystyle.SetTitleOffset(0.75,"x")
 mystyle.SetStatFont(42)
 mystyle.SetStatFontSize(0.03)
+
 #mystyle.SetTitleBorderSize(0)
 #mystyle.SetStatBorderSize(0)
 #mystyle.SetTextFont(42)
@@ -563,7 +565,8 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-mystyle.SetOptStat(1001111)
+mystyle.SetOptStat(0) ##removes stat box
+#mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #
 ##marker settings
@@ -601,7 +604,7 @@ parser.add_argument('--xrange', dest='xaxisrange', default=[9999], nargs='*', ty
 parser.add_argument('--yrange', dest='yaxisrange', default=[9999], nargs='*', type=float, help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float')
 parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to be used as legend titles instead of the default filename+histogram name')
 parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
-parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  908, 435, 880, 860, 632, 840], nargs='*', help='list of colors to be used')
+parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  908, 435, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')

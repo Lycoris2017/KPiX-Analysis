@@ -1,20 +1,20 @@
 #!/bin/bash
-calib_files20190402_normal_gain=(/scratch/data/testbeam201905/Calibration_20190504_230648.dat)
-calib_files20190402_normal_gain=(/scratch/data/testbeam201905/Calibration_20190504_230648.dat)
+calib_files_normal_gain=(/scratch/data/testbeam201905/Data_runs/Calibration_20190504_230648.dat /scratch/data/testbeam201905/debug_runs/Calibration_20190513_152812.dat)
+
 #/scratch/data/testbeam201905/Calibration_20190502_083214.dat /scratch/data/testbeam201905/Calibration_20190502_180620.dat /scratch/data/testbeam201905/Calibration_20190503_121847.dat /scratch/data/testbeam201905/Calibration_20190504_111600.dat
 
 
 ymlcalib_extension=.ymlcalib.root
 #same=""
 
-for i in ${calib_files20190402_normal_gain[*]}
+for i in ${calib_files_normal_gain[*]}
 do
 	substring=$(echo $i| cut -d'/' -f 5 | cut -d '.' -f 1)
 	same="$same $i$ymlcalib_extension"
-	python python/plot_producer.py $i$ymlcalib_extension -n pedestalsRMS_fc_k -d "h e same" -k 0 1 2 3 4 5 -o pedestalRMS_compare -b 0 --refuse 10 11 --legend k0 k1 k2 k3 k4 k5 --xrange -0.5 4
-	python python/plot_producer.py $i$ymlcalib_extension -n pedestalsRMS_fc_k -d "h e same" -k 6 7 8 9 10 11 -o pedestalRMS_compare2 -b 0 --legend k6 k7 k8 k9 k10 k11 --xrange -0.5 4
-	python python/plot_producer.py $i$ymlcalib_extension -n slope_k -d "h e same" -k 0 1 2 3 4 5 -o slope_compare -b 0 --refuse 10 11 --legend k0 k1 k2 k3 k4 k5
-	python python/plot_producer.py $i$ymlcalib_extension -n slope_k -d "h e same" -k 6 7 8 9 10 11 -o slope_compare2 -b 0 --legend k6 k7 k8 k9 k10 k11
+	python python/plot_producer.py $i$ymlcalib_extension -n pedestalsRMS_fc_k -d "h e same" -k 0 1 2 3 4 5 -o pedestalRMS_compare_downstream -b 0 --refuse 10 11 --legend S59-1 S59-2 S43-1 S43-2 S1st-1 S1st-2 --xrange -0.5 4
+	python python/plot_producer.py $i$ymlcalib_extension -n pedestalsRMS_fc_k -d "h e same" -k 6 7 8 9 10 11 -o pedestalRMS_compare_upstream -b 0 --legend S34-1 S34-2 S53-1 S53-2 S55-1 S55-2 --xrange -0.5 4
+	python python/plot_producer.py $i$ymlcalib_extension -n slope_k -d "h e same" -k 0 1 2 3 4 5 -o slope_compare_downstream -b 0 --refuse 10 11 --legend S59-1 S59-2 S43-1 S43-2 S1st-1 S1st-2
+	python python/plot_producer.py $i$ymlcalib_extension -n slope_k -d "h e same" -k 6 7 8 9 10 11 -o slope_compare_upstream -b 0 --legend S34-1 S34-2 S53-1 S53-2 S55-1 S55-2
 	
 done
 
