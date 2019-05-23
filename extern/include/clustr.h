@@ -28,10 +28,13 @@ class clustr
 		double Charge;
 		double SigmaCoG;
 		
-		std::map<int, double> Elements;
-
+		std::map<int,double> Elements;
+		std::multimap<int,double> ElementsNoise;
 		void SetParameters();
+		void SetParameters_w_Noise();
 		int MaxCharge();
+		int MaxCharge_w_Noise();
+		int MaxSoN();
 		//void setEventList(vector<pair<double, double>>);
 } ;
 

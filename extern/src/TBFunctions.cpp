@@ -54,14 +54,14 @@ double xParameterSensor(double strip, int sensor)
 {
 	if (sensor == 0 || sensor == 5 || sensor == 4) // kpix side showing towards beam movement beam side  KPIX >  < Beam
 	{
-		if (sensor == 5) return 0*(-strip+1840); // sensor 2 and sensor 5 have no stereo angle
-		else return -1.744998*(-strip+1840); // sensor 0 and 4 have a -2 degree stereo angle means the y movement is slightly lower (50*sin(-2/57.295))
+		if (sensor == 5) return 0*(-strip+920); // sensor 2 and sensor 5 have no stereo angle
+		else return -1.744998*(-strip+920); // sensor 0 and 4 have a -2 degree stereo angle means the y movement is slightly lower (50*sin(-2/57.295))
 
 	}
 	else  // kpix side in direction of beam movement KPIX < < BEAM
 	{
-		if (sensor == 2) return 0*strip; // sensor 2 and sensor 5 have no stereo angle
-		else return 1.744998*strip; // sensor 1 and 3 have a 2 degree stereo angle means the y movement is slightly lower (50*sin(2/57.295))
+		if (sensor == 2) return 0*(strip-920); // sensor 2 and sensor 5 have no stereo angle
+		else return 1.744998*(strip-920); // sensor 1 and 3 have a 2 degree stereo angle means the y movement is slightly lower (50*sin(2/57.295))
 	}
 }
 

@@ -9,6 +9,7 @@ using namespace std;
 
 double yParameter(double, int);
 double yParameterSensor(double, int);
+double xParameterSensor(double, int);
 double median(vector<double>&);
 double MAD(vector<double>&);
 

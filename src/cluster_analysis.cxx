@@ -178,16 +178,20 @@ int main ( int argc, char **argv )
 	
 	TH1F					*fc_response_medCM_subtracted[kpix_checking];
 		
-	TH1F 					*cluster_position[kpix_checking/2][4];
+	TH1F 					*cluster_position_y[kpix_checking/2][4];
+	TH1F 					*cluster_position_y_test[kpix_checking/2][4];
+	//TH1F 					*cluster_position_x[kpix_checking/2][4];
 	TH1F 					*clusters[kpix_checking/2];
 	TH1F 					*cluster_charge[kpix_checking][3];
 	TH1F 					*cluster_size[kpix_checking][3];
 		
 		
 	TH2F					*cluster_correlation[kpix_checking][kpix_checking-1];
-	TH1F					*cluster_offset[kpix_checking/2][kpix_checking/2-1];
+	TH1F					*cluster_offset_y[kpix_checking/2][kpix_checking/2-1];
+	TH1F					*cluster_offset_x[kpix_checking/2][kpix_checking/2-1];
 		
 	TH1F					*noise_distribution[kpix_checking];
+	TH1F					*noise_v_position[kpix_checking/2];
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -518,8 +522,12 @@ int main ( int argc, char **argv )
 			for (int s = sensor+1; s < kpix_checking/2; ++s)
 			{
 				tmp.str("");
-				tmp << "cluster_offset_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset[sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+				tmp << "cluster_offset_y_sens" << sensor << "_to_sens" << s << "_b0";
+				cluster_offset_y[sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+				
+				tmp.str("");
+				tmp << "cluster_offset_x_sens" << sensor << "_to_sens" << s << "_b0";
+				cluster_offset_x[sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
 				
 				tmp.str("");
 				tmp << "cluster_correlation_sens" << sensor << "_to_sens" << s << "_b0";
@@ -530,17 +538,43 @@ int main ( int argc, char **argv )
 			
 			
 			tmp.str("");
-			tmp << "cluster_position0_sens" << sensor << "_b0";
-			cluster_position[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position0; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp << "cluster_position_y0_sens" << sensor << "_b0";
+			cluster_position_y[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; #mum; #Entries", 1840,-0.5, 91999.5);
 			tmp.str("");
-			tmp << "cluster_position1_sens" << sensor << "_b0";
-			cluster_position[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position1; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp << "cluster_position_y1_sens" << sensor << "_b0";
+			cluster_position_y[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position y1; #mum; #Entries", 1840,-0.5, 91999.5);
 			tmp.str("");
-			tmp << "cluster_position2_sens" << sensor << "_b0";
-			cluster_position[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position2; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp << "cluster_position_y2_sens" << sensor << "_b0";
+			cluster_position_y[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-0.5, 91999.5);
 			tmp.str("");
-			tmp << "cluster_position3_sens" << sensor << "_b0";
-			cluster_position[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
+			tmp << "cluster_position_y3_sens" << sensor << "_b0";
+			cluster_position_y[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position y3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
+			
+			tmp.str("");
+			tmp << "cluster_position_y0_test_sens" << sensor << "_b0";
+			cluster_position_y_test[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp.str("");
+			tmp << "cluster_position_y1_test_sens" << sensor << "_b0";
+			cluster_position_y_test[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position y1; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp.str("");
+			tmp << "cluster_position_y2_test_sens" << sensor << "_b0";
+			cluster_position_y_test[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-0.5, 91999.5);
+			tmp.str("");
+			tmp << "cluster_position_y3_test_sens" << sensor << "_b0";
+			cluster_position_y_test[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position y3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
+			
+			//tmp.str("");
+			//tmp << "cluster_position_x0_sens" << sensor << "_b0";
+			//cluster_position_x[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position x0; #mum; #Entries", 1840,-0.5, 91999.5);
+			//tmp.str("");
+			//tmp << "cluster_position_x1_sens" << sensor << "_b0";
+			//cluster_position_x[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position x1; #mum; #Entries", 1840,-0.5, 91999.5);
+			//tmp.str("");
+			//tmp << "cluster_position_x2_sens" << sensor << "_b0";
+			//cluster_position_x[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position x2; #mum; #Entries", 1840,-0.5, 91999.5);
+			//tmp.str("");
+			//tmp << "cluster_position_x3_sens" << sensor << "_b0";
+			//cluster_position_x[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position x3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
 			
 			tmp.str("");
 			tmp << "clusters_sens" << sensor << "_b0";
@@ -553,6 +587,10 @@ int main ( int argc, char **argv )
 			tmp.str("");
 			tmp << "cluster_size_sens" << sensor << "_b0";
 			cluster_size[sensor][0] = new TH1F(tmp.str().c_str(), "cluster size0; Size; #Entries", 10,-0.5, 9.5);
+
+			tmp.str("");
+			tmp << "noise_v_position_s" << sensor << "_b0";
+			noise_v_position[sensor]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-0.5, 91999.5);
 
 			for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
 			{
@@ -615,15 +653,12 @@ int main ( int argc, char **argv )
 					{
 						if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
 						{
-						
 							double charge_value = double(value)/calib_slope[kpix][channel];
-							
 							double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-							
 							double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-							
 							corrected_charge_vec[kpix][channel].push_back(charge_CM_corrected);
 						}
+						//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 					}
 				}
 			}
@@ -645,11 +680,24 @@ int main ( int argc, char **argv )
 	{
 		for (int c = 0; c < 1024; ++c)
 		{
-			if (corrected_charge_vec[k][c].size() != 0)
-			{
-				noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-				noise_distribution[k]->Fill(noise[k][c]);
-			}
+			int sensor = k/2;
+			int strip = 9999;
+			if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
+			else strip  = kpix2strip_right.at(c); // if right kpix
+	    
+			y = yParameter(strip, kpix);
+			
+			noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+			//if (MAD(corrected_charge_vec[k][c]) == 0)
+			//{
+				////cout << "2KPIX " << k << " Channel " << c << endl;
+				////for (auto const& i : corrected_charge_vec[k][c])
+				////{
+					////cout << "Value is " << i << endl;
+				////}
+			//}
+			noise_distribution[k]->Fill(noise[k][c]);
+			noise_v_position[sensor]->Fill(y, noise[k][c]);
 		}
 	}
 	
@@ -666,6 +714,7 @@ int main ( int argc, char **argv )
 		std::vector<double> time_ext;
 		std::map<int, double> cluster_events_after_cut[kpix_checking/2];
 
+		std::multimap<int, double> cluster_EventsNoise_after_cut[kpix_checking/2];
 
 		//cout << "Beginning a new EVENT" << endl;
 		//cout << " NEW EVENT " << endl;
@@ -706,26 +755,27 @@ int main ( int argc, char **argv )
 				//cout << tstamp << endl;
 				if (bucket == 0)
 				{
-					//cout << "Test" << endl;
-					if (calibration_check == 1)
+					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] >= 0.5) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
 					{
-						if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] >= 0.5) //ensuring we ignore 0 MAD channels and channels with extremely high noise
+						
+						//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
+						double charge_value = double(value)/calib_slope[kpix][channel];
+						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+                
+						//// ========= Event cut ============
+                
+						if (kpix == 0) claus_file << event.eventNumber() << " " << channel << " " << value << " " << charge_value << " " << corrected_charge_value_median << " " << charge_CM_corrected << endl;
+						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected, weight);
+						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels)
 						{
-							
-							//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
-							double charge_value = double(value)/calib_slope[kpix][channel];
-							double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-							double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-
-							//// ========= Event cut ============
-
-							if (kpix == 0) claus_file << event.eventNumber() << " " << channel << " " << value << " " << charge_value << " " << corrected_charge_value_median << " " << charge_CM_corrected << endl;
-							fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected, weight);
-							if ( charge_CM_corrected > 4*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 5 fC (to cut out weird channels)
-							{
-								cluster_events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
-							}
+							cluster_events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
+							cluster_EventsNoise_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
+							cluster_EventsNoise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
+							if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
 						}
+						//if (kpix == 0 && (channel == 9 || channel == 105)) cout << "Something is going wrong here" << endl;
+						
 					}
 				}
 			}
@@ -739,6 +789,38 @@ int main ( int argc, char **argv )
 			std::vector<clustr> multi_cluster[kpix_checking/2];
 			for (sensor = 0; sensor < kpix_checking/2; sensor++)
 			{
+				if ( cluster_EventsNoise_after_cut[sensor].size() != 0)
+				{
+					//cout << "===================" << endl;
+					//cout << "Starting new PacMan" << endl;
+					//cout << "===================" << endl;
+					//cout << endl;
+					clustr Input;
+					Input.ElementsNoise = cluster_EventsNoise_after_cut[sensor];
+					int num_of_clusters = 0;
+					while (Input.ElementsNoise.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
+					{
+						PacMan NomNom;
+						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
+						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
+						NomNom.Eater_w_Noise(Input, Input.MaxSoN(), 9999);
+						if (num_of_clusters == 0)
+						{
+							cluster_position_y_test[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
+							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
+						}
+						cluster_position_y_test[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+						cluster_position_y_test[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
+						multi_cluster[sensor].push_back(NomNom.getCluster());
+						num_of_clusters++;
+						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
+					}
+					//clusters[sensor]->Fill(num_of_clusters);
+				}
+				
+				
+				
 				if ( cluster_events_after_cut[sensor].size() != 0)
 				{
 					
@@ -755,16 +837,14 @@ int main ( int argc, char **argv )
 						NomNom.Eater(Input, Input.MaxCharge(), 9999);
 						if (num_of_clusters == 0)
 						{
-							cluster_position[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
-							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
+							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+							//cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
+							//cluster_size[sensor][0]->Fill(NomNom.getElementssize());
 						}
-						cluster_position[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-						cluster_position[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
-						multi_cluster[sensor].push_back(NomNom.getCluster());
-						//*clusttree = NomNom.getCluster();
-						//sensr = sensor;
-						//cluster_tree->Fill();
+						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+						//cluster_position_x[sensor][1]->Fill(46000+xParameterSensor(NomNom.getClusterCoG(), sensor));
+						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
+						//multi_cluster[sensor].push_back(NomNom.getCluster());
 						num_of_clusters++;
 					}
 					clusters[sensor]->Fill(num_of_clusters);
@@ -779,20 +859,23 @@ int main ( int argc, char **argv )
 				{
 					for (auto const& s1 : multi_cluster[sensor1])
 					{
+						int s1_count = 0;
 						for (auto const& s2 : multi_cluster[sensor2])
 						{
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
-							double clstroffset  = y1 - y2;
+							double clstroffset_y  = y1 - y2;
 							//cout << "Cluster offset is " << clstroffset << endl;
-							cluster_offset[sensor1][sensor2]->Fill(clstroffset);
+							cluster_offset_y[sensor1][sensor2]->Fill(clstroffset_y);
 							cluster_correlation[sensor1][sensor2]->Fill(y1,y2);
-							if (10000 > fabs(clstroffset))
+							if (10000 > fabs(clstroffset_y))
 							{
-								cluster_position[sensor1][2]->Fill(y1);
-								cluster_position[sensor2][2]->Fill(y2);
 								
+								cluster_position_y[sensor2][2]->Fill(y2);
+								if (s1_count = 0) cluster_position_y[sensor1][2]->Fill(y1);
 							}
+							s1_count++;
+								
 						}
 					}
 				}
