@@ -49,6 +49,7 @@
 
 #include "kpixmap.h"
 #include "kpix_left_and_right.h"
+#include "testbeam201905_noise_mask.h"
 #include "clustr.h"
 #include "PacMan.h"
 #include "TBFunctions.h"
@@ -178,6 +179,9 @@ int main ( int argc, char **argv )
 	
 	TH1F					*fc_response_medCM_subtracted[kpix_checking];
 		
+	TH1F 					*Max_SoN[kpix_checking/2];
+		
+		
 	TH1F 					*cluster_position_y[kpix_checking/2][4];
 	TH1F 					*cluster_position_y_test[kpix_checking/2][4];
 	//TH1F 					*cluster_position_x[kpix_checking/2][4];
@@ -201,6 +205,7 @@ int main ( int argc, char **argv )
 	stringstream			FolderName;
 	
 	ofstream				claus_file;
+	ofstream				noise_file;
 	ofstream               xml;
 	ofstream               csv;
 	uint                   acqCount; // acquisitionCount
@@ -218,10 +223,13 @@ int main ( int argc, char **argv )
 	double					pedestal_MedMAD[24][1024][4][2] = {0};
 	int						calibration_check = 0;
 	double 					noise[kpix_checking][1024];
+	double 					MaximumSoN[kpix_checking/2][1840] = {0};
 	//int						pedestal_check = 0;
 	
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;
+	
+	
 	kpix2strip_left = kpix_left();
 	kpix2strip_right = kpix_right();
 	
@@ -486,7 +494,8 @@ int main ( int argc, char **argv )
 	//cout << "DEBUG: 3" << endl;
 	//cout << tstamp << endl;
 	dataRead.close();
-	double weight = 1.0;//acqProcessed;
+	double weight = 1.0/acqProcessed;
+	;//acqProcessed;
 	
 	
 	
@@ -536,6 +545,9 @@ int main ( int argc, char **argv )
 				cluster_correlation[sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-0.5, 91999.5, 230,-0.5, 91999.5);
 			}
 			
+			tmp.str("");
+			tmp << "Max_SoN_sens" << sensor << "_b0";
+			Max_SoN[sensor] = new TH1F(tmp.str().c_str(), "cluster position y0; strip; #Entries", 1840,-0.5, 1839.5);
 			
 			tmp.str("");
 			tmp << "cluster_position_y0_sens" << sensor << "_b0";
@@ -617,7 +629,8 @@ int main ( int argc, char **argv )
 	dataRead.open(argv[1]); //open file again to start from the beginning
 	
 	claus_file.open("claus_file.txt");
-	
+
+	int header = 1;
 	
 
 	int clstrcounter[kpix_checking][1840] = {0};
@@ -625,6 +638,13 @@ int main ( int argc, char **argv )
 	
 	std::vector<double> corrected_charge_vec[kpix_checking][1024];
 	
+	unordered_map<uint, uint> noise_mask[6];
+	noise_mask[0] = noise_sensor_0();
+	noise_mask[1] = noise_sensor_1();
+	noise_mask[2] = noise_sensor_2();
+	noise_mask[3] = noise_sensor_3();
+	noise_mask[4] = noise_sensor_4();
+	noise_mask[5] = noise_sensor_5();
 	
 	while ( dataRead.next(&event) ) //preread to determine noise value of each channel in each KPiX.
 	{
@@ -705,7 +725,7 @@ int main ( int argc, char **argv )
 	dataRead.open(argv[1]);
 	
 	
-	
+	int global_trig_counter = 0;
 	
 	while ( dataRead.next(&event) )
 	{
@@ -718,6 +738,7 @@ int main ( int argc, char **argv )
 
 		//cout << "Beginning a new EVENT" << endl;
 		//cout << " NEW EVENT " << endl;
+		int trig_counter = 0;
 		
 		for (x=0; x < event.count(); x++)
 		{
@@ -743,8 +764,17 @@ int main ( int argc, char **argv )
 	
 			if (type == 2)// If event is of type external timestamp
 			{
+				trig_counter++;
+				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
+				if (trig_counter == 1)
+				{
+					//cout << "DEBUG: " << event.eventNumber() << " ," << time << " ," << trig_counter << endl;
+					tmp.str("");
+					tmp << setw(7) << time  << " ," << setw(5) << global_trig_counter ;
+					
+				}
 			}
 			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{
@@ -765,9 +795,9 @@ int main ( int argc, char **argv )
                 
 						//// ========= Event cut ============
                 
-						if (kpix == 0) claus_file << event.eventNumber() << " " << channel << " " << value << " " << charge_value << " " << corrected_charge_value_median << " " << charge_CM_corrected << endl;
-						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected, weight);
-						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels)
+						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
+						//if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)
+						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
 							cluster_events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
 							cluster_EventsNoise_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
@@ -803,51 +833,60 @@ int main ( int argc, char **argv )
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
 						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
+						
 						NomNom.Eater_w_Noise(Input, Input.MaxSoN(), 9999);
 						if (num_of_clusters == 0)
 						{
-							cluster_position_y_test[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
 							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
 							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
+							
 						}
-						cluster_position_y_test[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-						cluster_position_y_test[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
+						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
+						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
+						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
+						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
 						multi_cluster[sensor].push_back(NomNom.getCluster());
+						if (header == 1)
+						{
+							header = 0;
+							claus_file <<"Event Number, Sensor, position, time, #trig" << endl;
+						}
+						claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << tmp.str().c_str() << endl;
 						num_of_clusters++;
 						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
 					//clusters[sensor]->Fill(num_of_clusters);
 				}
 				
-				
-				
-				if ( cluster_events_after_cut[sensor].size() != 0)
+				if ( cluster_EventsNoise_after_cut[sensor].size() != 0)
 				{
-					
 					//cout << "===================" << endl;
 					//cout << "Starting new PacMan" << endl;
 					//cout << "===================" << endl;
 					//cout << endl;
 					clustr Input;
-					Input.Elements = cluster_events_after_cut[sensor];
+					Input.ElementsNoise = cluster_EventsNoise_after_cut[sensor];
 					int num_of_clusters = 0;
-					while (Input.Elements.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
+					while (Input.ElementsNoise.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
 					{
 						PacMan NomNom;
-						NomNom.Eater(Input, Input.MaxCharge(), 9999);
+						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
+						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
+						NomNom.Eater_w_Noise2(Input, Input.MaxSoN(), 9999);
 						if (num_of_clusters == 0)
 						{
-							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-							//cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
-							//cluster_size[sensor][0]->Fill(NomNom.getElementssize());
+							cluster_position_y_test[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor));
+							cluster_charge[sensor][0]->Fill(NomNom.getClusterSoN());
+							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
 						}
-						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-						//cluster_position_x[sensor][1]->Fill(46000+xParameterSensor(NomNom.getClusterCoG(), sensor));
-						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
+						cluster_position_y_test[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor));
+						cluster_position_y_test[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor), NomNom.getClusterSoN());
 						//multi_cluster[sensor].push_back(NomNom.getCluster());
 						num_of_clusters++;
+						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
-					clusters[sensor]->Fill(num_of_clusters);
+					//clusters[sensor]->Fill(num_of_clusters);
 				}
 				
 			
@@ -896,7 +935,40 @@ int main ( int argc, char **argv )
 		
 	}
 	
+	// Noise mask generation. ONLY USE WHEN NO MASK IS PUT IN!
+	//noise_file.open("include/testbeam201905_noise_mask.h");
+	//for (int s = 0; s < 6; ++s)
+	//{
+		//int badentries = 0;
+		//noise_file << "unordered_map<uint, uint> noise_sensor_" << s << "()" << endl;
+		//noise_file << "{" << endl;
+		//noise_file << "    unordered_map<uint, uint> m1;" << endl;
+		//for (int strips = 0; strips < 1840; strips++)
+		//{
+			//if (MaximumSoN[s][strips] > 0.03 ) // && cluster_position_y_test[s][0]->GetstripContent(strip+1) < 7 && cluster_position_y_test[s][0]->GetstripContent(strip-1) < 7)
+			//{
+				//cout << "Huge number of entries with no adjacent entries in strip " << strips << " with " << MaximumSoN[s][strips] << " entries in Sensor " << s << endl;
+				//badentries += MaximumSoN[s][strips];
+				//noise_file << "    m1.insert(make_pair(" << strips << ",0));" << endl;
+			//}
+			//else
+			//{
+				//noise_file << "    m1.insert(make_pair(" << strips << ",1));" << endl;
+			//}
+			////if (Max_SoN[s]->GetBinContent(strips) > 25)
+			////{
+				////cout << "Huge number of entries with no adjacent entries in strip in MaxSoN " << strips << " with " << Max_SoN[s]->GetBinContent(strips) << " entries in Sensor " << s << endl;
+			////}
+		//}
+		//noise_file << "    return m1;" << endl;
+		//noise_file << "}" << endl;
+		//cout << "Number of bad entries in this sensor is " << badentries << endl;
+	//}
+	//noise_file.close();
 	
+	
+	
+	claus_file.close();
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
@@ -905,7 +977,7 @@ int main ( int argc, char **argv )
 	rFile->Write();
 	gROOT->GetListOfFiles()->Remove(rFile); //delete cross links that make production of subfolder structure take forever
 	rFile->Close();
-	claus_file.close();
+	
 	
 	
 	dataRead.close();

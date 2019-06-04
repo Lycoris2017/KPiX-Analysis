@@ -14,12 +14,15 @@ class PacMan
 		~PacMan();
 		
 		double getClusterCoG();
+		double getClusterCoGSoN();
 		double getClusterCharge();
+		double getClusterSoN();
 		int getElementssize();
 		
 		clustr getCluster();
 		void Eater(clustr&, int, int);
 		void Eater_w_Noise(clustr&, int, int);
+		void Eater_w_Noise2(clustr&, int, int);
 		
 	private:
 		clustr Cluster;

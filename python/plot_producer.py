@@ -565,8 +565,8 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-mystyle.SetOptStat(0) ##removes stat box
-#mystyle.SetOptStat(1001111)
+#mystyle.SetOptStat(0) ##removes stat box
+mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #
 ##marker settings

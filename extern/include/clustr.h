@@ -26,12 +26,16 @@ class clustr
 	
 		double CoG ;
 		double Charge;
+		double SoN;
+		double CoGSoN;
 		double SigmaCoG;
 		
 		std::map<int,double> Elements;
 		std::multimap<int,double> ElementsNoise;
+		
 		void SetParameters();
 		void SetParameters_w_Noise();
+		void SetParameters_w_Noise2();
 		int MaxCharge();
 		int MaxCharge_w_Noise();
 		int MaxSoN();

@@ -291,14 +291,16 @@ int main ( int argc, char **argv ) {
   uint                    errorSigmaCnt;
   stringstream			 FolderName;
   
-	TH1F				*pedestals[24][4];
 	TH1F				*pedestals_fc_0_127[24][4];
 	TH1F				*slope_hist[24][4];
+	TH1F				*slope_hist_0RMS[24][4];
 	TH1F				*slope_hist_conn[24][4];
 	TH1F				*slope_hist_disc[24][4];
 	TH1F				*slope_hist_0_127[24][4];
 	TH1F				*slope_residual[24][4];
+	TH1F				*pedestals_ADC[24][4];
 	TH1F				*pedestals_fc[24][4];
+	TH1F				*pedestalsRMS_ADC[24][4];
 	TH1F				*pedestalsRMS_fc[24][4];
 	TH1F				*pedestalsRMS_fc_0_127[24][4];
 	TH1F				*pedestalsRMS_fc_disc[24][4];
@@ -683,7 +685,7 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
 				tmp << "pedestals_k" << kpix << "_b" << bucket;
-				pedestals[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals distribution; Charge [ADC]; #entries", 9000, 0, 9000);
+				pedestals_ADC[kpix][bucket] = new TH1F(tmp.str().c_str(), "pedestals distribution; Charge [ADC]; #entries", 9000, 0, 9000);
 				
 				tmp.str("");
 				tmp << "pedestals_fc_k" << kpix << "_b" << bucket;
@@ -696,6 +698,10 @@ int main ( int argc, char **argv ) {
 				tmp.str("");
 				tmp << "pedestalsRMS_fc_k" << kpix << "_b" << bucket;
 				pedestalsRMS_fc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals RMS, All Chn; [fC]; a.u.", 1000, 0, 4);
+				
+				tmp.str("");
+				tmp << "pedestalsRMS_ADC_k" << kpix << "_b" << bucket;
+				pedestalsRMS_ADC[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals RMS, All Chn; [ADC]; a.u.", 1000, 0, 11);
 				
 				tmp.str("");
 				tmp << "pedestalsRMS_fc_0_127_k" << kpix << "_b" << bucket;
@@ -715,6 +721,10 @@ int main ( int argc, char **argv ) {
 				tmp.str("");
 				tmp << "slope_k" << kpix << "_b" << bucket;
 				slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; #entries", 200, -5, 35);
+				
+				tmp.str("");
+				tmp << "slope_0RMS_k" << kpix << "_b" << bucket;
+				slope_hist_0RMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution of 0 RMS pedestal channels; Slope [ADC/fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_conn_k" << kpix << "_b" << bucket;
@@ -850,7 +860,7 @@ for (kpix=0; kpix<24; kpix++)
 									chanData[kpix][channel][bucket][range]->baseFitMeanErr   = hist->GetFunction("gaus")->GetParError(1);
 									chanData[kpix][channel][bucket][range]->baseFitSigmaErr  = hist->GetFunction("gaus")->GetParError(2);
 									
-									pedestals[kpix][bucket]->Fill(chanData[kpix][channel][bucket][range]->baseFitMean);
+									pedestals_ADC[kpix][bucket]->Fill(chanData[kpix][channel][bucket][range]->baseFitMean);
 									channel_file_adc_mean << chanData[kpix][channel][bucket][range]->baseFitMean << " " << channel << " " << bucket << endl;
 									//pedestalsRMS->Fill(chanData[kpix][channel][bucket][range]->baseFitSigma);
 									if ( hist->GetFunction("gaus")->GetNDF() == 0 ) 
@@ -1102,7 +1112,7 @@ for (kpix=0; kpix<24; kpix++)
 										pedestals_fc[kpix][bucket]->Fill( ped_charge /* *pow(10,15) */ );
 										if (channel >= 0 && channel <= 127) pedestals_fc_0_127[kpix][bucket]->Fill( ped_charge  /* *pow(10,15) */ );
 										
-										
+										pedestalsRMS_ADC[kpix][bucket]->Fill( chanData[kpix][channel][bucket][range]->baseHistRMS /* *pow(10,15) */ );
 										pedestalsRMS_fc[kpix][bucket]->Fill( ped_charge_err /* *pow(10,15) */ );
 										if (channel >= 0 && channel <= 127) pedestalsRMS_fc_0_127[kpix][bucket]->Fill( ped_charge_err  /* *pow(10,15) */ );
 
@@ -1134,7 +1144,12 @@ for (kpix=0; kpix<24; kpix++)
 				
 										slope_residual[kpix][bucket]->Fill( offset);
 									
-										
+
+										if (chanData[kpix][channel][bucket][range]->baseHistRMS == 0)
+										{
+											//cout << "Slope of 0 RMS channel is " << slope << endl;
+											slope_hist_0RMS[kpix][bucket]->Fill(slope);
+										}
 								
 				
 										// Determine bad channel from fitted gain
