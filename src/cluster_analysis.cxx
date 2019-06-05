@@ -183,11 +183,12 @@ int main ( int argc, char **argv )
 		
 		
 	TH1F 					*cluster_position_y[kpix_checking/2][4];
-	TH1F 					*cluster_position_y_test[kpix_checking/2][4];
 	//TH1F 					*cluster_position_x[kpix_checking/2][4];
 	TH1F 					*clusters[kpix_checking/2];
 	TH1F 					*cluster_charge[kpix_checking][3];
+	TH1F 					*cluster_significance[kpix_checking][3];
 	TH1F 					*cluster_size[kpix_checking][3];
+	
 		
 		
 	TH2F					*cluster_correlation[kpix_checking][kpix_checking-1];
@@ -235,6 +236,15 @@ int main ( int argc, char **argv )
 	
 	pixel					pixel_kpix[1024];
 	pixel_mapping(pixel_kpix);
+	
+	unordered_map<uint, uint> sensor2layer;
+	
+	sensor2layer.insert(make_pair(0, 15));
+	sensor2layer.insert(make_pair(1, 14));
+	sensor2layer.insert(make_pair(2, 13));
+	sensor2layer.insert(make_pair(3, 10));
+	sensor2layer.insert(make_pair(4, 11));
+	sensor2layer.insert(make_pair(5, 12));
 	
 	
 	
@@ -562,18 +572,7 @@ int main ( int argc, char **argv )
 			tmp << "cluster_position_y3_sens" << sensor << "_b0";
 			cluster_position_y[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position y3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
 			
-			tmp.str("");
-			tmp << "cluster_position_y0_test_sens" << sensor << "_b0";
-			cluster_position_y_test[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; #mum; #Entries", 1840,-0.5, 91999.5);
-			tmp.str("");
-			tmp << "cluster_position_y1_test_sens" << sensor << "_b0";
-			cluster_position_y_test[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position y1; #mum; #Entries", 1840,-0.5, 91999.5);
-			tmp.str("");
-			tmp << "cluster_position_y2_test_sens" << sensor << "_b0";
-			cluster_position_y_test[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-0.5, 91999.5);
-			tmp.str("");
-			tmp << "cluster_position_y3_test_sens" << sensor << "_b0";
-			cluster_position_y_test[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position y3; #mum; #Entries x Charge", 1840,-0.5, 91999.5);
+			
 			
 			//tmp.str("");
 			//tmp << "cluster_position_x0_sens" << sensor << "_b0";
@@ -593,13 +592,36 @@ int main ( int argc, char **argv )
 			clusters[sensor] = new TH1F(tmp.str().c_str(), "Clusters; #Clusters; #Entries", 100,-0.5, 99.5);
 			
 			tmp.str("");
-			tmp << "cluster_charge_sens" << sensor << "_b0";
-			cluster_charge[sensor][0] = new TH1F(tmp.str().c_str(), "cluster charge0; Charge (fC); #Entries", 100,-0.5, 24.5);
+			tmp << "cluster_charge0_sens" << sensor << "_b0";
+			cluster_charge[sensor][0] = new TH1F(tmp.str().c_str(), "cluster charge0; Charge (fC); #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_charge1_sens" << sensor << "_b0";
+			cluster_charge[sensor][1] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_charge2_sens" << sensor << "_b0";
+			cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 200,-0.5, 49.5);
+			
 			
 			tmp.str("");
-			tmp << "cluster_size_sens" << sensor << "_b0";
+			tmp << "cluster_significance0_sens" << sensor << "_b0";
+			cluster_significance[sensor][0] = new TH1F(tmp.str().c_str(), "cluster significance0; S/N; #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_significance1_sens" << sensor << "_b0";
+			cluster_significance[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance1; S/N; #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_significance2_sens" << sensor << "_b0";
+			cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance1; S/N; #Entries", 200,-0.5, 49.5);
+			
+			tmp.str("");
+			tmp << "cluster_size0_sens" << sensor << "_b0";
 			cluster_size[sensor][0] = new TH1F(tmp.str().c_str(), "cluster size0; Size; #Entries", 10,-0.5, 9.5);
-
+			tmp.str("");
+			tmp << "cluster_size1_sens" << sensor << "_b0";
+			cluster_size[sensor][1] = new TH1F(tmp.str().c_str(), "cluster size1; Size; #Entries", 10,-0.5, 9.5);
+			tmp.str("");
+			tmp << "cluster_size2_sens" << sensor << "_b0";
+			cluster_size[sensor][2] = new TH1F(tmp.str().c_str(), "cluster size1; Size; #Entries", 10,-0.5, 9.5);
+			
 			tmp.str("");
 			tmp << "noise_v_position_s" << sensor << "_b0";
 			noise_v_position[sensor]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-0.5, 91999.5);
@@ -628,7 +650,7 @@ int main ( int argc, char **argv )
 	//////////////////////////////////////////
 	dataRead.open(argv[1]); //open file again to start from the beginning
 	
-	claus_file.open("claus_file.txt");
+	claus_file.open("claus_file_new.txt");
 
 	int header = 1;
 	
@@ -732,9 +754,9 @@ int main ( int argc, char **argv )
 		int not_empty= 0;
 		
 		std::vector<double> time_ext;
-		std::map<int, double> cluster_events_after_cut[kpix_checking/2];
+		std::map<int, double> cluster_Events_after_cut[kpix_checking/2];
+		std::map<int, double> cluster_Noise_after_cut[kpix_checking/2];
 
-		std::multimap<int, double> cluster_EventsNoise_after_cut[kpix_checking/2];
 
 		//cout << "Beginning a new EVENT" << endl;
 		//cout << " NEW EVENT " << endl;
@@ -799,9 +821,8 @@ int main ( int argc, char **argv )
 						//if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)
 						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
-							cluster_events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
-							cluster_EventsNoise_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
-							cluster_EventsNoise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
+							cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
+							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
 							if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
 						}
 						//if (kpix == 0 && (channel == 9 || channel == 105)) cout << "Something is going wrong here" << endl;
@@ -819,76 +840,61 @@ int main ( int argc, char **argv )
 			std::vector<clustr> multi_cluster[kpix_checking/2];
 			for (sensor = 0; sensor < kpix_checking/2; sensor++)
 			{
-				if ( cluster_EventsNoise_after_cut[sensor].size() != 0)
+				
+				if ( cluster_Events_after_cut[sensor].size() != 0 )
 				{
 					//cout << "===================" << endl;
 					//cout << "Starting new PacMan" << endl;
 					//cout << "===================" << endl;
 					//cout << endl;
 					clustr Input;
-					Input.ElementsNoise = cluster_EventsNoise_after_cut[sensor];
+					Input.Elements = cluster_Events_after_cut[sensor];
+					Input.Noise = cluster_Noise_after_cut[sensor];
 					int num_of_clusters = 0;
-					while (Input.ElementsNoise.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
+					while (Input.Elements.size() != 0 && num_of_clusters < 9999) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
 					{
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
 						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
 						
-						NomNom.Eater_w_Noise(Input, Input.MaxSoN(), 9999);
+						NomNom.Eater(Input, Input.MaxSoN(), 9999);
 						if (num_of_clusters == 0)
 						{
-							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge());
-							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
+							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge(), weight);
+							cluster_size[sensor][0]->Fill(NomNom.getClusterElementssize(), weight);
+							cluster_significance[sensor][0]->Fill(NomNom.getClusterSignificance(), weight);
+							//cout << "Size: " << NomNom.getClusterElementssize() << endl;
 							
 						}
 						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
 						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
-						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor));
-						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterCharge());
+						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterSignificance()*weight);
 						multi_cluster[sensor].push_back(NomNom.getCluster());
-						if (header == 1)
+						cluster_size[sensor][1]->Fill(NomNom.getClusterElementssize(), weight);
+						cluster_significance[sensor][1]->Fill(NomNom.getClusterSignificance(), weight);
+						cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
+						//cout << "Significance: " << NomNom.getClusterSignificance() << endl;
+						if (NomNom.getClusterSignificance() > 4 && NomNom.getClusterCharge() > 2)
 						{
-							header = 0;
-							claus_file <<"Event Number, Sensor, position, time, #trig" << endl;
+							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+							cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
+							cluster_size[sensor][2]->Fill(NomNom.getClusterElementssize(), weight);
+							cluster_significance[sensor][2]->Fill(NomNom.getClusterSignificance(), weight);
+							if (header == 1)
+							{
+								header = 0;
+								claus_file <<"Event Number, Layer, position, Significance, Size, Charge, time, #trig" << endl;
+							}
+							claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor2layer.at(sensor)  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << setw(7) << NomNom.getClusterSignificance() << " ," << setw(2) << NomNom.getClusterElementssize() << " ," << setw(7) << NomNom.getClusterCharge() << " ," << tmp.str().c_str() << endl;
+						
 						}
-						claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << tmp.str().c_str() << endl;
 						num_of_clusters++;
 						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
-					//clusters[sensor]->Fill(num_of_clusters);
+					clusters[sensor]->Fill(num_of_clusters);
 				}
-				
-				if ( cluster_EventsNoise_after_cut[sensor].size() != 0)
-				{
-					//cout << "===================" << endl;
-					//cout << "Starting new PacMan" << endl;
-					//cout << "===================" << endl;
-					//cout << endl;
-					clustr Input;
-					Input.ElementsNoise = cluster_EventsNoise_after_cut[sensor];
-					int num_of_clusters = 0;
-					while (Input.ElementsNoise.size() != 0 && num_of_clusters < 5) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
-					{
-						PacMan NomNom;
-						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
-						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
-						NomNom.Eater_w_Noise2(Input, Input.MaxSoN(), 9999);
-						if (num_of_clusters == 0)
-						{
-							cluster_position_y_test[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor));
-							cluster_charge[sensor][0]->Fill(NomNom.getClusterSoN());
-							cluster_size[sensor][0]->Fill(NomNom.getElementssize());
-						}
-						cluster_position_y_test[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor));
-						cluster_position_y_test[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoGSoN(), sensor), NomNom.getClusterSoN());
-						//multi_cluster[sensor].push_back(NomNom.getCluster());
-						num_of_clusters++;
-						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
-					}
-					//clusters[sensor]->Fill(num_of_clusters);
-				}
-				
 			
 			}
 			
@@ -905,13 +911,13 @@ int main ( int argc, char **argv )
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
 							//cout << "Cluster offset is " << clstroffset << endl;
-							cluster_offset_y[sensor1][sensor2]->Fill(clstroffset_y);
+							cluster_offset_y[sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[sensor1][sensor2]->Fill(y1,y2);
 							if (10000 > fabs(clstroffset_y))
 							{
 								
-								cluster_position_y[sensor2][2]->Fill(y2);
-								if (s1_count = 0) cluster_position_y[sensor1][2]->Fill(y1);
+								cluster_position_y[sensor2][2]->Fill(y2, weight);
+								if (s1_count = 0) cluster_position_y[sensor1][2]->Fill(y1, weight);
 							}
 							s1_count++;
 								
@@ -945,7 +951,7 @@ int main ( int argc, char **argv )
 		//noise_file << "    unordered_map<uint, uint> m1;" << endl;
 		//for (int strips = 0; strips < 1840; strips++)
 		//{
-			//if (MaximumSoN[s][strips] > 0.03 ) // && cluster_position_y_test[s][0]->GetstripContent(strip+1) < 7 && cluster_position_y_test[s][0]->GetstripContent(strip-1) < 7)
+			//if (MaximumSoN[s][strips] > 0.03 ) //
 			//{
 				//cout << "Huge number of entries with no adjacent entries in strip " << strips << " with " << MaximumSoN[s][strips] << " entries in Sensor " << s << endl;
 				//badentries += MaximumSoN[s][strips];

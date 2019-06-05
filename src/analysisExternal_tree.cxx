@@ -1193,16 +1193,16 @@ int main ( int argc, char **argv )
 								{
 									cluster_position[KPIX][0]->Fill(yParameter(NomNom.getClusterCoG(), KPIX));
 									cluster_charge[KPIX][0]->Fill(NomNom.getClusterCharge());
-									cluster_size[KPIX][0]->Fill(NomNom.getElementssize());
+									cluster_size[KPIX][0]->Fill(NomNom.getClusterElementssize());
 									cluster_position[KPIX][bucket_checking]->Fill(yParameter(NomNom.getClusterCoG(), KPIX));
 									cluster_charge[KPIX][bucket_checking]->Fill(NomNom.getClusterCharge());
-									cluster_size[KPIX][bucket_checking]->Fill(NomNom.getElementssize());
+									cluster_size[KPIX][bucket_checking]->Fill(NomNom.getClusterElementssize());
 									Cluster[KPIX] = NomNom.getCluster();
 									Cluster[KPIX].SetParameters();
 								}
 								cluster_position[KPIX][1]->Fill(NomNom.getClusterCoG());
 								cluster_charge[KPIX][1]->Fill(NomNom.getClusterCharge()); //currently misusing the buckets
-								cluster_size[KPIX][1]->Fill(NomNom.getElementssize());
+								cluster_size[KPIX][1]->Fill(NomNom.getClusterElementssize());
 								multi_cluster[KPIX].push_back(NomNom.getCluster());
 								num_of_clusters++;
 							}

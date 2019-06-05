@@ -54,15 +54,15 @@ pedestal_ext=".tree_pedestal.root"
 for i in ${files[*]}
 do
 	./bin/pedestal_tree $i $calibration
-	./bin/analysisExternal_tree $i $calibration $i$pedestal_ext
+	#./bin/analysisExternal_tree $i $calibration $i$pedestal_ext
 	
 done
 
-for i in ${files_high[*]}
-do
-	./bin/pedestal_tree $i $calibration_high
-	./bin/analysisExternal_tree $i $calibration_high $i$pedestal_ext
+#for i in ${files_high[*]}
+#do
+	#./bin/pedestal_tree $i $calibration_high
+	#./bin/analysisExternal_tree $i $calibration_high $i$pedestal_ext
 	
-done
+#done
 
-source ./scripts/tb201905/ext_plots_script.sh
+#source ./scripts/tb201905/ext_plots_script.sh

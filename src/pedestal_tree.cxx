@@ -144,6 +144,7 @@ int main ( int argc, char **argv )
 	KpixSample::SampleType type;
 	TTree*					pedestal;
 	
+	TH1F*					MAD0_v_channel;
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -270,8 +271,7 @@ int main ( int argc, char **argv )
 	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
 		
 	
-	
-	
+	MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; #Entries", 1024, -0.5, 1023.5);
 
 	range = 0;
 	
@@ -345,6 +345,10 @@ int main ( int argc, char **argv )
 						
 					}
 				}
+				//if ( type == 1 )
+				//{
+					//cout << kpix << " " << value << endl;
+				//}
 				//cout << "DEBUG time size" << time_ext.size() << endl;
 			}
 			
@@ -375,6 +379,11 @@ int main ( int argc, char **argv )
 					bucket_num = bucket;
 					//cout << "Median is " << pedestal_median << endl;
 					pedestal->Fill();
+					
+					if (pedestal_MAD == 0)
+					{
+						MAD0_v_channel->Fill(channel);
+					}
 
 			}
 		}
