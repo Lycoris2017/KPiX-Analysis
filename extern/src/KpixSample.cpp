@@ -117,11 +117,19 @@ KpixSample::SampleType KpixSample::getSampleType() {
 
 
 // ExtTs runtime -- last 32 bits of the FPGA clock counter
-uint KpixSample::getGlobalTime() {
+uint KpixSample::getSampleRuntime32() {
   // 63-32 bits
   uint ret;
   ret = data_[1];
   return(ret);
+}
+
+uint64_t KpixSample::getSampleRuntime64(uint64_t frameruntime){
+	uint64_t ret = (frameruntime & 0xFFFFFFFF00000000) | data_[1];
+
+	printf("frame : %lu; sample : %lu\n", frameruntime,ret);
+	
+	return(ret);
 }
 
 
@@ -140,3 +148,5 @@ uint KpixSample::getSubCount() {
   ret = (data_[0] & 0x3);
   return(ret);
 }
+
+

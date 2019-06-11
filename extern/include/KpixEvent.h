@@ -8,8 +8,8 @@
 // Event Data consists of the following: Z[xx:xx] = Zeros
 //    Header = 8 x 32-bits
 //       Header[0] = EventNumber[31:0]
-//       Header[1] = Timestamp[31:00]
-//       Header[2] = Zeros[31:0]
+//       Header[1] = Timestamp[31:00] --> RunTime - LSB, little endian @MQ
+//       Header[2] = Zeros[31:0] --> RunTime - HSB, little endian @MQ
 //       Header[3] = Zeros[31:0]
 //       Header[4] = Zeros[31:0]
 //       Header[5] = Zeros[31:0]
@@ -26,6 +26,7 @@
 //-----------------------------------------------------------------------------
 // Modification history :
 // 05/29/2012: created
+// 11/06/2019: modified -- Mengqing
 //----------------------------------------------------------------------------
 #ifndef __KPIX_EVENT_H__
 #define __KPIX_EVENT_H__
@@ -63,6 +64,9 @@ class KpixEvent : public Data {
 
       //! Get timestamp
       uint timestamp ( );
+
+      //! Get frame runtime
+      uint64_t runtime ();
 
       //! Get sample count
       uint count ( );

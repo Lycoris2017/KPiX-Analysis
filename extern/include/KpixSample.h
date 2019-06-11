@@ -38,9 +38,9 @@ class KpixSample {
       // Sample types
       enum SampleType {
          Data        = 0,
-         Temperature = 1,
-         Timestamp   = 2,
-	 Runtime     = 3
+         Temperature = 1, // kpix on-chip 
+         Timestamp   = 2, 
+         Runtime     = 3  // kpix data sent out time
       };
 
    private:
@@ -191,13 +191,14 @@ class KpixSample {
       /*
 	New Data Time stamp structure -- Mengqing
        */
-      uint getGlobalTime(); // runtime in Timestamp sample
+      uint getSampleRuntime32(); // runtime lsb based on 64-bit frame counter
+      uint64_t getSampleRuntime64(uint64_t frameruntime); // you need to input the kpixEvent level runtime;
       uint getBunchCount(); // TimeStamp bunch clock count
       uint getSubCount(); // the 8 sub counts under 1 bunch count
 
       /*
 	New RunTime structure -- Mengqing
-       */
+      */
 
       
 };

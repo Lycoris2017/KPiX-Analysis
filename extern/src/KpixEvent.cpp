@@ -7,9 +7,9 @@
 // Description :
 // Event Data consists of the following: Z[xx:xx] = Zeros
 //    Header = 8 x 32-bits
-//       Header[0] = EventNumber[31:0]
-//       Header[1] = Timestamp[31:00]
-//       Header[2] = Zeros[31:0]
+//       Header[0] = EventNumber[31:0] 
+//       Header[1] = Timestamp[31:00] --> runtime lsb @MQ
+//       Header[2] = Zeros[31:0] --> runtime hsb @MQ
 //       Header[3] = Zeros[31:0]
 //       Header[4] = Zeros[31:0]
 //       Header[5] = Zeros[31:0]
@@ -29,6 +29,7 @@
 // 05/29/2012: created
 //----------------------------------------------------------------------------
 // Modified by Mengqing Wu for Lycoris Project @ 28/09/2018
+// Modified by MQ for Lycoris @ 11/06/2019
 // -- 
 //----------------------------------------------------------------------------
 #include <iostream>
@@ -40,6 +41,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "KpixEvent.h"
+#include <stdint.h>
 using namespace std;
 
 // Constructor
@@ -56,6 +58,19 @@ uint KpixEvent::eventNumber ( ) {
 // Get timestamp
 uint KpixEvent::timestamp ( ) {
    return(data_[1]);
+}
+
+
+// Get 64bit runtime
+uint64_t KpixEvent::runtime ( ) {
+    uint64_t lsb = data_[1];
+    uint64_t hsb = data_[2];
+
+    uint64_t ret =  hsb<<32 | lsb;
+	
+    // printf("Counter: %lu %lu; ret : %lu\n", hsb,lsb,ret); // debug
+	
+	return (ret);
 }
 
 // Get sample count

@@ -33,6 +33,9 @@ int main ( int argc, char **argv ) {
   //off_t                  filePos;
   KpixEvent              event;
   KpixSample             *sample;
+
+  uint64_t               frameruntime;
+  uint64_t               sampleruntime;
   
   bool                   bucketFound[32][1024][4];
   bool                   chanFound[32][1024];
@@ -88,6 +91,8 @@ int main ( int argc, char **argv ) {
       cout << "\tTimeStamp = " << event.timestamp() <<endl;
       cout << "\tCount = " << event.count() <<endl;
       }*/
+    //    cout << "Runtime : "<< event.runtime() << endl;
+    frameruntime  = event.runtime();
     
     int DataSampleCount=0, TempSampleCount=0;
     int tenSamples=0;
@@ -96,8 +101,8 @@ int main ( int argc, char **argv ) {
       //// Get sample
       sample  = event.sample(x1);
       if (sample->getEmpty()) {
-	cout<<" [info] empty sample, jump over!"<<endl;
-	continue;
+	      //cout<<" [info] empty sample, jump over!"<<endl;
+	      continue;
       }
       
       kpix    = sample->getKpixAddress();
@@ -106,34 +111,41 @@ int main ( int argc, char **argv ) {
       type    = sample->getSampleType();
       
       if ( type == KpixSample::Data ){
-	DataSampleCount++;
-	
-	kpixFound[kpix]          = true;
-	chanFound[kpix][channel] = true;
-	bucketFound[kpix][channel][bucket] = true;
-	
-	if ( print10Sam &&  tenSamples < 11 ){
-	  //cout << kpixeventcount << endl;
-	  cout<<"[dev] kpix = "<<kpix<<", channel = " <<channel <<", bucket = " <<bucket <<"\n";
-	  tenSamples++;
-	}
+	      DataSampleCount++;
+	      
+	      kpixFound[kpix]          = true;
+	      chanFound[kpix][channel] = true;
+	      bucketFound[kpix][channel][bucket] = true;
+	      
+	      if ( print10Sam &&  tenSamples < 11 ){
+		      //cout << kpixeventcount << endl;
+		      cout<<"[dev] kpix = "<<kpix<<", channel = " <<channel <<", bucket = " <<bucket <<"\n";
+		      tenSamples++;
+	      }
+      }
+      
+      if ( type == KpixSample::Temperature){
+	      TempSampleCount++;
+	      if ( print10Sam &&  tenSamples < 11 ){
+		      cout<<"[*]   This is Temperature!" << endl;
+		      tenSamples++;
+	      }
       }
 
-      if ( type == KpixSample::Temperature){
-	TempSampleCount++;
-	if ( print10Sam &&  tenSamples < 11 ){
-	  cout<<"[*]   This is Temperature!" << endl;
-	  tenSamples++;
-	}
+      if (type == KpixSample::Timestamp){
+	      if (frameruntime!=0)
+		      sampleruntime = sample->getSampleRuntime64(frameruntime);
+	      else
+		      cerr<< "Error: frameruntime is ZEROs!"<< endl;
       }
       
       kpixFound[0] = false; // in any case, kpix=0 is a virtual index
     }
     
-
+    
     if (kpixeventcount < 10 && print10evts){
-      cout << "\tDataSampleCount = " << DataSampleCount <<endl;
-      cout << "\tTempSampleCount = " << TempSampleCount <<endl;
+	    cout << "\tDataSampleCount = " << DataSampleCount <<endl;
+	    cout << "\tTempSampleCount = " << TempSampleCount <<endl;
     }
 
   }
