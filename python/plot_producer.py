@@ -110,10 +110,13 @@ def loopdir(keys):  # loop through all subdirectories of the root file and add a
 
 
 def hist_plotter():
-	if ('same' in args.draw_option):
+	if ('same' in args.draw_option or 'stack' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-		drawing_option = args.draw_option.replace('same', 'NOSTACK') #exchange the same with a NOSTACK as I am using THStack
+		if ('stack' not in args.draw_option):
+			drawing_option = args.draw_option.replace('same', 'NOSTACK') #exchange the same with a NOSTACK as I am using THStack
+		else:
+			drawing_option = args.draw_option
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
@@ -169,26 +172,12 @@ def hist_plotter():
 				x_axis.SetRangeUser(x_low, x_high)
 				print 'Number of normed Entries in range = ', obj.Integral()
 				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
-			
-			
-			if 9999 in args.yaxisrange:
-				if (y_low is None):
-					y_low = obj.FindFirstBinAbove(0,2)-10
-				elif (y_low > obj.FindFirstBinAbove(0,2)-10):
-					y_low = obj.FindFirstBinAbove(0,2)-10
-				if (y_high is None):
-					y_high = obj.FindLastBinAbove(0,2)+10
-				elif (y_high < obj.FindLastBinAbove(0,2)+10):
-					y_high = obj.FindLastBinAbove(0,2)+10
-				if (y_high > obj.GetNbinsY()):  #avoids overflow bin
-					y_high = obj.GetNbinsY()
-				if (y_low <= 0): #avoids underflow bin
-					y_low = 1
-				y_axis.SetRange(y_low, y_high)
-			else:
+
+			if 9999 not in args.yaxisrange:
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
-				y_axis.SetRangeUser(y_low, y_high) 
+				hist_comp.SetMaximum(y_high)
+				hist_comp.SetMinimum(y_low)
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
@@ -357,7 +346,7 @@ def graph_plotter():
 	if ('same' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-		drawing_option = args.draw_option.replace('same', 'A') #exchange the same with a NOSTACK as I am using THStack
+		drawing_option = args.draw_option.replace('same', 'A') 
 		c1 = ROOT.TCanvas( args.output_name, 'Test', 1200, 900 )
 		c1.cd()
 		c1.SetFillColor(0)

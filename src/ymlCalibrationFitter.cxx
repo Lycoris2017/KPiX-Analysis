@@ -483,8 +483,13 @@ int main ( int argc, char **argv ) {
 	dataRead.close();
 	dataRead.open(argv[2]);*/
 	// end - work in progress - wmq - Apr 11 2018
-	
-	TH1F *calib_fluctuate = new TH1F("calib_fluctuate", "calib_fluctuate; Charge [ADC]; #entries", 8192, -0.5, 8191.5);
+	TH1F *			calib_fluctuate[12];
+	for (kpix = 0; kpix < 12; kpix++)
+	{
+		tmp.str("");
+		tmp << "calib_fluctuate_k" << kpix;
+		calib_fluctuate[kpix] = new TH1F(tmp.str().c_str(), "calib_fluctuate; Charge [ADC]; #entries", 8192, -0.5, 8191.5);
+	}
 	
 	
 	
@@ -578,7 +583,7 @@ int main ( int argc, char **argv ) {
 						if ( channel == calChannel ) 
 						{
 							chanData[kpix][channel][bucket][range]->addCalibPoint(calDac, value);
-							if (kpix == 0 && bucket == 0) calib_fluctuate->Fill(value);
+							if (bucket == 0) calib_fluctuate[kpix]->Fill(value);
 						}
 						else{
 							if ( chanData[kpix][calChannel][bucket][range] != NULL )
@@ -946,18 +951,34 @@ for (kpix=0; kpix<24; kpix++)
   //////////////////////////////////////////
   // Process Calibration
   //////////////////////////////////////////
-  rFile->cd(); // move into root folder base
-  FolderName.str("");
-  FolderName << "Calibration_and_Residuals";
-  rFile->mkdir(FolderName.str().c_str()); // produce a sub folder with name of variable FolderName
-  TDirectory *calibration_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
-  calibration_folder->cd(); // move into subdirectory
+  
+
+	
+	
+	
+	
+	//rFile->cd(); // move into root folder base
+	//FolderName.str("");
+	//FolderName << "Calibration_and_Residuals";
+	//rFile->mkdir(FolderName.str().c_str());
+	//TDirectory *calibration_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
+	//calibration_folder->cd(); // move into subdirectory
+	
+  
   // Process each kpix device
 for (kpix=0; kpix<24; kpix++)
 {
 	if ( kpixFound[kpix] )
 	{ 
-      
+		
+		FolderName.str("");
+		FolderName << "KPiX_" << kpix;
+		TDirectory *kpix_folder2 = rFile->GetDirectory(FolderName.str().c_str());
+		kpix_folder2->cd();
+		
+		
+
+		
 		// Get serial number
 		tmp.str("");
 		tmp << "cntrlFpga(0):kpixAsic(" << dec << kpix << "):SerialNumber";

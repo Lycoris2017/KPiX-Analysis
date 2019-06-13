@@ -20,6 +20,7 @@ void clustr::SetParameters()
 {
 	double chargesum = 0;
 	double position = 0;
+	double positionSoN = 0;
 	double sigmapos = 0;
 	double SoNsum = 0;
 	
@@ -28,9 +29,11 @@ void clustr::SetParameters()
 		chargesum += i.second;
 		position += i.second*i.first;
 		SoNsum += (i.second/Noise.at(i.first));
+		positionSoN += i.first*(i.second/Noise.at(i.first));
 	}
 	Charge = chargesum;
 	CoG = position/chargesum;
+	CoGSoN = positionSoN/SoNsum;
 	Significance = SoNsum;
 	for (auto const& i : Elements)
 	{

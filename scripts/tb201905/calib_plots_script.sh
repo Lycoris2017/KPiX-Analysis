@@ -40,5 +40,7 @@
 kpix=(k0 k1 k2 k3 k4 k5 k6 k7 k8 k9 k10 k11)
 for i in ${kpix[*]}
 do
-	python2.7 python/plot_producer.py /scratch/data/testbeam201905/Data_runs/Calibration_20190523_095745.dat.ymlcalib.root /scratch/data/testbeam201905/Data_runs/Calibration_20190523_115002.dat.ymlcalib.root -n "slope_0RMS_"$i"_b0" -d 'hist e same' -o "calibration_swapping_RMS_test_"$i --legend Normal Swapped
+	#python2.7 python/plot_producer.py /scratch/data/testbeam201905/Data_runs/Calibration_20190523_095745.dat.ymlcalib.root /scratch/data/testbeam201905/Data_runs/Calibration_20190523_115002.dat.ymlcalib.root -n "slope_0RMS_"$i"_b0" -d 'hist e same' -o "calibration_swapping_RMS_test_"$i --legend Normal Swapped
+	python2.7 python/plot_producer.py /scratch/data/testbeam201905/Data_runs/Calibration_20190504_230648.dat.ymlcalib.root -n "slope_"$i -d "h e same" -o "bucket_compare_normalgain_"$i --legend b0 b1 --refuse b2 b3
+
 done
