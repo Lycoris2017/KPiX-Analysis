@@ -311,6 +311,8 @@ int main ( int argc, char **argv ) {
 	TH1F				*slope_vs_left_strip[24][4];
 	TH1F				*RMSfC_vs_channel[24][4];
 	
+	TH1F				*pearson_hist[24][4];
+	TH1F 				*pearson_vs_channel[24][4];
   
   
   
@@ -363,27 +365,7 @@ int main ( int argc, char **argv ) {
 	//}
 	
 	// Extract configuration values
-	//findBadMeanHist  = config.getInt("FindBadMeanHist");
-	//findBadMeanFit   = config.getInt("FindBadMeanFit");
-	//meanMin[0]       = config.getDouble("GoodMeanMinR0");
-	//meanMax[0]       = config.getDouble("GoodMeanMaxR0");
-	//meanMin[1]       = config.getDouble("GoodMeanMinR1");
-	//meanMax[1]       = config.getDouble("GoodMeanMaxR1");
-	//findBadMeanChisq = config.getInt("FindBadMeanChisq");
-	//meanChisq        = config.getInt("GoodMeanChisqMax");
-	//findBadGainFit   = config.getInt("FindBadGainFit");
-	//gainMin[0]       = config.getDouble("GoodGainMinR0");
-	//gainMax[0]       = config.getDouble("GoodGainMaxR0");
-	//gainMin[1]       = config.getDouble("GoodGainMinR1");
-	//gainMax[1]       = config.getDouble("GoodGainMaxR1");
-	//findBadGainChisq = config.getInt("FindBadGainChisq");
-	//gainChisq        = config.getInt("GoodGainChisqMax");
-	//fitMin[0]        = config.getDouble("GainFitMinR0");
-	//fitMax[0]        = config.getDouble("GainFitMaxR0");
-	//fitMin[1]        = config.getDouble("GainFitMinR1");
-	//fitMax[1]        = config.getDouble("GainFitMaxR1");
-	//chargeError[0]   = config.getDouble("GainChargeErrorR0");
-	//chargeError[1]   = config.getDouble("GainChargeErrorR1");
+
 	
 	findBadMeanHist  = 0;  //there is no such thing as a config file?
 	findBadMeanFit   = 0;  //there is no such thing as a config file?
@@ -484,11 +466,16 @@ int main ( int argc, char **argv ) {
 	dataRead.open(argv[2]);*/
 	// end - work in progress - wmq - Apr 11 2018
 	TH1F *			calib_fluctuate[12];
+	TH2F *			calib_fluctuate_2D[12];
 	for (kpix = 0; kpix < 12; kpix++)
 	{
 		tmp.str("");
 		tmp << "calib_fluctuate_k" << kpix;
-		calib_fluctuate[kpix] = new TH1F(tmp.str().c_str(), "calib_fluctuate; Charge [ADC]; #entries", 8192, -0.5, 8191.5);
+		calib_fluctuate[kpix] = new TH1F(tmp.str().c_str(), "calib_fluctuate; readCharge [ADC]; #entries", 8192, -0.5, 8191.5);
+		
+		tmp.str("");
+		tmp << "calib_fluctuate_2D_k" << kpix;
+		calib_fluctuate_2D[kpix] = new TH2F(tmp.str().c_str(), "calib_fluctuate_2D; readCharge [ADC]; InjectCharge [DAC]", 8192, -0.5, 8191.5 , 255, -0.5, 254.5);
 	}
 	
 	
@@ -583,7 +570,11 @@ int main ( int argc, char **argv ) {
 						if ( channel == calChannel ) 
 						{
 							chanData[kpix][channel][bucket][range]->addCalibPoint(calDac, value);
-							if (bucket == 0) calib_fluctuate[kpix]->Fill(value);
+							if (bucket == 0)
+							{
+								calib_fluctuate_2D[kpix]->Fill(value, calDac);
+								calib_fluctuate[kpix]->Fill(value);
+							}
 						}
 						else{
 							if ( chanData[kpix][calChannel][bucket][range] != NULL )
@@ -720,7 +711,12 @@ int main ( int argc, char **argv ) {
 				tmp << "pedestalsRMS_fc_conn_k" << kpix << "_b" << bucket;
 				pedestalsRMS_fc_conn[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals RMS, conn. Chn; [fC]; a.u.", 1000, 0, 4);
 				
-				
+				tmp.str("");
+				tmp << "pearson_correlation_k" << kpix << "_b" << bucket;
+				pearson_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_correlation; coefficient; #entries", 100, -1.5, 1.5);
+				tmp.str("");
+				tmp << "pearson_vs_channel_k" << kpix <<  "_b" << bucket;
+				pearson_vs_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_vs_channel; channel; pearson correlation", 1024, -0.5, 1023.5);
 				
 				
 				tmp.str("");
@@ -964,7 +960,7 @@ for (kpix=0; kpix<24; kpix++)
 	//TDirectory *calibration_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
 	//calibration_folder->cd(); // move into subdirectory
 	
-  
+
   // Process each kpix device
 for (kpix=0; kpix<24; kpix++)
 {
@@ -1018,6 +1014,14 @@ for (kpix=0; kpix<24; kpix++)
 					
 								// Create calibration graph
 								grCount = 0;
+								double meanx = 0;
+								double meany = 0;
+								double EXY = 0;
+								double EX2 = 0;
+								double EX  = 0;
+								double EY2 = 0;
+								double EY  = 0;
+								
 								for (x=0; x < 256; x++) 
 								{
 									
@@ -1028,7 +1032,13 @@ for (kpix=0; kpix<24; kpix++)
 										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));
 										grDAC[grCount]  = x;
-										
+										meanx = meanx + grX[grCount];
+										meany = meany + grY[grCount];
+										EXY = EXY+grX[grCount]*grY[grCount];
+										EX2 = EX2+pow(grX[grCount],2);
+										EY2 = EY2+pow(grY[grCount],2);
+										EX = EX+grX[grCount];
+										EY = EY+grY[grCount];
 										grY[grCount]    = chanData[kpix][channel][bucket][range]->calibMean[x];
 										grYErr[grCount] = chanData[kpix][channel][bucket][range]->calibError[x];
 										grXErr[grCount] = 0;
@@ -1056,6 +1066,19 @@ for (kpix=0; kpix<24; kpix++)
 										}
 									}
 								}
+								meanx = meanx/grCount;
+								meany = meany/grCount;
+								EXY = EXY/grCount;
+								EX2 = EX2/grCount;
+								EY2 = EY2/grCount;
+								EX = EX/grCount;
+								EY = EY/grCount;								
+								
+								double PCC = (EXY-EX*EY)/(sqrt(EX2-pow(EX,2))*sqrt(EY2-pow(EY,2)));
+								//if (fabs(PCC) > 1) cout << "Undefined/horrible pearson coefficient = " << PCC << endl;
+								pearson_hist[kpix][bucket]->Fill(PCC);
+								if (fabs(PCC) < 1) pearson_vs_channel[kpix][bucket]->Fill(channel, PCC);
+								
 		  
 								// Create graph
 								if ( grCount > 0 ) 
@@ -1125,6 +1148,9 @@ for (kpix=0; kpix<24; kpix++)
 										chisqNdf = (grCalib->GetFunction("pol1")->GetChisquare() / grCalib->GetFunction("pol1")->GetNDF());
 										Double_t slope = grCalib->GetFunction("pol1")->GetParameter(1);
 										Double_t offset = offset;
+										
+										
+										
 										
 										long double ped_charge = ( chanData[kpix][channel][bucket][range]->baseFitMean ) / slope;
 										long double ped_charge_err = (chanData[kpix][channel][bucket][range]->baseHistRMS) / slope ; // simple err

@@ -7,7 +7,7 @@ files=(
 #/scratch/data/testbeam201905/Data_runs/Run_20190504_225553.dat
 #/scratch/data/testbeam201905/Data_runs/Run_20190504_225931.dat
 #/scratch/data/testbeam201905/Data_runs/Run_20190505_094624.dat
-#/scratch/data/testbeam201905/Data_runs/Run_20190505_111442.dat
+/scratch/data/testbeam201905/Data_runs/Run_20190505_111442.dat
 #/scratch/data/testbeam201905/Data_runs/Run_20190505_113435.dat
 #/scratch/data/testbeam201905/Data_runs/Run_20190505_121902.dat
 #/scratch/data/testbeam201905/Data_runs/Run_20190505_122701.dat
@@ -77,9 +77,9 @@ do
 	##python2.7 python/plot_producer.py $i"_"$substring$extension -n fc_response_median_made _k  -k 0 3 5 7 8 10 -b 0 -d 'hist e same' -o fc_response_median_made_compare_upperRow --refuse  _c --legend S59-1 S43-2 S1st-2 S34-2 S53-1 S55-1
 	##python2.7 python/plot_producer.py $i"_"$substring$extension -n fc_response_median_made _k  -k 1 2 4 6 9 11 -b 0 -d 'hist e same' -o fc_response_median_made_compare_lowerRow --refuse  _c --legend S59-2 S43-1 S1st-1 S34-1 S53-2 S55-2
 	##python2.7 python/plot_producer.py $i"_"$substring$extension -n fc_response_median_made _k -b 0 -d 'hist e'
-	#python2.7 python/plot_producer.py $i"_"$substring$extension -n cluster_position_y2 -d 'e'
+	python2.7 python/plot_producer.py $i"_"$substring$extension -n cluster_position_y2 -d 'e'
 	#python2.7 python/plot_producer.py $i"_"$substring$extension -n cluster_position_y2 -d 'e same' -o cluster_position_compare --legend S0 S1 S2 S3 S4 S5
-	python2.7 python/plot_producer.py $i"_"$substring$extension -n cluster_position_y2 -d 'e stack' -o cluster_position_stack --legend S0 S1 S2 S3 S4 S5
+	#python2.7 python/plot_producer.py $i"_"$substring$extension -n cluster_position_y2 -d 'e stack' -o cluster_position_stack --legend S0 S1 S2 S3 S4 S5
 
 done
 #kpix=(k0 k1 k2 k3 k4 k5 k6 k7 k8 k9 k10 k11)

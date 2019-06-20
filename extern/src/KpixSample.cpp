@@ -127,7 +127,7 @@ uint KpixSample::getSampleRuntime32() {
 uint64_t KpixSample::getSampleRuntime64(uint64_t frameruntime){
 	uint64_t ret = (frameruntime & 0xFFFFFFFF00000000) | data_[1];
 
-	printf("frame : %lu; sample : %lu\n", frameruntime,ret);
+	//printf("frame : %lu; sample : %lu\n", frameruntime,ret);
 	
 	return(ret);
 }

@@ -186,9 +186,10 @@ int main ( int argc, char **argv )
 	TH1F 					*cluster_position_y[kpix_checking/2][4];
 	//TH1F 					*cluster_position_x[kpix_checking/2][4];
 	TH1F 					*clusters[kpix_checking/2];
-	TH1F 					*cluster_charge[kpix_checking][3];
-	TH1F 					*cluster_significance[kpix_checking][3];
-	TH1F 					*cluster_size[kpix_checking][3];
+	TH1F 					*cluster_charge[kpix_checking][4];
+	TH1F 					*cluster_significance[kpix_checking][4];
+	TH1F 					*cluster_size[kpix_checking][4];
+	TH1F 					*cluster_sigma[kpix_checking][4];
 	
 		
 		
@@ -602,7 +603,10 @@ int main ( int argc, char **argv )
 			cluster_charge[sensor][1] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 200,-0.5, 49.5);
 			tmp.str("");
 			tmp << "cluster_charge2_sens" << sensor << "_b0";
-			cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 200,-0.5, 49.5);
+			cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_charge3_sens" << sensor << "_b0";
+			cluster_charge[sensor][3] = new TH1F(tmp.str().c_str(), "cluster charge3; Charge (fC); #Entries", 200,-0.5, 49.5);
 			
 			
 			tmp.str("");
@@ -613,7 +617,24 @@ int main ( int argc, char **argv )
 			cluster_significance[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance1; S/N; #Entries", 200,-0.5, 49.5);
 			tmp.str("");
 			tmp << "cluster_significance2_sens" << sensor << "_b0";
-			cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance1; S/N; #Entries", 200,-0.5, 49.5);
+			cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance2; S/N; #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_significance3_sens" << sensor << "_b0";
+			cluster_significance[sensor][3] = new TH1F(tmp.str().c_str(), "cluster significance3; S/N; #Entries", 200,-0.5, 49.5);
+			
+			tmp.str("");
+			tmp << "cluster_sigma0_sens" << sensor << "_b0";
+			cluster_sigma[sensor][0] = new TH1F(tmp.str().c_str(), "cluster sigmae0; #sigma; #Entries", 200,-0.5, 4.95);
+			tmp.str("");
+			tmp << "cluster_sigma1_sens" << sensor << "_b0";
+			cluster_sigma[sensor][1] = new TH1F(tmp.str().c_str(), "cluster sigma1; #sigma; #Entries", 200,-0.5, 4.95);
+			tmp.str("");
+			tmp << "cluster_sigma2_sens" << sensor << "_b0";
+			cluster_sigma[sensor][2] = new TH1F(tmp.str().c_str(), "cluster sigma2; #sigma; #Entries", 200,-0.5, 4.95);
+			tmp.str("");
+			tmp << "cluster_sigma3_sens" << sensor << "_b0";
+			cluster_sigma[sensor][3] = new TH1F(tmp.str().c_str(), "cluster sigma3; #sigma; #Entries", 200,-0.5, 4.95);
+			
 			
 			tmp.str("");
 			tmp << "cluster_size0_sens" << sensor << "_b0";
@@ -623,7 +644,10 @@ int main ( int argc, char **argv )
 			cluster_size[sensor][1] = new TH1F(tmp.str().c_str(), "cluster size1; Size; #Entries", 10,-0.5, 9.5);
 			tmp.str("");
 			tmp << "cluster_size2_sens" << sensor << "_b0";
-			cluster_size[sensor][2] = new TH1F(tmp.str().c_str(), "cluster size1; Size; #Entries", 10,-0.5, 9.5);
+			cluster_size[sensor][2] = new TH1F(tmp.str().c_str(), "cluster size2; Size; #Entries", 10,-0.5, 9.5);
+			tmp.str("");
+			tmp << "cluster_size3_sens" << sensor << "_b0";
+			cluster_size[sensor][3] = new TH1F(tmp.str().c_str(), "cluster size3; Size; #Entries", 10,-0.5, 9.5);
 			
 			tmp.str("");
 			tmp << "noise_v_position_s" << sensor << "_b0";
@@ -840,7 +864,7 @@ int main ( int argc, char **argv )
                 
 						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
 						//if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)
-						if ( charge_CM_corrected > 3*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
+						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
 							cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
 							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
@@ -861,7 +885,7 @@ int main ( int argc, char **argv )
 			std::vector<clustr> multi_cluster[kpix_checking/2];
 			for (sensor = 0; sensor < kpix_checking/2; sensor++)
 			{
-				
+				std::vector<clustr>::iterator it_SoN;
 				if ( cluster_Events_after_cut[sensor].size() != 0 )
 				{
 					//cout << "===================" << endl;
@@ -877,6 +901,7 @@ int main ( int argc, char **argv )
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
 						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
+						double SoN_order = 0;
 						
 						NomNom.Eater(Input, Input.MaxSoN(), 9999);
 						if (num_of_clusters == 0)
@@ -885,24 +910,25 @@ int main ( int argc, char **argv )
 							cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge(), weight);
 							cluster_size[sensor][0]->Fill(NomNom.getClusterElementssize(), weight);
 							cluster_significance[sensor][0]->Fill(NomNom.getClusterSignificance(), weight);
+							cluster_sigma[sensor][0]->Fill(NomNom.getClusterSigma(), weight);
 							//cout << "Size: " << NomNom.getClusterElementssize() << endl;
-							
 						}
 						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
 						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
 						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
-						cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), NomNom.getClusterSignificance()*weight);
 						
 						cluster_size[sensor][1]->Fill(NomNom.getClusterElementssize(), weight);
 						cluster_significance[sensor][1]->Fill(NomNom.getClusterSignificance(), weight);
 						cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
+						cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
 						//cout << "Significance: " << NomNom.getClusterSignificance() << endl;
-						if (NomNom.getClusterSignificance() > 7 && NomNom.getClusterCharge() > 2.3 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance() > 4)
 						{
 							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
 							cluster_size[sensor][2]->Fill(NomNom.getClusterElementssize(), weight);
 							cluster_significance[sensor][2]->Fill(NomNom.getClusterSignificance(), weight);
+							cluster_sigma[sensor][2]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[sensor].push_back(NomNom.getCluster());
 						}
 						if (header == 1)
@@ -916,8 +942,22 @@ int main ( int argc, char **argv )
 						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
 					clusters[sensor]->Fill(num_of_clusters);
+					
+					sort( multi_cluster[sensor].begin(), multi_cluster[sensor].end(), [ ]( const clustr& lhs, const clustr& rhs )  // lambda expression sorting of the clusters by their significance, first element is most significant (very experimental as I do not fully understand lambda expressions, I only interpret them...)
+					{
+						return lhs.Significance > rhs.Significance;
+					});
+					
+					//should now only fill the most significant cluster
+					if ( multi_cluster[sensor].size() != 0)
+					{
+						cluster_position_y[sensor][3]->Fill(yParameterSensor(multi_cluster[sensor].at(0).CoG, sensor), weight);
+						cluster_size[sensor][3]->Fill(multi_cluster[sensor].at(0).Elements.size(), weight);
+						cluster_significance[sensor][3]->Fill(multi_cluster[sensor].at(0).Significance, weight);
+						cluster_charge[sensor][3]->Fill(multi_cluster[sensor].at(0).Charge, weight);
+						cluster_sigma[sensor][3]->Fill(multi_cluster[sensor].at(0).Sigma, weight);
+					}
 				}
-			
 			}
 			
 			for (int sensor1 = 0; sensor1 < kpix_checking/2; sensor1++)

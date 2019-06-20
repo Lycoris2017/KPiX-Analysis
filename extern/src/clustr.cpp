@@ -11,7 +11,7 @@ using namespace std;
 
 clustr::clustr()
 {
-	SigmaCoG = 0;
+	Sigma = 0;
 	CoG = 0;
 	Charge = 0;
 }
@@ -39,7 +39,7 @@ void clustr::SetParameters()
 	{
 		sigmapos +=  pow((CoG - i.first), 2)*i.second;
 	}
-	SigmaCoG = sqrt(sigmapos/chargesum);;
+	Sigma = sqrt(sigmapos/chargesum);;
 }
 
 

@@ -216,6 +216,9 @@ def hist_plotter():
 		if args.ylog:
 			c1.SetLogy()
 			ROOT.gPad.SetLogy()
+		if args.zlog:
+			c1.SetLogz()
+			ROOT.gPad.SetLogz()
 		##------------------
 		##draw histogram + components and save the file
 	
@@ -320,6 +323,9 @@ def hist_plotter():
 			if args.ylog:
 				c1.SetLogy()
 				ROOT.gPad.SetLogy()
+			if args.zlog:
+				c1.SetLogz()
+				ROOT.gPad.SetLogz()
 			##------------------
 			##set axis titles if chosen through options.
 			if (args.xtitle):
@@ -554,8 +560,8 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-#mystyle.SetOptStat(0) ##removes stat box
-mystyle.SetOptStat(1001111)
+mystyle.SetOptStat(0) ##removes stat box
+#mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #
 ##marker settings
@@ -593,6 +599,7 @@ parser.add_argument('--xrange', dest='xaxisrange', default=[9999], nargs='*', ty
 parser.add_argument('--yrange', dest='yaxisrange', default=[9999], nargs='*', type=float, help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float')
 parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to be used as legend titles instead of the default filename+histogram name')
 parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
+parser.add_argument('--zlog', dest='zlog', help='if given as an option, set z axis to logarithmic.')
 parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  908, 435, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')

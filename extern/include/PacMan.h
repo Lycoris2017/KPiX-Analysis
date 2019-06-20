@@ -14,6 +14,7 @@ class PacMan
 		~PacMan();
 		
 		double getClusterCoG();
+		double getClusterSigma();
 		double getClusterCoGSoN();
 		double getClusterCharge();
 		double getClusterSignificance();

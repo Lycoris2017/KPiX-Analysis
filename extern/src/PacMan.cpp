@@ -33,6 +33,11 @@ double PacMan::getClusterCoGSoN()
 	return Cluster.CoGSoN;
 }
 
+double PacMan::getClusterSigma()
+{
+	return Cluster.Sigma;
+}
+
 double PacMan::getClusterCharge()
 {
 	return Cluster.Charge;

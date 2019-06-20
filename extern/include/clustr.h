@@ -28,7 +28,7 @@ class clustr
 		double Charge;
 		double Significance;
 		double CoGSoN;
-		double SigmaCoG;
+		double Sigma;
 		
 		std::map<int,double> Elements;
 		std::map<int,double> Noise;
