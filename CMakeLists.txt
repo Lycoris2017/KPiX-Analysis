@@ -14,7 +14,7 @@ include(CMakeDependentOption)
 
 ##-- Project's name
 
-project(Lycoris)
+project(Lycoris VERSION 1.0)
 
 ##-- Options for extern packages
 option(USE_KPIX 
@@ -71,11 +71,13 @@ include_directories( ${LIBXML2_INCLUDE_DIR} )
 ##-- Extern Packages to install prior
 if (USE_KPIX)
   message(" [INFO] local KPiX lite package used.")
+
   set(KPIX_LOCAL_LIB kpix) 
   include_directories( ${PROJECT_SOURCE_DIR}/extern/include)
   
   aux_source_directory( ${PROJECT_SOURCE_DIR}/extern/src LIB_SRC)
   add_library(${KPIX_LOCAL_LIB} SHARED ${LIB_SRC})
+  set_target_properties(${KPIX_LOCAL_LIB} PROPERTIES SOVERSION 2)
 
   # start of adding files to usr/local
   file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/extern/include/*.h" )
