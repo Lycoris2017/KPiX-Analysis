@@ -24,7 +24,9 @@ option(MODE_DEBUG
   "Use DEBUG mode, ONLY single module to compile!" OFF)
 
 option(USE_YAML "Turn libyaml-dependency " OFF)
-  
+
+option(USE_ROOT_INSTALL "Install shared lib and headers to /usr/local/include(or lib)/kpix/" OFF)
+
 ##-- cmake setup
 set(CMAKE_BUILD_TYPE Debug )
 
@@ -79,12 +81,14 @@ if (USE_KPIX)
   add_library(${KPIX_LOCAL_LIB} SHARED ${LIB_SRC})
   set_target_properties(${KPIX_LOCAL_LIB} PROPERTIES SOVERSION 2)
 
-  # start of adding files to usr/local
-  file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/extern/include/*.h" )
-  install(FILES ${KPIX_HEADER} DESTINATION /usr/local/include/kpix)
-  install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION /usr/local/lib/kpix)
-  # end of adding files to usr/local
-  
+  if (USE_ROOT_INSTALL)
+    # start of adding files to usr/local
+    file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/extern/include/*.h" )
+    install(FILES ${KPIX_HEADER} DESTINATION /usr/local/include/kpix)
+    install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION /usr/local/lib/kpix)
+    # end of adding files to usr/local
+  endif(USE_ROOT_INSTALL)
+    
   install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION lib)
   # file(GLOB INC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/eudaq/*.hh")
   
