@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <algorithm>
-
+#include <math.h> /* fabs */
 
 using namespace std;
 
