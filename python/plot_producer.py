@@ -110,13 +110,11 @@ def loopdir(keys):  # loop through all subdirectories of the root file and add a
 
 
 def hist_plotter():
-	if ('same' in args.draw_option or 'stack' in args.draw_option):
+	if ('stack' in args.draw_option or 'nostack' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-		if ('stack' not in args.draw_option):
-			drawing_option = args.draw_option.replace('same', 'NOSTACK') #exchange the same with a NOSTACK as I am using THStack
-		else:
-			drawing_option = args.draw_option
+
+		drawing_option = args.draw_option #exchange the same with a NOSTACK as I am using THStack
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
@@ -213,6 +211,7 @@ def hist_plotter():
 			
 		##------------------
 		##set y axis to log
+		
 		if args.ylog:
 			c1.SetLogy()
 			ROOT.gPad.SetLogy()
@@ -242,9 +241,156 @@ def hist_plotter():
 		histListForStats = []
 		for j in range(len(new_hist_list)-1, -1, -1): 
 			histListForStats.append(hist_comp.GetStack().At(j) )
+		print "Make sure the stat box is not set to stats 0 as otherwise it gives an error"
 		arrangeStats(histListForStats, statBoxW, statBoxH, legendname)
 		ROOT.gStyle.SetOptStat(0)
 		ROOT.gStyle.SetOptFit(0)
+		c1.Modified()
+		c1.Update()
+		if (args.output_name):
+			outname = folder_loc+filename_list[0]+'_'+args.output_name
+			print 'Creating '+outname
+			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.png')
+		else:
+			outname = folder_loc+filename_list[0]+'_'+graph.GetName()
+			print 'Creating '+outname+'.pvg'
+			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.png')
+		c1.Close()
+	elif ('same' in args.draw_option):
+		##------------------
+		##initialize a canvas, a stack histogram and further variables.
+		drawing_option = args.draw_option
+		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
+		c1.cd()
+		#c1.SetFillColor(0)
+		
+		statBoxW = 0.2
+		statBoxH = 0.14
+		print args.legendloc[0]
+		legend = ROOT.TLegend(0.8, 0.85, 0.8+statBoxW, 0.85+statBoxH)
+		counter = 1
+		x_title = None
+		y_title = None
+		x_low = None
+		x_high = None
+		y_low = None
+		y_high = None
+		new_hist_list = []
+		legendname = []
+		if args.order:
+			for i in args.order:
+				new_hist_list.append(hist_list[i]) 
+		else:
+			new_hist_list = hist_list
+		for histogram in new_hist_list:
+			##------------------
+			##loop through the histograms, get all parameters
+			obj = histogram.ReadObj()
+			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
+			x_axis = obj.GetXaxis()
+			y_axis = obj.GetYaxis()
+			##------------------
+			##rebin the histogram
+			if (args.rebin is not 1):
+					obj.Rebin(args.rebin)
+			##------------------
+			##adjust the xrange
+			if 9999 in args.xaxisrange:
+				if (x_low is None):
+					x_low = obj.FindFirstBinAbove(0)-10
+				elif (x_low > obj.FindFirstBinAbove(0)-10):
+					x_low = obj.FindFirstBinAbove(0)-10
+				if (x_high is None):
+					x_high = obj.FindLastBinAbove(0)+10
+				elif (x_high < obj.FindLastBinAbove(0)+10):
+					x_high = obj.FindLastBinAbove(0)+10
+				if (x_high > obj.GetNbinsX()):  #avoids overflow bin
+					x_high = obj.GetNbinsX()
+				if (x_low <= 0): #avoids underflow bin
+					x_low = 1
+				x_axis.SetRange(x_low, x_high)
+			else:
+				x_low = args.xaxisrange[0]
+				x_high = args.xaxisrange[1]
+				x_axis.SetRangeUser(x_low, x_high)
+				print 'Number of normed Entries in range = ', obj.Integral()
+				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
+
+			if 9999 not in args.yaxisrange:
+				y_low = args.yaxisrange[0]
+				y_high = args.yaxisrange[1]
+				hist_comp.SetMaximum(y_high)
+				hist_comp.SetMinimum(y_low)
+			#print x_low, x_high
+			#x_axis.SetRangeUser(x_low, x_high)
+			obj.SetLineColor(args.color[counter-1])
+			obj.SetMarkerColor(args.color[counter-1])
+			
+			if (args.xtitle):
+				x_title = args.xtitle
+			else:
+				x_title = x_axis.GetTitle()
+			if (args.ytitle):
+				y_title = args.ytitle
+			else:
+				y_title = y_axis.GetTitle()
+			
+			xaxis = obj.GetXaxis()
+			xaxis.SetTitle(x_title)
+			
+			print x_low
+			print x_high
+			if 9999 in args.xaxisrange:
+				xaxis.SetRange(x_low, x_high)
+			else:
+				xaxis.SetRangeUser(x_low, x_high)
+			yaxis = obj.GetYaxis()
+			if 9999 not in args.yaxisrange:
+				yaxis.SetRangeUser(y_low, y_high) 
+				print 'test'
+			yaxis.SetTitle(y_title)
+
+			##------------------
+			##draw histograms into the same canvas (equivalent to option same)
+			
+			
+			
+			##------------------
+			##adjust legend and the x and y title name if chosen
+			if (not args.legend):
+				if len(filename_list) > 1:
+					legend.AddEntry(obj, filename_list[counter-1]+'_'+histogram.GetName())
+				else:
+					legend.AddEntry(obj, '_'+histogram.GetName())
+			else:
+				legend.AddEntry(obj, args.legend[counter-1])
+				legendname.append(args.legend[counter-1])
+			counter +=1
+			
+			obj.Draw(drawing_option)
+			legend.Draw()
+			
+			
+		##------------------
+		##set y axis to log
+		
+		if args.ylog:
+			c1.SetLogy()
+			ROOT.gPad.SetLogy()
+		if args.zlog:
+			c1.SetLogz()
+			ROOT.gPad.SetLogz()
+		##------------------
+		##draw histogram + components and save the file
+		c1.Update()
+	
+		
+		
+		ROOT.gStyle.SetOptStat(0)
+		ROOT.gStyle.SetOptFit(0)
+		
 		c1.Modified()
 		c1.Update()
 		if (args.output_name):
@@ -436,7 +582,7 @@ def graph_plotter():
 			c1.SaveAs(outname+'.png')
 		else:
 			outname = folder_loc+filename_list[0]+'_'+graph.GetName()
-			print 'Creating '+outname+'.pvg'
+			print 'Creating '+outname+'.png'
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
 		c1.Close()
@@ -560,8 +706,8 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-mystyle.SetOptStat(0) ##removes stat box
-#mystyle.SetOptStat(1001111)
+#mystyle.SetOptStat(0) ##removes stat box
+mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #
 ##marker settings

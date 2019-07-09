@@ -277,6 +277,10 @@ int main ( int argc, char **argv ) {
   ofstream				channel_file_noise;
   ofstream				channel_file_calib;
   ofstream 				channel_file_adc_mean;
+  
+  ofstream 				special_channels;
+  ofstream 				zero_channels;
+  
   uint                   badTimes;
   uint                   goodTimes;
   uint                   badMeanFitCnt;
@@ -357,7 +361,8 @@ int main ( int argc, char **argv ) {
 	
 	if ( argc == 5 ) debug.open(argv[4],ios::out | ios::trunc);
 	
-	
+	special_channels.open("include/special_channels.txt");
+	zero_channels.open("include/zero_channels.txt");
 	//// Read configuration
 	//if ( ! config.parseFile("config",argv[1]) ) {
 		//cout << "Failed to read configuration from " << argv[1] << endl;
@@ -465,9 +470,9 @@ int main ( int argc, char **argv ) {
 	dataRead.close();
 	dataRead.open(argv[2]);*/
 	// end - work in progress - wmq - Apr 11 2018
-	TH1F *			calib_fluctuate[12];
-	TH2F *			calib_fluctuate_2D[12];
-	for (kpix = 0; kpix < 12; kpix++)
+	TH1F *			calib_fluctuate[24];
+	TH2F *			calib_fluctuate_2D[24];
+	for (kpix = 0; kpix < 24; kpix++)
 	{
 		tmp.str("");
 		tmp << "calib_fluctuate_k" << kpix;
@@ -1078,6 +1083,8 @@ for (kpix=0; kpix<24; kpix++)
 								//if (fabs(PCC) > 1) cout << "Undefined/horrible pearson coefficient = " << PCC << endl;
 								pearson_hist[kpix][bucket]->Fill(PCC);
 								if (fabs(PCC) < 1) pearson_vs_channel[kpix][bucket]->Fill(channel, PCC);
+								else zero_channels << kpix << " " << channel << endl;
+								if (PCC < 0.8 && PCC >= -1) special_channels << kpix << " " << channel << endl;
 								
 		  
 								// Create graph
@@ -1110,18 +1117,20 @@ for (kpix=0; kpix<24; kpix++)
 									
 									// Create name and write
 									tmp.str("");
-									tmp << "calib_" << serial << "c" << dec << setw(4) << setfill('0') << channel;
+									tmp << "calib_" << serial << "c" << channel;
+									tmp << "_k" << dec << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
-									tmp << "_k" << dec << kpix;
+									
 									grCalib->SetTitle(tmp.str().c_str());
 									grCalib->Write(tmp.str().c_str());
 									
 									tmp.str("");
-									tmp << "calib_DAC" << serial << "_c" << dec << setw(4) << setfill('0') << channel;
+									tmp << "calib_DAC" << serial << "_c" <<  channel;
+									tmp << "_k" << dec << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
-									tmp << "_k" << dec << kpix;
+									
 									grCalibDAC->SetTitle(tmp.str().c_str());
 									grCalibDAC->Write(tmp.str().c_str());
 				
@@ -1134,10 +1143,11 @@ for (kpix=0; kpix<24; kpix++)
 									
 									// Create name and write
 									tmp.str("");
-									tmp << "resid_" << serial << "_c" << dec << setw(4) << setfill('0') << channel;
+									tmp << "resid_" << serial << "c" <<  channel;
+									tmp << "_k" << dec << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
-									tmp << "_k" << dec << kpix;
+									
 									//grResid->SetTitle(tmp.str().c_str());
 									grResid->Write(tmp.str().c_str());
 									

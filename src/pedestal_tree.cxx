@@ -120,7 +120,7 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	int kpix_checking = 12;
+	int kpix_checking = 24;
 	int bucket_checking = 1;
 	
 	// cycles to skip in front:

@@ -147,7 +147,7 @@ int main ( int argc, char **argv )
 	KpixSample             *sample;   //
 	
 	int bucket_checking = 1;
-	int  kpix_checking = 12;
+	int  kpix_checking = 24;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -157,8 +157,8 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   kpixFound[kpix_checking]; // variable that gives true if a kpix at the index n (0<=n<32) was found
-	bool                   chanFound[kpix_checking][1024];
+	bool                   kpixFound[kpix_checking] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   chanFound[kpix_checking][1024] = {false};
 	uint                   x;
 	uint                   value;
 	uint                   kpix;
@@ -248,6 +248,12 @@ int main ( int argc, char **argv )
 	sensor2layer.insert(make_pair(3, 10));
 	sensor2layer.insert(make_pair(4, 11));
 	sensor2layer.insert(make_pair(5, 12));
+	sensor2layer.insert(make_pair(6, 9999));
+	sensor2layer.insert(make_pair(7, 9999));
+	sensor2layer.insert(make_pair(8, 9999));
+	sensor2layer.insert(make_pair(9, 9999));
+	sensor2layer.insert(make_pair(10, 9999));
+	sensor2layer.insert(make_pair(11, 9999));
 	
 	
 	
@@ -433,10 +439,10 @@ int main ( int argc, char **argv )
 				
 				if ( type == KpixSample::Data )
 				{
-					if (kpix == 13 || kpix ==16) cout << "Found KPIX " << kpix << endl;
 					kpixFound[kpix]          = true;
 					chanFound[kpix][channel] = true;
 					cycle_time_local[kpix][int(tstamp)]+=1;
+					//cout << "Found KPIX " << kpix << endl;
 					
 					if (bucket == 0)
 					{
@@ -527,13 +533,12 @@ int main ( int argc, char **argv )
 	//cluster_tree->Branch("cluster", &clusttree);
 	//cluster_tree->Branch("sensor", &sensr, "sensr/I");
 
-	TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
+	//TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
 	
 	for (sensor = 0; sensor < kpix_checking/2; sensor++) //looping through all possible kpix
 	{
-		//
 		//cout << "DEBUG test " << kpixFound[kpix] << endl;
-		if (kpixFound[kpix]) //checking if kpix exists
+		if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
 		{
 			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
 			FolderName.str("");
@@ -660,22 +665,26 @@ int main ( int argc, char **argv )
 			for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
 			{
 				kpix = (sensor*2)+k;
-				FolderName.str("");
-				FolderName << "KPiX_" << kpix;
-				sensor_folder->mkdir(FolderName.str().c_str());
-				TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
-				rFile->cd(kpix_folder->GetPath());
-				
-				tmp.str("");
-				tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
-				fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
-				
-				tmp.str("");
-				tmp << "noise_distribution_k" << kpix << "_b0";
-				noise_distribution[kpix] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 4.995);
+				if (kpixFound[kpix])
+				{
+					FolderName.str("");
+					FolderName << "KPiX_" << kpix;
+					sensor_folder->mkdir(FolderName.str().c_str());
+					TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
+					rFile->cd(kpix_folder->GetPath());
+					
+					tmp.str("");
+					tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
+					fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+					
+					tmp.str("");
+					tmp << "noise_distribution_k" << kpix << "_b0";
+					noise_distribution[kpix] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 4.995);
+					cout << kpix << endl;
+				}
 			}
-			
 		}
+		
 	}
 	//////////////////////////////////////////
 	// Data read for all events for detailed look
@@ -752,38 +761,43 @@ int main ( int argc, char **argv )
 	 // BEGIN OF NOISE CALCULATION
 	for (int k = 0; k < kpix_checking; ++k)
 	{
-		for (int c = 0; c < 1024; ++c)
+		if (kpixFound[k])
 		{
-			int sensor = k/2;
-			int strip = 9999;
-			if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
-			else strip  = kpix2strip_right.at(c); // if right kpix
-			
-			if (pedestal_MedMAD[k][c][0][1] != 0)
+			for (int c = 0; c < 1024; ++c)
 			{
-				y = yParameterSensor(strip, sensor);
+				int sensor = k/2;
+				int strip = 9999;
+				if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
+				else strip  = kpix2strip_right.at(c); // if right kpix
 				
-				noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-				//if (MAD(corrected_charge_vec[k][c]) == 0)
-				//{
-					////cout << "2KPIX " << k << " Channel " << c << endl;
-					////for (auto const& i : corrected_charge_vec[k][c])
-					////{
-						////cout << "Value is " << i << endl;
-					////}
-				//}
-				if (strip != 9999)
+				if (pedestal_MedMAD[k][c][0][1] != 0)
 				{
-					noise_distribution[k]->Fill(noise[k][c]);
-					noise_distribution_sensor[sensor]->Fill(noise[k][c]);
-					noise_v_position[sensor]->Fill(y, noise[k][c]);
+					y = yParameterSensor(strip, sensor);
+					
+					noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+					//if (MAD(corrected_charge_vec[k][c]) == 0)
+					//{
+						////cout << "2KPIX " << k << " Channel " << c << endl;
+						////for (auto const& i : corrected_charge_vec[k][c])
+						////{
+							////cout << "Value is " << i << endl;
+						////}
+					//}
+					if (strip != 9999)
+					{
+						noise_distribution[k]->Fill(noise[k][c]);
+						noise_distribution_sensor[sensor]->Fill(noise[k][c]);
+						noise_v_position[sensor]->Fill(y, noise[k][c]);
+					}
 				}
 			}
+			//cout << "DEBUG1: " << noise_distribution[k]->GetMean() << endl;
+			//mean_noise->Fill(noise_distribution[k]->GetMean());
+			//cout << "DEBUG2: " << endl;
 		}
-		mean_noise->Fill(noise_distribution[k]->GetMean());
 	}
-	
-	// BEGIN OF CLUSTER READ
+	/////////////////////////////////////////////////////////
+	//// BEGIN OF CLUSTER READ
 	dataRead.open(argv[1]);
 	
 	
@@ -863,8 +877,8 @@ int main ( int argc, char **argv )
 						//// ========= Event cut ============
                 
 						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
-						//if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)
-						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
+						if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999)
+						//if ( charge_CM_corrected > 2*noise[kpix][channel] && charge_CM_corrected < 10 && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
 							cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
 							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
@@ -881,6 +895,7 @@ int main ( int argc, char **argv )
 		}
 		if (not_empty == 1) //if event is not empty
 		{
+			//cout << "DEBUG 1" << endl;
 			clustr Cluster[kpix_checking/2];  // Another Cluster class variable
 			std::vector<clustr> multi_cluster[kpix_checking/2];
 			for (sensor = 0; sensor < kpix_checking/2; sensor++)
@@ -892,18 +907,21 @@ int main ( int argc, char **argv )
 					//cout << "Starting new PacMan" << endl;
 					//cout << "===================" << endl;
 					//cout << endl;
+					//cout << "DEBUG 2" << endl;
 					clustr Input;
 					Input.Elements = cluster_Events_after_cut[sensor];
 					Input.Noise = cluster_Noise_after_cut[sensor];
 					int num_of_clusters = 0;
-					while (Input.Elements.size() != 0 && num_of_clusters < 9999) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
+					while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
 					{
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
 						//cout << "Maximum Charge Strip " << Input.MaxCharge_w_Noise() << endl;
 						double SoN_order = 0;
-						
-						NomNom.Eater(Input, Input.MaxSoN(), 9999);
+						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
+						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
+						NomNom.Eater(Input, Input.MaxSoN(), 9999, 9999);
+						//cout << "DEBUG 3" << endl;
 						if (num_of_clusters == 0)
 						{
 							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -913,8 +931,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][0]->Fill(NomNom.getClusterSigma(), weight);
 							//cout << "Size: " << NomNom.getClusterElementssize() << endl;
 						}
-						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
-						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
+						
 						cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 						
 						cluster_size[sensor][1]->Fill(NomNom.getClusterElementssize(), weight);
@@ -922,6 +939,7 @@ int main ( int argc, char **argv )
 						cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
 						cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
 						//cout << "Significance: " << NomNom.getClusterSignificance() << endl;
+						//cout << "DEBUG 4" << endl;
 						if (NomNom.getClusterSignificance() > 4)
 						{
 							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -939,6 +957,7 @@ int main ( int argc, char **argv )
 						claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor2layer.at(sensor)  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << setw(7) << NomNom.getClusterSignificance() << " ," << setw(2) << NomNom.getClusterElementssize() << " ," << setw(7) << NomNom.getClusterCharge() << " ," << tmp.str().c_str() << endl;
 						
 						num_of_clusters++;
+						//cout << "DEBUG 5" << endl;
 						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
 					clusters[sensor]->Fill(num_of_clusters);
@@ -947,7 +966,7 @@ int main ( int argc, char **argv )
 					{
 						return lhs.Significance > rhs.Significance;
 					});
-					
+					//cout << "DEBUG 6" << endl;
 					//should now only fill the most significant cluster
 					if ( multi_cluster[sensor].size() != 0)
 					{
@@ -959,7 +978,7 @@ int main ( int argc, char **argv )
 					}
 				}
 			}
-			
+			//cout << "DEBUG 7" << endl;
 			for (int sensor1 = 0; sensor1 < kpix_checking/2; sensor1++)
 			{
 				for (int sensor2 = sensor1+1; sensor2 < kpix_checking/2; sensor2++)
@@ -974,6 +993,7 @@ int main ( int argc, char **argv )
 							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[sensor1][sensor2]->Fill(y1,y2);
+							//cout << "DEBUG 8" << endl;
 						}
 					}
 				}
