@@ -215,7 +215,8 @@ namespace lycoris
 	if (_type == KpixSample::Timestamp) {
 	  nTrig++;
 	  exttstamp.tstamp = _tstamp;
-	  exttstamp.value  = _value;
+	  //exttstamp.value  = _value;
+	  exttstamp.value = _cyclesample -> getBunchCount();
 	  vtstamp.push_back(exttstamp);
 
 	  //std::vector<double> _test;
