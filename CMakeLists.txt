@@ -172,6 +172,10 @@ add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
 target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
 
+add_executable(splitFile ${PROJECT_SOURCE_DIR}/src/splitFile.cxx)
+target_link_libraries(splitFile ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS splitFile)
+
 # add_executable(analysis_newdaq_mq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq_mq.cxx)
 # target_link_libraries(analysis_newdaq_mq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 # list(APPEND INSTALL_EXE_TARGETS analysis_newdaq_mq)
