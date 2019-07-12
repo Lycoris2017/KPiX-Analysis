@@ -34,7 +34,7 @@ void treer(){
 int main( int argc, char **argv){
   lycoris::ntupleMaker kk(argv[1]);
   //kk.loopKpix();
-  kk.setDebug(false);
+  kk.setDebug(true);
   kk.CreateTree();
 
   //  kk.makeTreeEx();
