@@ -259,14 +259,14 @@ int main ( int argc, char **argv )
 	
 	// Open root file
 	double pedestal_median, pedestal_MAD;
-	int kpix_num, channel_num1, bucket_num;
+	int kpix_num, channel_num, bucket_num;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
 	 
 	pedestal = new TTree("pedestal_tree", "A ROOT Tree");
 	pedestal->Branch("pedestal_median", &pedestal_median, "pedestal_median/D");
 	pedestal->Branch("kpix_num", &kpix_num, "kpix_num/I");
-	pedestal->Branch("channel_num", &channel_num1, "channel_num1/I:");
+	pedestal->Branch("channel_num", &channel_num, "channel_num/I:");
 	pedestal->Branch("bucket_num", &bucket_num, "bucket_num/I");
 	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
 		
@@ -374,7 +374,7 @@ int main ( int argc, char **argv )
 
 					pedestal_median = median(pedestal_results[kpix][channel][bucket]);
 					pedestal_MAD = MAD(pedestal_results[kpix][channel][bucket]);
-					channel_num1 = channel;
+					channel_num = channel;
 					kpix_num = kpix;
 					bucket_num = bucket;
 					//cout << "Median is " << pedestal_median << endl;
