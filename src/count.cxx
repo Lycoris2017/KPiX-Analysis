@@ -78,8 +78,8 @@ int main ( int argc, char **argv ) {
   tmp.str("");
   tmp<<"output/count.root";
   string outRoot = tmp.str();
-  rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
-  rFile->cd(); // move into root folder base
+  // rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
+  // rFile->cd(); // move into root folder base
   
   //////////////////////////////////////////
   // Read Data - init
@@ -171,32 +171,32 @@ int main ( int argc, char **argv ) {
   cout<<"\n\n";
 
   // read over kpix events again to fill the histograms:
-  dataRead.open(argv[1]);
-  while ( dataRead.next(&event) ){
-    for (uint x2=0; x2<event.count(); x2++){
-      //// Get sample
-      sample  = event.sample(x2);  // check event subtructure
-      if (sample->getEmpty()) continue; // if empty jump over
+  // dataRead.open(argv[1]);
+  // while ( dataRead.next(&event) ){
+  //   for (uint x2=0; x2<event.count(); x2++){
+  //     //// Get sample
+  //     sample  = event.sample(x2);  // check event subtructure
+  //     if (sample->getEmpty()) continue; // if empty jump over
       
-      kpix    = sample->getKpixAddress();
-      channel = sample->getKpixChannel();
-      bucket  = sample->getKpixBucket();
-      //value   = sample->getSampleValue();
-      type    = sample->getSampleType();
-      //tstamp  = sample->getSampleTime();
-      //range   = sample->getSampleRange();
+  //     kpix    = sample->getKpixAddress();
+  //     channel = sample->getKpixChannel();
+  //     bucket  = sample->getKpixBucket();
+  //     //value   = sample->getSampleValue();
+  //     type    = sample->getSampleType();
+  //     //tstamp  = sample->getSampleTime();
+  //     //range   = sample->getSampleRange();
       
-      if (type == KpixSample::Data) {
-	channel_entries[kpix][bucket]->Fill(channel, weight);
-	channel_entries[kpix][4]->Fill(channel, weight);
-      }
-    }
-  }
-  dataRead.close(); // close file as we have looped through it and are now at the end
+  //     if (type == KpixSample::Data) {
+  // 	channel_entries[kpix][bucket]->Fill(channel, weight);
+  // 	channel_entries[kpix][4]->Fill(channel, weight);
+  //     }
+  //   }
+  // }
+  // dataRead.close(); // close file as we have looped through it and are now at the end
 
-  cout << "Writing root plots to " << outRoot << endl;
-  rFile->Write();
-  rFile->Close();
+  // cout << "Writing root plots to " << outRoot << endl;
+  // rFile->Write();
+  // rFile->Close();
   
   return 1;
 	
