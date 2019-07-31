@@ -48,6 +48,11 @@ double PacMan::getClusterSignificance()
 	return Cluster.Significance;
 }
 
+double PacMan::getClusterSignificance2()
+{
+	return Cluster.Significance2;
+}
+
 int PacMan::getClusterElementssize()
 {
 	return Cluster.Elements.size(); //divided by two because we have 1 entry for signal and 1 entry for noise
@@ -128,7 +133,8 @@ void PacMan::Eater(clustr& PACMAN, int element, int oldelement, double old_signi
 		{
 			if (oldelement == 9999)
 			{
-				cout << "Error: Starting element has significance higher than 9999" << endl;
+				cout << "charge: " << PACMAN.Elements.at(element) << " | noise: " << PACMAN.Noise.at(element) << " | element: " << element << endl;
+				cout << "Error: Starting element has significance higher than 99999" << endl;
 			}
 			//cout << "Just checking how often it happens that a new strip has higher significance than the previous" << endl;
 		}

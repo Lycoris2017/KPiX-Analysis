@@ -26,7 +26,8 @@ class clustr
 	
 		double CoG ;
 		double Charge;
-		double Significance;
+		double Significance; //linear addition of charge/noise for each strip
+		double Significance2; //Adding noises in quadrature and later dividing chargesum by this noise sum
 		double CoGSoN;
 		double Sigma;
 		

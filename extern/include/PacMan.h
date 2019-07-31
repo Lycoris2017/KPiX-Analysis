@@ -18,6 +18,7 @@ class PacMan
 		double getClusterCoGSoN();
 		double getClusterCharge();
 		double getClusterSignificance();
+		double getClusterSignificance2();
 		int getClusterElementssize();
 		
 		clustr getCluster();
