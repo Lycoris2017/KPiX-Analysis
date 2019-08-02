@@ -339,11 +339,11 @@ int main ( int argc, char **argv ) {
   uint 					noise_cut = 1.0;
 
  // bool                    printalot=false;
-  
-  unordered_map<uint, uint> kpix2strip_left;
-  unordered_map<uint, uint> kpix2strip_right;
-  kpix2strip_left = kpix_left();
-  kpix2strip_right = kpix_right();
+
+	unordered_map<uint, uint> kpix2strip_left;
+	unordered_map<uint, uint> kpix2strip_right;
+	kpix2strip_left = kpix_left();
+	kpix2strip_right = kpix_right();
   
   // Init structure
   for (kpix=0; kpix < 32; kpix++) {
