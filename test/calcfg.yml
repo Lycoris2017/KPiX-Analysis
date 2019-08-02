@@ -1,0 +1,9 @@
+DesyTrackerRoot.DataWriter.enable:True
+DesyTrackerRoot.DesyTrackerRunControl.enable:True
+DesyTrackerRoot.DesyTracker.enable:True
+DesyTrackerRoot.DesyTracker.AxiVersion.enable:True
+DesyTrackerRoot.DesyTracker.KpixDaqCore.enable:True
+DesyTrackerRoot.DesyTracker.KpixDaqCore.SysConfig.enable:True
+DesyTrackerRoot.DesyTracker.KpixDaqCore.KpixClockGen.enable:True
+DesyTrackerRoot.DesyTracker.KpixDaqCore.AcquisitionControl.enable:True
+DesyTrackerRoot.DesyTracker.KpixDaqCore.KpixAsicArray.enable:True

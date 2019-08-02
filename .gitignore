@@ -1,12 +1,20 @@
+cmake/
 *.bin
 *~
+*#
 *.save*
 *.so
 *.o
+*.log
 bin/
 ChangeLog
 .cproject
 .project
+txt
+*.root
+lib/
+build/
+data/*txt
 
 include/kpix_left.hplot_script.sh
 threshold_scan_script.sh
@@ -16,3 +24,4 @@ plot_script.sh
 threshold_scan_script.sh
 SLAC_plot_script.sh
 channel_list_noise.txt
+run.sh

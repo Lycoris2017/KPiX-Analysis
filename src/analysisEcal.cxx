@@ -254,13 +254,13 @@ if ( ! dataRead.open(argv[1])  ) {
 
 // Create output names
 tmp.str("");
-tmp << argv[1] << ".root";
+tmp << argv[1] << ".ecal.root";
 outRoot = tmp.str();
 tmp.str("");
-tmp << argv[1] << ".xml";
+tmp << argv[1] << ".ecal.xml";
 outXml = tmp.str();
 tmp.str("");
-tmp << argv[1] << ".csv";
+tmp << argv[1] << ".ecal.csv";
 outCsv = tmp.str();
 
 //================================================ Charge calibration, currently not working

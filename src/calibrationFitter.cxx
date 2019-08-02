@@ -320,6 +320,41 @@ int main ( int argc, char **argv ) {
    fitMax[1]        = config.getDouble("GainFitMaxR1");
    chargeError[0]   = config.getDouble("GainChargeErrorR0");
    chargeError[1]   = config.getDouble("GainChargeErrorR1");
+   
+ //cout << "teeest = " << findBadMeanHist  << endl;
+ //cout << "teeest = " << findBadMeanFit   << endl;
+ //cout << "teeest = " << meanMin[0]       << endl;
+ //cout << "teeest = " << meanMax[0]       << endl;
+ //cout << "teeest = " << meanMin[1]       << endl;
+ //cout << "teeest = " << meanMax[1]       << endl;
+ //cout << "teeest = " << findBadMeanChisq << endl;
+ //cout << "teeest = " << meanChisq        << endl;
+ //cout << "teeest = " << findBadGainFit   << endl;
+ //cout << "teeest = " << gainMin[0]       << endl;
+ //cout << "teeest = " << gainMax[0]       << endl;
+ //cout << "teeest = " << gainMin[1]       << endl;
+ //cout << "teeest = " << gainMax[1]       << endl;
+ //cout << "teeest = " << findBadGainChisq << endl;
+ //cout << "teeest = " << gainChisq        << endl;
+ //cout << "teeest = " << fitMin[0]        << endl;
+ //cout << "teeest = " << fitMax[0]        << endl;
+ //cout << "teeest = " << fitMin[1]        << endl;
+ //cout << "teeest = " << fitMax[1]        << endl;
+ //cout << "teeest = " << chargeError[0]   << endl;
+ //cout << "teeest = " << chargeError[1]   << endl;
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
    // Open data file
    if ( ! dataRead.open(argv[2]) ) {
