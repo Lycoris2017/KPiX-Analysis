@@ -184,6 +184,10 @@ add_executable(cluster_analysis ${PROJECT_SOURCE_DIR}/src/cluster_analysis.cxx)
 target_link_libraries(cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS cluster_analysis)
 
+add_executable(external_trig_debug ${PROJECT_SOURCE_DIR}/src/external_trig_debug.cxx)
+target_link_libraries(external_trig_debug ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS external_trig_debug)
+
 #add_executable(analysisExternal ${PROJECT_SOURCE_DIR}/src/analysisExternal.cxx)
 #target_link_libraries(analysisExternal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 #list(APPEND INSTALL_EXE_TARGETS analysisExternal)
@@ -200,12 +204,16 @@ add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS pedestal_tree)
 
+add_executable(testing_functions ${PROJECT_SOURCE_DIR}/src/testing_functions.cxx)
+target_link_libraries(testing_functions ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS testing_functions)
+
 
 # tree builders:
 
-add_executable(ntupleTest ${PROJECT_SOURCE_DIR}/src/ntupleTest.cxx)
-target_link_libraries(ntupleTest ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS ntupleTest)
+#add_executable(ntupleTest ${PROJECT_SOURCE_DIR}/src/ntupleTest.cxx)
+#target_link_libraries(ntupleTest ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS ntupleTest)
 
 
 

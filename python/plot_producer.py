@@ -247,13 +247,14 @@ def hist_plotter():
 		ROOT.gStyle.SetOptFit(0)
 		c1.Modified()
 		c1.Update()
+		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+filename_list[0]+'_'+args.output_name
+			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
 		else:
-			outname = folder_loc+filename_list[0]+'_'+graph.GetName()
+			outname = folder_loc+run_name+'_'+graph.GetName()
 			print 'Creating '+outname+'.pvg'
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
@@ -752,7 +753,7 @@ parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y ax
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
 parser.add_argument('-q', '--newdaq', dest='newdaq', default=True, help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
-parser.add_argument('-f', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
+parser.add_argument('-f', dest='folder', default='summer', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 args = parser.parse_args()
 if len(sys.argv) < 2:
@@ -796,9 +797,11 @@ for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	loopdir(key_root)
 if ('elab' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
+	folder_loc = '/home/lycoris-admin/Documents/elab201904/'
 elif ('tb' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/testbeamPCMAG201904_05/'
+	folder_loc = '/home/lycoris-admin/Documents/testbeamPCMAG201904_05/'
+elif ('summer' in args.folder):
+	folder_loc = '/home/lycoris-admin/Documents/summer_student/'
 ##-----------------	
 ##general output
 #print args.color

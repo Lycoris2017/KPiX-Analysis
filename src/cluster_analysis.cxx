@@ -148,7 +148,7 @@ int main ( int argc, char **argv )
 	
 	int bucket_checking = 4;
 	//int  kpix_checking = 6;
-	int  kpix_checking = 12;
+	int  kpix_checking = 13;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -203,8 +203,9 @@ int main ( int argc, char **argv )
 	TH1F					*noise_distribution_sensor[kpix_checking];
 	TH1F					*noise_v_position[kpix_checking/2];
 	TH1F					*noise_v_channel[kpix_checking];
-	cout <<"DEBUG2" << endl;
+	
 	TH1F					*noise_v_time[kpix_checking/2];
+	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -410,7 +411,7 @@ int main ( int argc, char **argv )
 	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
 	//goodTimes       	= 0;
 	
-	
+	cout <<"DEBUG 3" << endl;
 	// Open root file
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
@@ -514,7 +515,7 @@ int main ( int argc, char **argv )
 		cout << "Wrote skipped cycles to " << outtxt << endl;
 		cout << endl;
 	}
-	
+	cout <<"DEBUG 4" << endl;
 	//cout << "DEBUG: 3" << endl;
 	//cout << tstamp << endl;
 	dataRead.close();
@@ -879,6 +880,7 @@ int main ( int argc, char **argv )
 		}
 		
 	}
+	cout <<"DEBUG 5" << endl;
 	//////////////////////////////////////////
 	// Data read for all events for detailed look
 	//////////////////////////////////////////
@@ -894,6 +896,9 @@ int main ( int argc, char **argv )
 	
 	std::vector<double> corrected_charge_vec[kpix_checking][1024];
 	std::vector<double> corrected_charge_vec_time[kpix_checking][8192];
+	
+	//std::vector<double> corrected_charge_vec_time_0_200[kpix_checking][8192];
+	//std::vector<double> corrected_charge_vec_time_201_1023[kpix_checking][8192];
 	
 	unordered_map<uint, uint> noise_mask[6];
 	noise_mask[0] = noise_sensor_0();
@@ -935,6 +940,8 @@ int main ( int argc, char **argv )
 							double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
 							corrected_charge_vec[kpix][channel].push_back(charge_CM_corrected);
 							corrected_charge_vec_time[kpix][int(tstamp)].push_back(charge_CM_corrected);
+							//if (channel < 201)  corrected_charge_vec_time_0_200[kpix][int(tstamp)].push_back(charge_CM_corrected);
+							//else corrected_charge_vec_time_201_1023[kpix][int(tstamp)].push_back(charge_CM_corrected);
 						}
 						//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 					}
@@ -950,7 +957,7 @@ int main ( int argc, char **argv )
 		}
 	}
 	dataRead.close();
-	
+	cout <<"DEBUG 6" << endl;
 	
 	 // END OF PREREAD
 	 // BEGIN OF NOISE CALCULATION
@@ -993,6 +1000,9 @@ int main ( int argc, char **argv )
 			for (int t = 0; t < 8192; ++t)
 			{
 				noise_v_time[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time[k][t]));
+				
+				//noise_v_time_0_200[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time_0_200[k][t]));
+				//noise_v_time_201_1023[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time_201_1023[k][t]));
 			}
 			//cout << "DEBUG1: " << noise_distribution[k]->GetMean() << endl;
 			//mean_noise->Fill(noise_distribution[k]->GetMean());

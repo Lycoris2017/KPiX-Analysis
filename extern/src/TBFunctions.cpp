@@ -65,7 +65,7 @@ double xParameterSensor(double strip, int sensor)
 	}
 }
 
-double median(vector<double> &v)
+double median(vector<double_t> &v)
 {
     size_t n = v.size() / 2;
     if (n != 0)
@@ -85,7 +85,7 @@ double median(vector<double> &v)
 	else return 0;
 }
 
-double MAD(vector<double> &v)
+double MAD(vector<double_t> &v)
 {
 	double med = median(v);
 	vector<double> deviation;
