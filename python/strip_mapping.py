@@ -75,6 +75,7 @@ def loopdir(keys):  # loop through all subdirectories of the root file and look 
 
 
 
+
 parser = MyParser()
 parser.add_argument('file_in', help='name of the input file')
 parser.add_argument('-k', dest='kpix', help='which kpix to check, eg: 1 or 1 2')
