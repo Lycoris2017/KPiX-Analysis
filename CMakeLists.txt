@@ -2,7 +2,9 @@
 #------------------
 #- Author: Mengqing Wu <mengqing.wu@desy.de>
 #- Generated: September, 2018
-#- Modified: October 1st, 2018
+#- Modified: 2019-08-02
+# * new feature:
+#   kpix package is importable from outside via find_package()
 #- for LYCORIS project at DESY.
 #------------------
 
@@ -25,7 +27,9 @@ option(MODE_DEBUG
 
 option(USE_YAML "Turn libyaml-dependency " OFF)
 
-option(USE_ROOT_INSTALL "Install shared lib and headers to /usr/local/include(or lib)/kpix/" OFF)
+#option(USE_ROOT_INSTALL "Install shared lib and headers to /usr/local/include(or lib)/kpix/" OFF)
+
+option(DO_EXPORT "Export kpix pacakge " ON)
 
 ##-- cmake setup
 set(CMAKE_BUILD_TYPE Debug )
@@ -74,23 +78,49 @@ include_directories( ${LIBXML2_INCLUDE_DIR} )
 if (USE_KPIX)
   message(" [INFO] local KPiX lite package used.")
 
-  set(KPIX_LOCAL_LIB kpix) 
+  set(KPIX_LOCAL_LIB kpix)
   include_directories( ${PROJECT_SOURCE_DIR}/extern/include)
-  
+
   aux_source_directory( ${PROJECT_SOURCE_DIR}/extern/src LIB_SRC)
   add_library(${KPIX_LOCAL_LIB} SHARED ${LIB_SRC})
   set_target_properties(${KPIX_LOCAL_LIB} PROPERTIES SOVERSION 2)
 
-  if (USE_ROOT_INSTALL)
+  target_include_directories(${KPIX_LOCAL_LIB}
+	PUBLIC
+	$<INSTALL_INTERFACE:extern/include>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/extern/include>
+	PRIVATE
+	)
+
+  install(TARGETS ${KPIX_LOCAL_LIB}
+	EXPORT kpixConfig
+	LIBRARY DESTINATION lib
+	)
+  # file(GLOB INC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/eudaq/*.hh")
+
+  if (DO_EXPORT)
+	
+	#--newly added for find_package() outside of kpix
+	export(TARGETS
+	  ${KPIX_LOCAL_LIB}
+      NAMESPACE kpix::
+      FILE "${PROJECT_SOURCE_DIR}/cmake/kpixConfig.cmake"
+	  )
+	install(EXPORT
+      kpixConfig
+      DESTINATION "${PROJECT_SOURCE_DIR}/cmake"
+      NAMESPACE kpix::
+	  )
+	
+  else()
     # start of adding files to usr/local
     file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/extern/include/*.h" )
     install(FILES ${KPIX_HEADER} DESTINATION /usr/local/include/kpix)
     install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION /usr/local/lib/kpix)
     # end of adding files to usr/local
-  endif(USE_ROOT_INSTALL)
+	
+  endif(DO_EXPORT)
     
-  install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION lib)
-  # file(GLOB INC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/include/eudaq/*.hh")
   
 else () # not tested, definately not working...
   message(" [INFO] external KPiX packages used.")

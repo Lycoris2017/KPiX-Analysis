@@ -499,6 +499,7 @@ int main ( int argc, char **argv )
 		  //}
 		  
 		//}
+
 		
 	}
 	
@@ -672,6 +673,7 @@ int main ( int argc, char **argv )
 				//tmp << "timestamp_kpix_k" << kpix << "_b" << bucket << "_no_monster";
 				//times_kpix_no_monster[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
 				
+
 				//tmp.str("");
 				//tmp << "kpix_entries_left_k" << kpix << "_bucket_" << bucket;
 				//kpix_entries_left[kpix][bucket] = new TH2F ("kpix_entries_left", "kpix_entries_left; column;  row", 32,-0.5,31.5, 32,-0.5,31.5);
@@ -903,6 +905,7 @@ int main ( int argc, char **argv )
 					
 					//right_strip_entries[kpix][bucket]->Fill(kpix2strip_right.at(channel), weight);
 					//right_strip_entries[kpix][4]->Fill(kpix2strip_right.at(channel), weight);
+
 					
 					//times_kpix[kpix][bucket]->Fill(tstamp, weight);
 					//times_kpix[kpix][4]->Fill(tstamp, weight);
