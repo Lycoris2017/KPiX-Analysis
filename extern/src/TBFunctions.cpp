@@ -85,7 +85,7 @@ double median(vector<double> &v)
 	else return 0;
 }
 
-double MAD(vector<double> &v)
+double MAD(vector<double> &v, double factor)
 {
 	double med = median(v);
 	vector<double> deviation;
@@ -93,5 +93,5 @@ double MAD(vector<double> &v)
 	{
 		deviation.push_back(fabs(i - med));
 	}
-	return median(deviation);
+	return factor*median(deviation);
 }

@@ -11,6 +11,6 @@ double yParameter(double, int);
 double yParameterSensor(double, int);
 double xParameterSensor(double, int);
 double median(vector<double>&);
-double MAD(vector<double>&);
+double MAD(vector<double>& v, double factor = 1 );
 
 #endif

@@ -992,7 +992,7 @@ int main ( int argc, char **argv )
 			}
 			for (int t = 0; t < 8192; ++t)
 			{
-				noise_v_time[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time[k][t]));
+				noise_v_time[sensor]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
 			}
 			//cout << "DEBUG1: " << noise_distribution[k]->GetMean() << endl;
 			//mean_noise->Fill(noise_distribution[k]->GetMean());
@@ -1148,7 +1148,7 @@ int main ( int argc, char **argv )
 						multi_cluster[1][sensor].push_back(NomNom.getCluster());
 						//cout << "Significance: " << NomNom.getClusterSignificance() << endl;
 						//cout << "DEBUG 4" << endl;
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 1.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 1.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1158,7 +1158,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][2]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[2][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][4]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][4]->Fill(NomNom.getClusterCharge(), weight);
@@ -1168,7 +1168,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][4]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[4][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 3.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 3.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][5]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][5]->Fill(NomNom.getClusterCharge(), weight);
@@ -1178,7 +1178,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][5]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[5][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.5 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.5 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][6]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][6]->Fill(NomNom.getClusterCharge(), weight);
@@ -1188,7 +1188,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][6]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[6][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.0)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.0)
 						{
 							cluster_position_y[sensor][7]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][7]->Fill(NomNom.getClusterCharge(), weight);

@@ -184,6 +184,10 @@ add_executable(cluster_analysis ${PROJECT_SOURCE_DIR}/src/cluster_analysis.cxx)
 target_link_libraries(cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS cluster_analysis)
 
+add_executable(ext_trig_debug ${PROJECT_SOURCE_DIR}/src/ext_trig_debug.cxx)
+target_link_libraries(ext_trig_debug ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS ext_trig_debug)
+
 #add_executable(analysisExternal ${PROJECT_SOURCE_DIR}/src/analysisExternal.cxx)
 #target_link_libraries(analysisExternal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 #list(APPEND INSTALL_EXE_TARGETS analysisExternal)
