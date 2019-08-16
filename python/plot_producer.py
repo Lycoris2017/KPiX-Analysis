@@ -179,7 +179,7 @@ def hist_plotter():
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
-			obj.SetMarkerColor(args.color[counter-1])
+			obj.SetMarkerColor(args.color[counter-1]+3)
 			
 
 			##------------------
@@ -714,7 +714,7 @@ mystyle.SetOptFit(111)
 ##marker settings
 mystyle.SetMarkerStyle(20)
 mystyle.SetMarkerSize(0.7)
-mystyle.SetLineWidth(2) 
+mystyle.SetLineWidth(1) 
 
 #done
 mystyle.cd()
@@ -789,7 +789,7 @@ for root_file in args.file_in:
 	
 	#if (args.newdaq is True):
 		#print "HUH"
-	filename_list.append(root_file[root_file.find('testbeam201905/')+15:root_file.rfind('.dat')+1])
+	filename_list.append(root_file[root_file.find('data/')+5:root_file.rfind('.dat')+1])
 	#else:
 		#filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
 print filename_list
