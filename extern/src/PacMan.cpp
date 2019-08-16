@@ -131,7 +131,7 @@ void PacMan::Eater(clustr& PACMAN, int element, int oldelement, double old_signi
 	
 		else
 		{
-			if (oldelement == 9999)
+			if (oldelement == 9999 )
 			{
 				cout << "charge: " << PACMAN.Elements.at(element) << " | noise: " << PACMAN.Noise.at(element) << " | element: " << element << endl;
 				cout << "Error: Starting element has significance higher than 99999" << endl;

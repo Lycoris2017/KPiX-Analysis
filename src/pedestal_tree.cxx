@@ -61,6 +61,42 @@ vector<TGraphErrors*> calib_graphs; //needed for current loopdir
 // Functions
 //////////////////////////////////////////
 
+double median2(vector<double>* v)
+{
+	if (v  == nullptr )
+	{
+		//cout << "Found a nullpointer" << endl;
+		return 0;
+	}
+	else
+	{
+		//cout << "Calculating Median" << endl;
+		if (v->empty()) cout << "We have a problem in the Median, it is empty!" << endl;
+		size_t n = v->size() / 2;
+		cout << n << endl;
+		if (n != 0)
+		{
+			cout << "DEBUG X "  << v->at(n) << endl;
+			if (v->size()%2 == 0)
+			{
+				nth_element(v->begin(), v->begin()+n, v->end());
+				cout << "DEBUG Y" << endl;
+				nth_element(v->begin(), v->begin()+n-1, v->end());
+				return (v->at(n)+v->at(n-1))/2;
+			}
+			else
+			{
+				cout << "DEBUG Z "  << v->at(n) << endl;
+				nth_element(v->begin(), v->begin()+n, v->end());
+				return v->at(n);
+			}
+		}
+		else return 0;
+	}
+}
+
+
+
 void loopdir(TDirectory* dir, string histname)
 {
 	
@@ -120,8 +156,9 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	int kpix_checking = 24;
-	int bucket_checking = 1;
+	const unsigned int n_kpix = 24;
+	const unsigned int n_buckets = 4;
+	const unsigned int n_channels = 1024;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -131,9 +168,9 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   bucketFound[kpix_checking][1024][bucket_checking];  // variable that gives true if bucket has an entry (32 possible number of KPiX, 1024 channels per KPiX, 4 buckets per channel)
-	bool                   chanFound[kpix_checking][1024]; // variable that gives true if a channel has entries
-	bool                   kpixFound[kpix_checking]; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};  // variable that gives true if bucket has an entry (32 possible number of KPiX, n_channels channels per KPiX, 4 buckets per channel)
+	bool                   channelFound[n_kpix][n_channels] = {false}; // variable that gives true if a channel has entries
+	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
 	uint                   range;
 	uint                   value;
 	uint                   kpix;
@@ -165,7 +202,7 @@ int main ( int argc, char **argv )
 	ofstream               debug;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[kpix_checking][1024] = {1}; //ADD buckets later.
+	double					calib_slope[n_kpix][n_channels] = {1}; //ADD buckets later.
 	int						calibration_check = 0;
 
 	
@@ -220,7 +257,7 @@ int main ( int argc, char **argv )
 				//cout << "Channel Number = " << channel << endl;
 				
 				calib_slope[kpix][channel] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
+				//cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
 				
 			}
 		}
@@ -301,19 +338,19 @@ int main ( int argc, char **argv )
 	
 	cycle_num = 0;
 	ofstream myfile;
-	vector<double> pedestal_results[kpix_checking][1024][bucket_checking];
+	vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
 	
 	while ( dataRead.next(&event) )
 	{
 		cycle_num++;
 		//cout << "KPiX event Number: " << event.eventNumber() << endl;
-		
+		//cout << "DEBUG" << endl;
 		
 		
 		if ( cycle_num > skip_cycles_front)
 		{
 		
-			uint channel_adc[kpix_checking][1024];
+			uint channel_adc[n_kpix][n_channels];
 			//cout << " NEW EVENT " << endl;
 			for (uint x=0; x < event.count(); x++)
 			{
@@ -327,23 +364,39 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
 				tstamp  = sample->getSampleTime();
 				range   = sample->getSampleRange();
-		
+				
+				
 				if ( type == KpixSample::Data ) // If event is of type KPiX data
 				{
-					if (bucket < bucket_checking)
+					bucketFound[kpix][channel][bucket] = true;
+					channelFound[kpix][channel] = true;
+					kpixFound[kpix] = true;
+					if (kpix == 0)
+					cout <<"Weird!" << " k" << kpix << " c" << channel << " b" << bucket << " charge " << value << endl;
+					if (calibration_check == 1)
 					{
-						if (calibration_check == 1)
+						double charge = value/calib_slope[kpix][channel];
+						//cout << "Charge " << charge << endl;
+						if (pedestal_results[kpix][channel][bucket] == nullptr)
 						{
-							double charge = value/calib_slope[kpix][channel];
-
-							
-							pedestal_results[kpix][channel][bucket].push_back(charge);
-							
+							pedestal_results[kpix][channel][bucket] = new std::vector<double>;
+							if (pedestal_results[kpix][channel][bucket] == nullptr)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								"KPIX " << kpix << " CHANNEL " << channel << " BUCKET " << bucket << endl;
+								exit(-1); // probably best to bail out
+							}
 							
 						}
 						
+						pedestal_results[kpix][channel][bucket]->push_back(charge);
+						//cout << pedestal_results[kpix][channel][bucket]->at(0) << endl;
+						
 						
 					}
+						
+						
+					
 				}
 				//if ( type == 1 )
 				//{
@@ -365,30 +418,64 @@ int main ( int argc, char **argv )
 		}
 	}
 	myfile.close();
-	for (int kpix = 0; kpix < kpix_checking ; kpix++)
+	for (int kpix = 0; kpix < n_kpix ; kpix++)
 	{
-		for (int channel = 0; channel < 1024 ; channel++)
+		if (kpixFound[kpix] == true)
 		{
-			for (int bucket = 0; bucket < bucket_checking ; bucket++)
+			for (int channel = 0; channel < n_channels ; channel++)
 			{
-
-					pedestal_median = median(pedestal_results[kpix][channel][bucket]);
-					pedestal_MAD = MAD(pedestal_results[kpix][channel][bucket]);
-					channel_num = channel;
-					kpix_num = kpix;
-					bucket_num = bucket;
-					//cout << "Median is " << pedestal_median << endl;
-					pedestal->Fill();
-					
-					if (pedestal_MAD == 0)
+				if (channelFound[kpix][channel] == true)
+				{
+					for (int bucket = 0; bucket < n_buckets ; bucket++)
 					{
-						MAD0_v_channel->Fill(channel);
+						if (bucketFound[kpix][channel][bucket] == true)
+						{
+							//cout << "DEBUG 1 " << endl;
+							//if (pedestal_results[kpix][channel][bucket] == nullptr) cout << "Found a nullptr" << endl;
+							//else cout << "Found a normal pointer" << endl;
+							//cout << "Pedestal for k" << kpix << " c" << channel << " b" << bucket << endl ;
+							pedestal_median = median(pedestal_results[kpix][channel][bucket]);
+							//cout << "DEBUG 1.01 " << endl;
+							
+							//cout << pedestal_median << endl;
+							pedestal_MAD = MAD(pedestal_results[kpix][channel][bucket]);
+							channel_num = channel;
+							kpix_num = kpix;
+							bucket_num = bucket;
+							//cout << "DEBUG 1.1 " << endl;
+							//cout << "Median is " << pedestal_median << endl;
+							pedestal->Fill();
+							//cout << "DEBUG 2 " << endl;
+							if (pedestal_MAD == 0)
+							{
+								MAD0_v_channel->Fill(channel);
+							}
+							//cout << "DEBUG 3 " << endl;
+						}
 					}
-
+				}
 			}
 		}
 	}
-
+	for (int kpix = 0; kpix < n_kpix; ++kpix)
+	{
+		if (kpixFound[kpix] == true)
+		{
+			for (int channel = 0; channel < n_channels ; channel++)
+			{
+				if (channelFound[kpix][channel] == true)
+				{
+					for (int bucket = 0; bucket < n_buckets ; bucket++)
+					{
+						if (bucketFound[kpix][channel][bucket] == true)
+						{
+							delete pedestal_results[kpix][channel][bucket];
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;

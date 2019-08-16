@@ -469,7 +469,7 @@ int main ( int argc, char **argv )
 		if (acqCount > skip_cycles_front)
 		{
 			acqProcessed++;
-			vector<double> vec_corr_charge[kpix_checking];
+			vector<double>* vec_corr_charge[kpix_checking];
 			
 			for (x=0; x < event.count(); x++)
 			{
@@ -506,7 +506,7 @@ int main ( int argc, char **argv )
 							//if (calib_slope[kpix][channel] > 1 && calib_slope[kpix][channel] < 30)
 							//{
 								
-								vec_corr_charge[kpix].push_back(corrected_charge_value_median);
+								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
 								
 								
 								
@@ -531,7 +531,7 @@ int main ( int argc, char **argv )
 			}
 			for (int k = 0; k < kpix_checking ; k++)
 			{
-				if (vec_corr_charge[k].size() != 0)
+				if (vec_corr_charge[k]->size() != 0)
 				{
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
 					//cout << "Common mode median of KPiX " << k << " is " << median(vec_corr_charge[k]) << endl;
@@ -1001,7 +1001,7 @@ int main ( int argc, char **argv )
 	
 	int sbkgrnd = 0;
 	int dbkgrnd = 0;
-	std::vector<double> corrected_charge_vec[kpix_checking][1024][bucket_checking+1];
+	std::vector<double>* corrected_charge_vec[kpix_checking][1024][bucket_checking+1];
 	while ( dataRead.next(&event) )
 	{
 		cycle_num++;
@@ -1087,7 +1087,7 @@ int main ( int argc, char **argv )
 								double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
 								
 								channel_charge[kpix][channel] = charge_CM_corrected;
-								corrected_charge_vec[kpix][channel][bucket].push_back(charge_CM_corrected);
+								corrected_charge_vec[kpix][channel][bucket]->push_back(charge_CM_corrected);
 								
 								//// ========= Event cut ============
 
@@ -1208,7 +1208,7 @@ int main ( int argc, char **argv )
 							q = 0.5;
 							fc_response_median_subtracted_channel[kpix][channel]->GetQuantiles(1, &median, &q);
 							median_charge[kpix][bucket]->Fill(median);
-							if (corrected_charge_vec[kpix][channel][bucket].size() != 0)
+							if (corrected_charge_vec[kpix][channel][bucket]->size() != 0)
 							{
 								noise_distribution[kpix][bucket]->Fill(1.4826*MAD(corrected_charge_vec[kpix][channel][bucket]));
 							}

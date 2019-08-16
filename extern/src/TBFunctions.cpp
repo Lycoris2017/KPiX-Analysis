@@ -65,33 +65,54 @@ double xParameterSensor(double strip, int sensor)
 	}
 }
 
-double median(vector<double_t> &v)
+double median(vector<double>* v)
 {
-    size_t n = v.size() / 2;
-    if (n != 0)
-    {
-		if (v.size()%2 == 0)
+	if (v  == nullptr )
+	{
+		//cout << "Found a nullpointer" << endl;
+		return 0;
+	}
+	else
+	{
+		if (v->empty())
 		{
-			nth_element(v.begin(), v.begin()+n, v.end());
-			nth_element(v.begin(), v.begin()+n-1, v.end());
-			return (v[n]+v[n-1])/2;
+			return 0;
 		}
 		else
 		{
-			nth_element(v.begin(), v.begin()+n, v.end());
-			return v[n];
+			size_t n = v->size() / 2;
+			if (v->size()%2 == 0)
+			{
+				nth_element(v->begin(), v->begin()+n, v->end());
+				nth_element(v->begin(), v->begin()+n-1, v->end());
+				return (v->at(n)+v->at(n-1))/2;
+			}
+			else
+			{
+				nth_element(v->begin(), v->begin()+n, v->end());
+				return v->at(n);
+			}
 		}
 	}
-	else return 0;
 }
 
-double MAD(vector<double_t> &v)
+double MAD(vector<double>* v)
 {
-	double med = median(v);
-	vector<double> deviation;
-	for (auto const i:v)
+	if (v  == nullptr )
 	{
-		deviation.push_back(fabs(i - med));
+		//cout << "Found a nullpointer" << endl;
+		return 0;
 	}
-	return median(deviation);
+	else
+	{
+		double med = median(v);
+		vector<double>* deviation;
+		deviation = new std::vector<double>;
+		
+		for (auto const i:(*v))
+		{
+			deviation->push_back(fabs(i - med));
+		}
+		return median(deviation);
+	}
 }

@@ -146,9 +146,12 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	int bucket_checking = 4;
-	//int  kpix_checking = 6;
-	int  kpix_checking = 13;
+	const unsigned int n_buckets = 4;
+	const unsigned int n_kpix = 24;
+	const unsigned int n_blocks = 32;
+	const unsigned int n_channels = 1024;
+	const unsigned int n_BCC = 8192;
+	const unsigned int n_strips = 1840;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -158,8 +161,9 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   kpixFound[kpix_checking] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
-	bool                   chanFound[kpix_checking][1024] = {false};
+	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   channelFound[n_kpix][n_channels] = {false};
+	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
 	uint                   x;
 	uint                   value;
 	uint                   kpix;
@@ -169,7 +173,6 @@ int main ( int argc, char **argv )
 	double                  tstamp;
 	uint 					subCount;
 	double 					bunchClk;
-	cout <<"DEBUG1.5" << endl;
 	double 					y;
 	string                 serial;
 	KpixSample::SampleType type;	
@@ -179,32 +182,32 @@ int main ( int argc, char **argv )
 
 	//TTree*					cluster_tree;
 	
-	TH1F					*fc_response_medCM_subtracted[kpix_checking];
+	TH1F					*fc_response_medCM_subtracted[n_kpix];
 		
-	TH1F 					*Max_SoN[kpix_checking/2];
+	TH1F 					*Max_SoN[n_kpix/2];
 		
 		
-	TH1F 					*cluster_position_y[kpix_checking/2][8];
-	//TH1F 					*cluster_position_x[kpix_checking/2][4];
-	TH1F 					*clusters[kpix_checking/2];
-	TH1F 					*cluster_charge[kpix_checking][8];
-	TH1F 					*cluster_significance[kpix_checking][8];
-	TH1F 					*cluster_significance2[kpix_checking][8];
-	TH1F 					*cluster_size[kpix_checking][8];
-	TH1F 					*cluster_sigma[kpix_checking][8];
+	TH1F 					*cluster_position_y[n_kpix/2][8];
+	//TH1F 					*cluster_position_x[n_kpix/2][4];
+	TH1F 					*clusters[n_kpix/2];
+	TH1F 					*cluster_charge[n_kpix][8];
+	TH1F 					*cluster_significance[n_kpix][8];
+	TH1F 					*cluster_significance2[n_kpix][8];
+	TH1F 					*cluster_size[n_kpix][8];
+	TH1F 					*cluster_sigma[n_kpix][8];
 	
 		
 		
-	TH2F					*cluster_correlation[8][kpix_checking][kpix_checking-1];
-	TH1F					*cluster_offset_y[8][kpix_checking/2][kpix_checking/2-1];
-	TH1F					*cluster_offset_x[8][kpix_checking/2][kpix_checking/2-1];
+	TH2F					*cluster_correlation[8][n_kpix][n_kpix-1];
+	TH1F					*cluster_offset_y[8][n_kpix/2][n_kpix/2-1];
+	TH1F					*cluster_offset_x[8][n_kpix/2][n_kpix/2-1];
 		
-	TH1F					*noise_distribution[kpix_checking];
-	TH1F					*noise_distribution_sensor[kpix_checking];
-	TH1F					*noise_v_position[kpix_checking/2];
-	TH1F					*noise_v_channel[kpix_checking];
+	TH1F					*noise_distribution[n_kpix];
+	TH1F					*noise_distribution_sensor[n_kpix/2];
+	TH1F					*noise_v_position[n_kpix/2];
+	TH1F					*noise_v_channel[n_kpix];
 	
-	TH1F					*noise_v_time[kpix_checking/2];
+	TH1F					*noise_v_time[n_kpix/2];
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -228,12 +231,12 @@ int main ( int argc, char **argv )
 	ofstream               debug;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[24][1024] = {1}; //ADD buckets later.
+	double					calib_slope[n_kpix][n_channels] = {1}; //ADD buckets later.
 	
-	double					pedestal_MedMAD[24][1024][4][2] = {0};
+	double					pedestal_MedMAD[n_kpix][n_channels][n_buckets][2] = {0};
 	int						calibration_check = 0;
-	double 					noise[kpix_checking][1024];
-	double 					MaximumSoN[kpix_checking/2][1840] = {0};
+	double 					noise[n_kpix][n_channels] = {0};
+	double 					MaximumSoN[n_kpix/2][1840] = {0};
 	//int						pedestal_check = 0;
 	
 	unordered_map<uint, uint> kpix2strip_left;
@@ -243,7 +246,7 @@ int main ( int argc, char **argv )
 	kpix2strip_left = kpix_left();
 	kpix2strip_right = kpix_right();
 	
-	pixel					pixel_kpix[1024];
+	pixel					pixel_kpix[n_channels];
 	pixel_mapping(pixel_kpix);
 	
 	unordered_map<uint, uint> sensor2layer;
@@ -262,7 +265,6 @@ int main ( int argc, char **argv )
 	sensor2layer.insert(make_pair(11, 9999));
 	
 	
-	cout <<"DEBUG10" << endl;
 	//////////////////////////////////////////
 	// Skip cycle/Read calibration file
 	//////////////////////////////////////////
@@ -354,6 +356,10 @@ int main ( int argc, char **argv )
 				pedestal_tree->GetEntry(i);
 				pedestal_MedMAD[kpix_num][channel_num][bucket_num][0] = pedestal_median;
 				pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] = pedestal_MAD;
+				//if (pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] != 0)
+				//{
+					//cout << "Pedestal MAD " << pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] << " kpix " << kpix_num << " channel " << channel_num << " bucket " << bucket_num << endl;
+				//}
 			}
 			
 			
@@ -411,23 +417,19 @@ int main ( int argc, char **argv )
 	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
 	//goodTimes       	= 0;
 	
-	cout <<"DEBUG 3" << endl;
 	// Open root file
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
-	
-	std::map<int, double> common_modes_median[kpix_checking];
+	vector<double>* vec_corr_charge[n_kpix] = {nullptr}; //delete does not work if I do not initialize all vectors
+	std::map<int, double> common_modes_median[n_kpix];
 	while ( dataRead.next(&event) ) // event read to check for filled channels and kpix to reduce number of empty histograms.
 	{
+		
 		acqCount++;		
-		int cycle_time_local[kpix_checking][8192] = {0}; //list for each kpix that is part of improved monster finder
-		
-		
-
 		if (acqCount > skip_cycles_front)
 		{
 			acqProcessed++;
-			vector<double> vec_corr_charge[kpix_checking];
+			
 			
 			for (x=0; x < event.count(); x++)
 			{
@@ -442,62 +444,57 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
 				
 				//cout << type <<endl;
-				
+				//cout << "DEBUG 2" << endl;
 				if ( type == KpixSample::Data )
 				{
+					//cout << kpix << endl;
 					kpixFound[kpix]          = true;
-					chanFound[kpix][channel] = true;
-					cycle_time_local[kpix][int(tstamp)]+=1;
+					channelFound[kpix][channel] = true;
+					bucketFound[kpix][channel][bucket] = true;
 					//cout << "Found KPIX " << kpix << endl;
-					
 					if (bucket == 0)
 					{
-						//cout << "Test" << endl;
 						if (calibration_check == 1)
 						{
+							//cout << "2nd Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
 							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
 							{
+								
+								if (vec_corr_charge[kpix] == nullptr)
+								{
+									vec_corr_charge[kpix] = new std::vector<double>;
+									if (vec_corr_charge[kpix]==nullptr)
+									{
+										std::cerr << "Memory allocation error for vector kpix " <<
+										kpix <<std::endl;
+										exit(-1); // probably best to bail out
+									}
+								} 
+								
+								//cout << "DEBUG 2.1 " << kpix << endl;
 								double charge_value = double(value)/calib_slope[kpix][channel];
 								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-							
-							
-							//if (calib_slope[kpix][channel] > 1 && calib_slope[kpix][channel] < 30)
-							//{
-								
-								vec_corr_charge[kpix].push_back(corrected_charge_value_median);
-								
-								
-								
-								
-
-								//if (CM2[kpix]/hitcounter[kpix] > 2)
-								//{
-								//cout << "KPiX Number = " << kpix << "        cycle number = " << acqProcessed << "             channel = " << channel << "                  charge value = " << charge_value << "                 pedestal_gauss = " << pedestal_gauss[kpix][channel][0] <<  "            common mode = " <<  CM2[kpix]/hitcounter[kpix] << endl;
-								//if (channel == 373) cout << "KPiX Number = " << kpix << "       channel = " << channel << "                  pedestal median = " << pedestal_median[kpix][channel][0] << endl;
-								
-								//}
-								
+								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
+								//cout << "Pointer of vec_corr_charge " << vec_corr_charge[kpix] << endl;
 							}
 						}
 					}
-					
-					
 				}
-				//cout << "KPIX: " << kpix << endl;
-				//cout << "Channel: " << channel << endl;
-				
 			}
-			for (int k = 0; k < kpix_checking ; k++)
+			for (unsigned int k = 0; k < n_kpix ; k++)
 			{
-				if (vec_corr_charge[k].size() != 0)
+				//cout << "Pointer of vec_corr_charge " << vec_corr_charge[k] << endl;
+				if (vec_corr_charge[k] != nullptr) 
 				{
+					//cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl; 
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
-					//cout << "Common mode median of KPiX " << k << " is " << median(vec_corr_charge[k]) << endl;
-					//}
-					//cout << "Event_number " << event.eventNumber() << endl;
-					//cout << "KPiX Number = " << kpix <<  "            common mode mean calculated = " << CM2[k]/hitcounter[k] <<  "            common mode median calculated = " << median(vec_corr_charge[k]) << endl;
+					delete vec_corr_charge[k];
+					//cout << "Common modes median of EventNumber " << event.eventNumber() << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
+					vec_corr_charge[k] = nullptr;
+					
 				}
 			}
+			
 		}
 		else 
 		{
@@ -505,7 +502,6 @@ int main ( int argc, char **argv )
 			auto train = event.eventNumber();
 			if (f_skipped_cycles!=NULL)
 			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
-		
 		}
 	}
 	
@@ -515,7 +511,6 @@ int main ( int argc, char **argv )
 		cout << "Wrote skipped cycles to " << outtxt << endl;
 		cout << endl;
 	}
-	cout <<"DEBUG 4" << endl;
 	//cout << "DEBUG: 3" << endl;
 	//cout << tstamp << endl;
 	dataRead.close();
@@ -541,9 +536,8 @@ int main ( int argc, char **argv )
 
 	//TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
 	
-	for (sensor = 0; sensor < kpix_checking/2; sensor++) //looping through all possible kpix
+	for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
 	{
-		//cout << "DEBUG test " << kpixFound[kpix] << endl;
 		if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
 		{
 			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
@@ -553,7 +547,7 @@ int main ( int argc, char **argv )
 			TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
 			sensor_folder->cd();
 			
-			for (int s = sensor+1; s < kpix_checking/2; ++s)
+			for (int s = sensor+1; s < n_kpix/2; ++s)
 			{
 				tmp.str("");
 				tmp << "cluster_offset_seed_y_sens" << sensor << "_to_sens" << s << "_b0";
@@ -880,7 +874,6 @@ int main ( int argc, char **argv )
 		}
 		
 	}
-	cout <<"DEBUG 5" << endl;
 	//////////////////////////////////////////
 	// Data read for all events for detailed look
 	//////////////////////////////////////////
@@ -891,14 +884,11 @@ int main ( int argc, char **argv )
 	int header = 1;
 	
 
-	int clstrcounter[kpix_checking][1840] = {0};
+	int clstrcounter[n_kpix][1840] = {0};
 	
 	
-	std::vector<double> corrected_charge_vec[kpix_checking][1024];
-	std::vector<double> corrected_charge_vec_time[kpix_checking][8192];
-	
-	//std::vector<double> corrected_charge_vec_time_0_200[kpix_checking][8192];
-	//std::vector<double> corrected_charge_vec_time_201_1023[kpix_checking][8192];
+	std::vector<double>* corrected_charge_vec[n_kpix][n_channels] = {nullptr};
+	std::vector<double>* corrected_charge_vec_time[n_kpix][n_BCC]  = {nullptr};
 	
 	unordered_map<uint, uint> noise_mask[6];
 	noise_mask[0] = noise_sensor_0();
@@ -913,38 +903,55 @@ int main ( int argc, char **argv )
 		int not_empty= 0;
 		for (x=0; x < event.count(); x++)
 		{
-			
-			for (x=0; x < event.count(); x++)
+			//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
+			//// Get sample
+			sample  = event.sample(x);
+			kpix    = sample->getKpixAddress();
+			channel = sample->getKpixChannel();
+			bucket  = sample->getKpixBucket();
+			value   = sample->getSampleValue();
+			type    = sample->getSampleType();
+			tstamp  = sample->getSampleTime();
+			sensor = kpix/2;
+			unsigned int block = channel/32;
+			bunchClk = sample->getBunchCount();
+			subCount = sample->getSubCount();
+		
+			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{
-				//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
-				//// Get sample
-				sample  = event.sample(x);
-				kpix    = sample->getKpixAddress();
-				channel = sample->getKpixChannel();
-				bucket  = sample->getKpixBucket();
-				value   = sample->getSampleValue();
-				type    = sample->getSampleType();
-				tstamp  = sample->getSampleTime();
-				sensor = kpix/2;
-				bunchClk = sample->getBunchCount();
-				subCount = sample->getSubCount();
-			
-				if ( type == KpixSample::Data ) // If event is of type KPiX data
+				if (bucket == 0)
 				{
-					if (bucket == 0)
+					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
 					{
-						if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
+						//cout << "DEBUG 1" << endl;
+						double charge_value = double(value)/calib_slope[kpix][channel];
+						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
 						{
-							double charge_value = double(value)/calib_slope[kpix][channel];
-							double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-							double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-							corrected_charge_vec[kpix][channel].push_back(charge_CM_corrected);
-							corrected_charge_vec_time[kpix][int(tstamp)].push_back(charge_CM_corrected);
-							//if (channel < 201)  corrected_charge_vec_time_0_200[kpix][int(tstamp)].push_back(charge_CM_corrected);
-							//else corrected_charge_vec_time_201_1023[kpix][int(tstamp)].push_back(charge_CM_corrected);
-						}
-						//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
+							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
+							if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								kpix << " tstamp "  << tstamp <<" " <<std::endl;
+								exit(-1); // probably best to bail out
+							}
+						} 
+						if (corrected_charge_vec[kpix][channel] == NULL)
+						{
+							corrected_charge_vec[kpix][channel] = new std::vector<double>;
+							if (corrected_charge_vec[kpix][channel] == NULL)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								kpix << " tstamp "  << tstamp <<" " <<std::endl;
+								exit(-1); // probably best to bail out
+							}
+						} 
+						corrected_charge_vec[kpix][channel]->push_back(charge_CM_corrected);
+						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
+						
 					}
+					//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 				}
 			}
 		}
@@ -957,72 +964,57 @@ int main ( int argc, char **argv )
 		}
 	}
 	dataRead.close();
-	cout <<"DEBUG 6" << endl;
 	
 	 // END OF PREREAD
 	 // BEGIN OF NOISE CALCULATION
-	for (int k = 0; k < kpix_checking; ++k)
+	for (int k = 0; k < n_kpix; ++k)
 	{
 		if (kpixFound[k])
 		{
 			int sensor = k/2;
-			for (int c = 0; c < 1024; ++c)
+			for (int c = 0; c < n_channels; ++c)
 			{
-				int sensor = k/2;
-				int strip = 9999;
-				if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
-				else strip  = kpix2strip_right.at(c); // if right kpix
-				
-				if (pedestal_MedMAD[k][c][0][1] != 0)
+				if (channelFound[k][c])
 				{
-					y = yParameterSensor(strip, sensor);
-					
-					noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-					//if (MAD(corrected_charge_vec[k][c]) == 0)
-					//{
-						////cout << "2KPIX " << k << " Channel " << c << endl;
-						////for (auto const& i : corrected_charge_vec[k][c])
-						////{
-							////cout << "Value is " << i << endl;
-						////}
-					//}
-					if (strip != 9999)
+					int strip = 9999;
+					if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
+					else strip  = kpix2strip_right.at(c); // if right kpix
+					if (pedestal_MedMAD[k][c][0][1] != 0)
 					{
-						noise_distribution[k]->Fill(noise[k][c]);
-						noise_distribution_sensor[sensor]->Fill(noise[k][c]);
-						noise_v_position[sensor]->Fill(y, noise[k][c]);
+						y = yParameterSensor(strip, sensor);
+						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+						//cout << "Noise of kpix " << k << " and channel " << c << " is " << noise[k][c] << endl;
+						if (strip != 9999)
+						{
+							noise_distribution[k]->Fill(noise[k][c]);
+							noise_distribution_sensor[sensor]->Fill(noise[k][c]);
+							noise_v_position[sensor]->Fill(y, noise[k][c]);
+						}
+						noise_v_channel[k]->SetBinContent(c+1, noise[k][c]);
+						
 					}
-					noise_v_channel[k]->Fill(c, noise[k][c]);
-					
 				}
 				
 			}
-			for (int t = 0; t < 8192; ++t)
+			for (int t = 0; t < n_BCC ; ++t)
 			{
-				noise_v_time[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time[k][t]));
-				
-				//noise_v_time_0_200[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time_0_200[k][t]));
-				//noise_v_time_201_1023[sensor]->Fill(t, 1.4826*MAD(corrected_charge_vec_time_201_1023[k][t]));
-			}
-			//cout << "DEBUG1: " << noise_distribution[k]->GetMean() << endl;
-			//mean_noise->Fill(noise_distribution[k]->GetMean());
-			//cout << "DEBUG2: " << endl;
+				noise_v_time[sensor]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
+			}	
 		}
 	}
+	
 	/////////////////////////////////////////////////////////
 	//// BEGIN OF CLUSTER READ
 	dataRead.open(argv[1]);
-	
 	
 	int global_trig_counter = 0;
 	
 	while ( dataRead.next(&event) )
 	{
 		int not_empty= 0;
-		
 		std::vector<double> time_ext;
-		std::map<int, double> cluster_Events_after_cut[kpix_checking/2];
-		std::map<int, double> cluster_Noise_after_cut[kpix_checking/2];
+		std::map<int, double> cluster_Events_after_cut[n_kpix/2];
+		std::map<int, double> cluster_Noise_after_cut[n_kpix/2];
 		
 		frameruntime = event.runtime();
 
@@ -1086,7 +1078,6 @@ int main ( int argc, char **argv )
 						double charge_value = double(value)/calib_slope[kpix][channel];
 						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
 						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-                
 						//// ========= Event cut ============
                 
 						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
@@ -1109,9 +1100,9 @@ int main ( int argc, char **argv )
 		if (not_empty == 1) //if event is not empty
 		{
 			//cout << "DEBUG 1" << endl;
-			clustr Cluster[kpix_checking/2];  // Another Cluster class variable
-			std::vector<clustr> multi_cluster[8][kpix_checking/2];
-			for (sensor = 0; sensor < kpix_checking/2; sensor++)
+			clustr Cluster[n_kpix/2];  // Another Cluster class variable
+			std::vector<clustr> multi_cluster[8][n_kpix/2];
+			for (sensor = 0; sensor < n_kpix/2; sensor++)
 			{
 				std::vector<clustr>::iterator it_SoN;
 				if ( cluster_Events_after_cut[sensor].size() != 0 )
@@ -1134,7 +1125,6 @@ int main ( int argc, char **argv )
 						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
 						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
 						NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
-						//cout << "DEBUG 3" << endl;
 						if (num_of_clusters == 0)
 						{
 							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -1156,9 +1146,7 @@ int main ( int argc, char **argv )
 						cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
 						cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
 						multi_cluster[1][sensor].push_back(NomNom.getCluster());
-						//cout << "Significance: " << NomNom.getClusterSignificance() << endl;
-						//cout << "DEBUG 4" << endl;
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 1.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 1.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1168,7 +1156,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][2]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[2][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][4]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][4]->Fill(NomNom.getClusterCharge(), weight);
@@ -1178,7 +1166,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][4]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[4][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 3.0 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 3.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][5]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][5]->Fill(NomNom.getClusterCharge(), weight);
@@ -1188,7 +1176,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][5]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[5][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.5 && NomNom.getClusterElementssize() < 3)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.5 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][6]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][6]->Fill(NomNom.getClusterCharge(), weight);
@@ -1198,7 +1186,7 @@ int main ( int argc, char **argv )
 							cluster_sigma[sensor][6]->Fill(NomNom.getClusterSigma(), weight);
 							multi_cluster[6][sensor].push_back(NomNom.getCluster());
 						}
-						if (NomNom.getClusterSignificance() > 4.0 && NomNom.getClusterCharge() > 2.0)
+						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.0)
 						{
 							cluster_position_y[sensor][7]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 							cluster_charge[sensor][7]->Fill(NomNom.getClusterCharge(), weight);
@@ -1216,7 +1204,6 @@ int main ( int argc, char **argv )
 						claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor2layer.at(sensor)  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << setw(7) << NomNom.getClusterSignificance() << " ," << setw(2) << NomNom.getClusterElementssize() << " ," << setw(7) << NomNom.getClusterCharge() << " ," << tmp.str().c_str() << endl;
 						
 						num_of_clusters++;
-						//cout << "DEBUG 5" << endl;
 						//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;
 					}
 					clusters[sensor]->Fill(num_of_clusters);
@@ -1225,7 +1212,6 @@ int main ( int argc, char **argv )
 					{
 						return lhs.Significance > rhs.Significance;
 					});
-					//cout << "DEBUG 6" << endl;
 					//should now only fill the most significant cluster
 					if ( multi_cluster[0][sensor].size() != 0)
 					{
@@ -1238,10 +1224,9 @@ int main ( int argc, char **argv )
 					}
 				}
 			}
-			//cout << "DEBUG 7" << endl;
-			for (int sensor1 = 0; sensor1 < kpix_checking/2; sensor1++)
+			for (int sensor1 = 0; sensor1 < n_kpix/2; sensor1++)
 			{
-				for (int sensor2 = sensor1+1; sensor2 < kpix_checking/2; sensor2++)
+				for (int sensor2 = sensor1+1; sensor2 < n_kpix/2; sensor2++)
 				{
 					for (auto const& s1 : multi_cluster[0][sensor1])
 					{
@@ -1250,10 +1235,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[0][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[0][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[1][sensor1])
@@ -1263,10 +1246,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[1][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[1][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[2][sensor1])
@@ -1276,10 +1257,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[2][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[2][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[3][sensor1])
@@ -1289,10 +1268,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[3][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[3][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[4][sensor1])
@@ -1302,10 +1279,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[4][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[4][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[5][sensor1])
@@ -1315,10 +1290,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[5][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[5][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[6][sensor1])
@@ -1328,10 +1301,8 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[6][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[6][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 					for (auto const& s1 : multi_cluster[7][sensor1])
@@ -1341,19 +1312,14 @@ int main ( int argc, char **argv )
 							double y1 = yParameterSensor(s1.CoG, sensor1);
 							double y2 = yParameterSensor(s2.CoG, sensor2);
 							double clstroffset_y  = y1 - y2;
-							//cout << "Cluster offset is " << clstroffset << endl;
 							cluster_offset_y[7][sensor1][sensor2]->Fill(clstroffset_y, weight);
 							cluster_correlation[7][sensor1][sensor2]->Fill(y1,y2);
-							//cout << "DEBUG 8" << endl;
 						}
 					}
 				}
 			}
 			
 		}
-		
-		
-		
 	////   Show progress
 		filePos  = dataRead.pos();
 		currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
@@ -1364,7 +1330,6 @@ int main ( int argc, char **argv )
 		}
 		
 	}
-	
 	////// Noise mask generation. ONLY USE WHEN NO MASK IS PUT IN!
 	//noise_file.open("include/testbeam201905_noise_mask.h");
 	//for (int s = 0; s < 6; ++s)

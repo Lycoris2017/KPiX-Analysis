@@ -146,7 +146,16 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	int bucket_checking = 1;
+	const unsigned int n_buckets = 1;
+	const unsigned int n_kpix = 2;
+	const unsigned int n_blocks = 32;
+	const unsigned int n_channels = 1024;
+	const unsigned int n_BCC = 8192;
+	const unsigned int n_strips = 1840;
+	
+	const unsigned int n_input_kpix = 24;
+	const unsigned int n_input_buckets = 4;
+	const unsigned int n_input_channels = 1024;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -156,8 +165,9 @@ int main ( int argc, char **argv )
 	string                 calState;
 	uint                   lastPct;
 	uint                   currPct;
-	bool                   kpixFound[2] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
-	bool                   chanFound[2][1024] = {false};
+	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+	bool                   channelFound[n_kpix][n_channels] = {false};
+	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
 	uint                   x;
 	uint                   value;
 	uint                   kpix;
@@ -176,15 +186,15 @@ int main ( int argc, char **argv )
 
 	//TTree*					cluster_tree;
 	
-	TH1F					*fc_response_medCM_subtracted[2];
+	TH1F					*fc_response_medCM_subtracted[n_kpix];
 		
-	TH1F					*noise_distribution[2];
+	TH1F					*noise_distribution[n_kpix];
 	TH1F					*noise_distribution_sensor;
 	TH1F					*noise_v_position;
-	TH1F					*noise_v_channel[2];
-	
-	TH1F					*noise_v_time[2];
-	TH1F					*noise_v_time_block[2][32];
+	TH1F					*noise_v_channel[n_kpix];
+	TGraphErrors 			*noise_v_time_graph;
+	TH1F					*noise_v_time[n_kpix];
+	TH1F					*noise_v_time_block[n_kpix][n_blocks];
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -194,12 +204,11 @@ int main ( int argc, char **argv )
 	
 	stringstream			FolderName;
 	
-	ofstream				claus_file;
 	ofstream				noise_file;
 	ofstream               xml;
 	ofstream               csv;
-	uint                   acqCount; // acquisitionCount
-	uint                   acqProcessed;
+	unsigned int           acqCount; // acquisitionCount
+	unsigned int           acqProcessed;
 	string                 outRoot;
 	TFile                  *rFile;
 	stringstream           crossString;
@@ -208,12 +217,12 @@ int main ( int argc, char **argv )
 	ofstream               debug;
 	
 	// Calibration slope, is filled when 
-	double					calib_slope[24][1024] = {1}; //ADD buckets later.
+	double					calib_slope[n_input_kpix][n_input_channels] = {1}; //ADD buckets later.
 	
-	double					pedestal_MedMAD[24][1024][4][2] = {0};
+	double					pedestal_MedMAD[n_input_kpix][n_input_channels][n_input_buckets][2] = {0};
 	int						calibration_check = 0;
-	double 					noise[2][1024];
-	double 					MaximumSoN[1840] = {0};
+	double 					noise[n_kpix][n_channels];
+	double 					MaximumSoN[n_strips] = {0};
 	//int						pedestal_check = 0;
 	
 	unordered_map<uint, uint> kpix2strip_left;
@@ -223,7 +232,7 @@ int main ( int argc, char **argv )
 	kpix2strip_left = kpix_left();
 	kpix2strip_right = kpix_right();
 	
-	pixel					pixel_kpix[1024];
+	pixel					pixel_kpix[n_channels];
 	pixel_mapping(pixel_kpix);
 	
 	unordered_map<uint, uint> sensor2layer;
@@ -394,19 +403,16 @@ int main ( int argc, char **argv )
 	// Open root file
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
-	
-	std::map<int, double> common_modes_median[2];
+	vector<double>* vec_corr_charge[n_kpix]; //delete does not work if I do not initialize all vectors
+	std::map<int, double> common_modes_median[n_kpix];
 	while ( dataRead.next(&event) ) // event read to check for filled channels and kpix to reduce number of empty histograms.
 	{
+		
 		acqCount++;		
-		int cycle_time_local[2][8192] = {0}; //list for each kpix that is part of improved monster finder
-		
-		
-
 		if (acqCount > skip_cycles_front)
 		{
 			acqProcessed++;
-			vector<double> vec_corr_charge[2];
+			
 			
 			for (x=0; x < event.count(); x++)
 			{
@@ -421,60 +427,53 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
 				
 				//cout << type <<endl;
-				
+				//cout << "DEBUG 2" << endl;
 				if ( type == KpixSample::Data )
 				{
+					//cout << kpix << endl;
 					kpixFound[kpix]          = true;
-					chanFound[kpix][channel] = true;
-					cycle_time_local[kpix][int(tstamp)]+=1;
+					channelFound[kpix][channel] = true;
+					bucketFound[kpix][channel][bucket] = true;
 					//cout << "Found KPIX " << kpix << endl;
-					
 					if (bucket == 0)
 					{
 						if (calibration_check == 1)
 						{
+							cout << "Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << endl;
 							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
 							{
+								
+								if (vec_corr_charge[kpix] == NULL)
+								{
+									vec_corr_charge[kpix] = new std::vector<double>;
+									if (vec_corr_charge[kpix]==NULL)
+									{
+										std::cerr << "Memory allocation error for vector kpix " <<
+										kpix <<std::endl;
+										exit(-1); // probably best to bail out
+									}
+								} 
+								
+								//cout << "DEBUG 2.1 " << kpix << endl;
 								double charge_value = double(value)/calib_slope[kpix][channel];
 								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-							
-							//if (calib_slope[kpix][channel] > 1 && calib_slope[kpix][channel] < 30)
-							//{
-								
-								vec_corr_charge[kpix].push_back(corrected_charge_value_median);
-								
-								
-								
-								
-
-								//if (CM2[kpix]/hitcounter[kpix] > 2)
-								//{
-								//cout << "KPiX Number = " << kpix << "        cycle number = " << acqProcessed << "             channel = " << channel << "                  charge value = " << charge_value << "                 pedestal_gauss = " << pedestal_gauss[kpix][channel][0] <<  "            common mode = " <<  CM2[kpix]/hitcounter[kpix] << endl;
-								//if (channel == 373) cout << "KPiX Number = " << kpix << "       channel = " << channel << "                  pedestal median = " << pedestal_median[kpix][channel][0] << endl;
-								
-								//}
-								
+								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
 							}
 						}
 					}
-					
-					
 				}
-				//cout << "KPIX: " << kpix << endl;
-				//cout << "Channel: " << channel << endl;
-				
 			}
-			for (int k = 0; k < 2 ; k++)
+			for (unsigned int k = 0; k < n_kpix ; k++)
 			{
-				if (vec_corr_charge[k].size() != 0)
+				if (vec_corr_charge[k] != nullptr) 
 				{
+					//cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl; 
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
-					//cout << "Common mode median of KPiX " << k << " is " << median(vec_corr_charge[k]) << endl;
-					//}
-					//cout << "Event_number " << event.eventNumber() << endl;
-					//cout << "KPiX Number = " << kpix <<  "            common mode mean calculated = " << CM2[k]/hitcounter[k] <<  "            common mode median calculated = " << median(vec_corr_charge[k]) << endl;
+					delete vec_corr_charge[k];
+					vec_corr_charge[k] = NULL;
 				}
 			}
+			
 		}
 		else 
 		{
@@ -482,7 +481,6 @@ int main ( int argc, char **argv )
 			auto train = event.eventNumber();
 			if (f_skipped_cycles!=NULL)
 			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
-		
 		}
 	}
 	
@@ -495,7 +493,6 @@ int main ( int argc, char **argv )
 	//cout << tstamp << endl;
 	dataRead.close();
 	double weight = 1.0/acqProcessed;
-	;//acqProcessed;
 	
 	
 	
@@ -503,9 +500,9 @@ int main ( int argc, char **argv )
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
 	
-	int response_bins = 220;
-	double response_xmin = -20.5;
-	double response_xmax = 19.5;
+	const unsigned int response_bins = 220;
+	const double response_xmin = -20.5;
+	const double response_xmax = 19.5;
 	
 	
 	//clustr* clusttree = new clustr;
@@ -571,6 +568,7 @@ int main ( int argc, char **argv )
 					tmp_units << "noise_v_time; Time (BCC); Noise (fC) ";
 					noise_v_time[kpix]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 4096, 0, 8191);
 					
+					
 					for (int b = 0; b < 32; ++b)
 					{
 						tmp.str("");
@@ -590,21 +588,14 @@ int main ( int argc, char **argv )
 	// Data read for all events for detailed look
 	//////////////////////////////////////////
 	dataRead.open(argv[1]); //open file again to start from the beginning
-	
-	claus_file.open("claus_file_new.txt");
+
 
 	int header = 1;
 	
-	std::vector<double> corrected_charge_vec[2][1024];
-	std::vector<double> corrected_charge_vec_time_block[2][4096][32];
-	
-	unordered_map<uint, uint> noise_mask[6];
-	noise_mask[0] = noise_sensor_0();
-	noise_mask[1] = noise_sensor_1();
-	noise_mask[2] = noise_sensor_2();
-	noise_mask[3] = noise_sensor_3();
-	noise_mask[4] = noise_sensor_4();
-	noise_mask[5] = noise_sensor_5();
+	std::vector<double>* corrected_charge_vec[n_kpix][n_channels] = {nullptr};
+	std::vector<double>* corrected_charge_vec_time[n_kpix][n_BCC]  = {nullptr};
+	std::vector<double>* corrected_charge_vec_time_block[n_kpix][n_BCC][n_blocks]  = {nullptr};
+	//std::vector<double>* test[n_kpix][n_channels] = {nullptr}; // = { new std::vector<double> };
 	
 	while ( dataRead.next(&event) ) //preread to determine noise value of each channel in each KPiX.
 	{
@@ -621,7 +612,7 @@ int main ( int argc, char **argv )
 			type    = sample->getSampleType();
 			tstamp  = sample->getSampleTime();
 			sensor = kpix/2;
-			int block = channel/32;
+			unsigned int block = channel/32;
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
 		
@@ -631,11 +622,46 @@ int main ( int argc, char **argv )
 				{
 					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
 					{
+						//cout << "DEBUG 1" << endl;
 						double charge_value = double(value)/calib_slope[kpix][channel];
 						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
 						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-						corrected_charge_vec[kpix][channel].push_back(charge_CM_corrected);
-						corrected_charge_vec_time_block[kpix][int(tstamp)/2][block].push_back(charge_CM_corrected);
+						
+						
+						if (corrected_charge_vec_time_block[kpix][int(tstamp)][block] == NULL)
+						{
+							corrected_charge_vec_time_block[kpix][int(tstamp)][block] = new std::vector<double>;
+							if (corrected_charge_vec_time_block[kpix][int(tstamp)][block]==NULL)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								kpix << " tstamp "  << tstamp << " block "<< block <<" " <<std::endl;
+								exit(-1); // probably best to bail out
+							}
+						}
+						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
+						{
+							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
+							if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								kpix << " tstamp "  << tstamp <<" " <<std::endl;
+								exit(-1); // probably best to bail out
+							}
+						} 
+						if (corrected_charge_vec[kpix][channel] == NULL)
+						{
+							corrected_charge_vec[kpix][channel] = new std::vector<double>;
+							if (corrected_charge_vec[kpix][channel] == NULL)
+							{
+								std::cerr << "Memory allocation error for vector kpix " <<
+								kpix << " tstamp "  << tstamp <<" " <<std::endl;
+								exit(-1); // probably best to bail out
+							}
+						} 
+						corrected_charge_vec[kpix][channel]->push_back(charge_CM_corrected);
+						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
+						corrected_charge_vec_time_block[kpix][int(tstamp)][block]->push_back(charge_CM_corrected);
+						
 					}
 					//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 				}
@@ -653,54 +679,69 @@ int main ( int argc, char **argv )
 	
 	 // END OF PREREAD
 	 // BEGIN OF NOISE CALCULATION
-	for (int k = 0; k < 2; ++k)
+	for (int k = 0; k < n_kpix; ++k)
 	{
 		if (kpixFound[k])
 		{
+			double x[n_BCC];
+			double x_err[n_BCC];
+			double y_graph[n_BCC];
+			double y_graph_err[n_BCC];
 			int sensor = k/2;
-			for (int c = 0; c < 1024; ++c)
+			for (int c = 0; c < n_channels; ++c)
 			{
-				int sensor = k/2;
-				int strip = 9999;
-				if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
-				else strip  = kpix2strip_right.at(c); // if right kpix
-				
-				if (pedestal_MedMAD[k][c][0][1] != 0)
+				if (channelFound[k][c])
 				{
-					y = yParameterSensor(strip, sensor);
+					int sensor = k/2;
+					int strip = 9999;
+					if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
+					else strip  = kpix2strip_right.at(c); // if right kpix
 					
-					noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-					//if (MAD(corrected_charge_vec[k][c]) == 0)
-					//{
-						////cout << "2KPIX " << k << " Channel " << c << endl;
-						////for (auto const& i : corrected_charge_vec[k][c])
-						////{
-							////cout << "Value is " << i << endl;
-						////}
-					//}
-					if (strip != 9999)
+					if (pedestal_MedMAD[k][c][0][1] != 0)
 					{
-						noise_distribution[k]->Fill(noise[k][c]);
-						noise_distribution_sensor->Fill(noise[k][c]);
-						noise_v_position->Fill(y, noise[k][c]);
+						y = yParameterSensor(strip, sensor);
+						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+						if (strip != 9999)
+						{
+							noise_distribution[k]->Fill(noise[k][c]);
+							noise_distribution_sensor->Fill(noise[k][c]);
+							noise_v_position->Fill(y, noise[k][c]);
+						}
+						noise_v_channel[k]->SetBinContent(c+1, noise[k][c]);
+						
 					}
-					noise_v_channel[k]->Fill(c, noise[k][c]);
-					
 				}
 				
 			}
-			for (int t = 0; t < 4096; ++t)
+			for (int t = 0; t < n_BCC ; ++t)
 			{
 				
-				for (int b = 0; b < 32;  ++b)
+				for (int b = 0; b < n_blocks;  ++b)
 				{
-					noise_v_time_block[k][b]->Fill(t*2, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
-					noise_v_time[k]->Fill(t*2, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
+					noise_v_time_block[k][b]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
+					
 				}
-			}
+				noise_v_time[k]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
+				x[t] = t;
+				x_err[t] = 0;
+				y_graph[t] = 1.4826*MAD(corrected_charge_vec_time[k][t]);
+				y_graph_err[t] = 0;
+				//cout << x[t] << endl;
+			}	
+			noise_v_time_graph = new TGraphErrors(2*n_BCC ,x, y_graph, x_err, y_graph_err);
+			noise_v_time_graph->Draw("Ap");
+			noise_v_time_graph->GetXaxis()->SetTitle("Time (BCC)");
+			noise_v_time_graph->GetYaxis()->SetTitle("Noise (fC)");
+			tmp.str("");
+			tmp << "noise_v_time_graph_k" << k;
+			
+			noise_v_time_graph->SetTitle(tmp.str().c_str());
+			
+			noise_v_time_graph->Write(tmp.str().c_str());
+			
+			
 		}
 	}
-	claus_file.close();
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
