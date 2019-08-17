@@ -303,7 +303,7 @@ int main ( int argc, char **argv )
 	pedestal = new TTree("pedestal_tree", "A ROOT Tree");
 	pedestal->Branch("pedestal_median", &pedestal_median, "pedestal_median/D");
 	pedestal->Branch("kpix_num", &kpix_num, "kpix_num/I");
-	pedestal->Branch("channel_num", &channel_num, "channel_num/I:");
+	pedestal->Branch("channel_num", &channel_num, "channel_num/I");
 	pedestal->Branch("bucket_num", &bucket_num, "bucket_num/I");
 	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
 		
