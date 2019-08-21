@@ -439,7 +439,7 @@ int main ( int argc, char **argv )
 					{
 						if (calibration_check == 1)
 						{
-							cout << "Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << endl;
+							//cout << "Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << endl;
 							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
 							{
 								

@@ -180,7 +180,7 @@ def hist_plotter():
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1]+3)
-			
+			obj.SetFillColor(args.color[counter-1])
 
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -328,6 +328,7 @@ def hist_plotter():
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1])
+			obj.SetFillColor(args.color[counter-1])
 			
 			if (args.xtitle):
 				x_title = args.xtitle
@@ -418,7 +419,7 @@ def hist_plotter():
 			x_high = None
 			y_low = None
 			y_high = None
-			c1 = ROOT.TCanvas( 'test', 'Test', 1200,900 ) #
+			c1 = ROOT.TCanvas( 'test', 'Test', args.aratio[0], args.aratio[1] ) #
 			obj = histogram.ReadObj()
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
 			x_axis = obj.GetXaxis()
@@ -500,7 +501,10 @@ def graph_plotter():
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
 		drawing_option = args.draw_option.replace('same', 'A') 
-		c1 = ROOT.TCanvas( args.output_name, 'Test', 1200, 900 )
+		if (args.output_name):
+			c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
+		else:
+			c1 = ROOT.TCanvas( 'test', 'Test', args.aratio[0], args.aratio[1] ) #
 		c1.cd()
 		c1.SetFillColor(0)
 		statBoxW = 0.2
@@ -534,20 +538,27 @@ def graph_plotter():
 			##adjust the xrange
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1])
-
+			obj.SetFillColor(args.color[counter-1])
 			
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
-			multi_graph.Add(obj)
-			##------------------
-			##adjust legend and the x and y title name if chosen
 			if (not args.legend):
 				if len(filename_list) > 1:
+					print "A"
 					legend.AddEntry(obj, filename_list[counter-1]+'_'+graph.GetName())
 				else:
+					print "B"
 					legend.AddEntry(obj, '_'+graph.GetName())
 			else:
+				print "C"
 				legend.AddEntry(obj, args.legend[counter-1])
+			
+			
+			multi_graph.Add(obj,"PL")
+			
+			##------------------
+			##adjust legend and the x and y title name if chosen
+			
 			counter +=1
 			if (args.xtitle):
 				x_title = args.xtitle
@@ -565,6 +576,8 @@ def graph_plotter():
 		##------------------
 		##draw histogram + components and save the file
 		multi_graph.Draw(drawing_option)
+		legend.Draw()
+		c1.BuildLegend()
 		xaxis = multi_graph.GetXaxis()
 		xaxis.SetTitle(x_title)
 		if 9999 not in args.xaxisrange:
@@ -575,14 +588,19 @@ def graph_plotter():
 			print 'test'
 		yaxis.SetTitle(y_title)
 		#if (args.ylog is True):
-		legend.Draw()
+		
+		
 		if (args.output_name):
 			outname = folder_loc+filename_list[0]+'_'+args.output_name
 			print 'Creating '+outname
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
 		else:
-			outname = folder_loc+filename_list[0]+'_'+graph.GetName()
+			search_name=''
+			for q in args.name:
+				search_name = search_name + '_' + q
+			print search_name
+			outname = folder_loc+filename_list[0]+'graphs_w'+search_name
 			print 'Creating '+outname+'.png'
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
@@ -593,7 +611,7 @@ def graph_plotter():
 			##------------------
 			##loop through the histograms, get all parameters and adjust the xrange
 			#ROOT.gROOT.SetBatch(1)
-			c1 = ROOT.TCanvas( 'test', 'Test', 1200,900 ) #
+			c1 = ROOT.TCanvas( 'test', 'Test', args.aratio[0], args.aratio[1] ) #
 			obj = graph.ReadObj()
 			#print 'Number of entries =', obj.GetEntries()
 			x_axis = obj.GetXaxis()
@@ -623,6 +641,10 @@ def graph_plotter():
 				#c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
 			else:
+				search_name=''
+				for q in args.name:
+					search_name = search_name + '_' + q
+				print search_name
 				outname = folder_loc+filename_list[0]+'_'+graph.GetName()
 				print 'Creating '+outname+'.pvg'
 				#c1.SaveAs(outname+'.svg')
@@ -709,7 +731,7 @@ mystyle.SetHistLineWidth(2)
 ##turn off stats
 #mystyle.SetOptStat(0) ##removes stat box
 mystyle.SetOptStat(1001111)
-mystyle.SetOptFit(111)
+#mystyle.SetOptFit(111)
 #
 ##marker settings
 mystyle.SetMarkerStyle(20)
@@ -789,7 +811,10 @@ for root_file in args.file_in:
 	
 	#if (args.newdaq is True):
 		#print "HUH"
-	filename_list.append(root_file[root_file.find('data/')+5:root_file.rfind('.dat')+1])
+	if '/Run_' in root_file:
+		filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
+	elif '/Calibration_' in root_file:
+		filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
 	#else:
 		#filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
 print filename_list

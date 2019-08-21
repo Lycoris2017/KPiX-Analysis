@@ -297,6 +297,9 @@ int main ( int argc, char **argv ) {
   
 	TH1F				*pedestals_fc_0_127[24][4];
 	TH1F				*slope_hist[24][4];
+        TH1F				*MissingCalDac[24][4];
+        TH1F				*MissingCalDacChannel[24][4];
+        TH1F				*slope_err_hist[24][4];
 	TH1F				*slope_hist_0RMS[24][4];
 	TH1F				*slope_hist_conn[24][4];
 	TH1F				*slope_hist_disc[24][4];
@@ -513,6 +516,12 @@ int main ( int argc, char **argv ) {
 			injectTime[3] = dataRead.getYmlConfigInt("KpixDaqCore:KpixAsicArray:KpixAsic[24]:Cal3Delay") + injectTime[2] + 4;
 			injectTime[4] = 8192;
 			
+			int test = dataRead.getYmlConfigInt("KpixDaqCore:KpixAsicArray:KpixAsic[24]:Cal0Delay.value");
+			cout << "Testing the output " << test << endl;
+			cout << "Testing the previous output " << injectTime[0] << endl ;
+			cout << "Testing another output " << minDac << endl << endl;
+			
+			
 			logfile << "CalDelay : [" << dec
 				<< injectTime[0] << ", "	
 				<< injectTime[1] << ", "
@@ -560,7 +569,7 @@ int main ( int argc, char **argv ) {
 				if ( calState == "Idle" ) chanData[kpix][channel][bucket][range]->addBasePoint(value);
 				
 				// Filter for time
-				else if ( tstamp > injectTime[bucket] && tstamp < injectTime[bucket+1] ) {
+                                else if ( tstamp > injectTime[bucket] && tstamp < injectTime[bucket+1] ) {
 					goodTimes++;
 					//cout << "Timestamp = " << tstamp << endl;
 					//cout << "Inject time of Bucket " << bucket << " = " << injectTime[bucket] << endl;
@@ -593,7 +602,7 @@ int main ( int argc, char **argv ) {
 					badTimes++;
 					//cout << "Timestamp = " << tstamp << endl;
 					//cout << "Inject time of Bucket " << bucket << " = " << injectTime[bucket] << endl;
-					//cout << "Inject time of Bucket " << bucket+1 << " = " << injectTime[bucket+1] << endl << endl;
+                                        //cout << "Inject time of Bucket " << bucket+1 << " = " << injectTime[bucket+1] << endl << endl;
 				}
 				
 			}
@@ -727,6 +736,10 @@ int main ( int argc, char **argv ) {
 				tmp.str("");
 				tmp << "slope_k" << kpix << "_b" << bucket;
 				slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; #entries", 200, -5, 35);
+
+                                tmp.str("");
+                                tmp << "slope_err_k" << kpix << "_b" << bucket;
+                                slope_err_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope Error [fC]; #entries", 200, -5, 35);
 				
 				tmp.str("");
 				tmp << "slope_0RMS_k" << kpix << "_b" << bucket;
@@ -746,7 +759,7 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
 				tmp << "slope_residual_k" << kpix << "_b" << bucket;
-				slope_residual[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope_residual; Slope_residual[ADC/fC]; #entries", 2000, -100, 100);
+                                slope_residual[kpix][bucket] = new TH1F(tmp.str().c_str(), "Mean_Slope_residual; Mean_Slope_residual[ADC]; #entries", 500, -0.5, 99.5);
 				
 				tmp.str("");
 				tmp << "slopeRMS_k" << kpix << "_b" << bucket;
@@ -767,6 +780,14 @@ int main ( int argc, char **argv ) {
 				tmp.str("");
 				tmp << "RMSfC_vs_channel_k" << kpix << "_b" << bucket;
 				RMSfC_vs_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestal RMS [fC]; Channel ID; Pedestal RMS [fC]", 1024, -0.5, 1023.5);
+
+                                tmp.str("");
+                                tmp << "MissinCalDac_k" << kpix << "_b" << bucket;
+                                MissingCalDac[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; CalDac;#Entries", 256, -0.5, 255.5);
+
+                                tmp.str("");
+                                tmp << "MissinCalDacChannel_k" << kpix << "_b" << bucket;
+                                MissingCalDacChannel[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; Channel;#Entries", 1024, -0.5, 1023.5);
 				
 				
 			}
@@ -1033,6 +1054,7 @@ for (kpix=0; kpix<24; kpix++)
 									// Calibration point is valid
 									if ( chanData[kpix][channel][bucket][range]->calibCount[x] > 0 ) 
 									{
+										if (chanData[kpix][channel][bucket][range]->calibCount[x] > 1) cout << "Found " << chanData[kpix][channel][bucket][range]->calibCount[x] << " values calibration values for DAC " << x << endl;
 										//cout << " Number of CalDacCounts for DAC " << x << " is " << chanData[kpix][channel][bucket][range]->calibCount[x] << endl;
 										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));
@@ -1070,6 +1092,12 @@ for (kpix=0; kpix<24; kpix++)
 											}
 										}
 									}
+                                                                        else if (chanData[kpix][channel][bucket][range]->calibCount[x] == 0 && x%5 == 0 && x > 200)
+                                                                        {
+                                                                            MissingCalDac[kpix][bucket]->Fill(x);
+                                                                            MissingCalDacChannel[kpix][bucket]->Fill(channel);
+                                                                            cout << "We have no calibration points for DAC value " << x << endl;
+                                                                        }
 								}
 								meanx = meanx/grCount;
 								meany = meany/grCount;
@@ -1095,7 +1123,7 @@ for (kpix=0; kpix<24; kpix++)
 									grCalib->Draw("Ap");
 									grCalib->GetXaxis()->SetTitle("Charge [fC]");
 									grCalib->GetYaxis()->SetTitle("ADC");
-									grCalib->Fit("pol1","eq");   // FIT DOES NOT WORK WHEN OPTION E IS GIVEN
+                                                                        grCalib->Fit("pol1","wq");   // FIT DOES NOT WORK WHEN OPTION E IS GIVEN
 									
 									//TF1 *f1=new TF1("f1", "[0]+x*[1]");
 									//cout << "test" << endl;
@@ -1111,7 +1139,7 @@ for (kpix=0; kpix<24; kpix++)
 									grCalibDAC->Draw("Ap");
 									grCalibDAC->GetXaxis()->SetTitle("Charge [DAC]");
 									grCalibDAC->GetYaxis()->SetTitle("ADC");
-									grCalibDAC->Fit("pol1","eq"); // FOR SOME REASON HERE IT DOES WORK
+                                                                        grCalibDAC->Fit("pol1","wq"); // FOR SOME REASON HERE IT DOES WORK
 									grCalibDAC->GetFunction("pol1")->SetLineWidth(1);
 									
 									
@@ -1135,7 +1163,13 @@ for (kpix=0; kpix<24; kpix++)
 									grCalibDAC->Write(tmp.str().c_str());
 				
 									// Create and store residual plot
-									for (x=0; x < grCount; x++) grRes[x] = (grY[x] - grCalib->GetFunction("pol1")->Eval(grX[x]));
+                                                                        double meanRes = 0;
+                                                                        for (x=0; x < grCount; x++)
+                                                                        {
+                                                                            grRes[x] = (grY[x] - grCalib->GetFunction("pol1")->Eval(grX[x]));
+                                                                            meanRes += fabs(grRes[x]);
+                                                                        }
+                                                                        meanRes = meanRes/grCount;
 									grResid = new TGraph(grCount,grX,grRes);
 									grResid->Draw("Ap");
 									grResid->GetXaxis()->SetTitle("Charge [C]");
@@ -1157,9 +1191,9 @@ for (kpix=0; kpix<24; kpix++)
 									{
 										chisqNdf = (grCalib->GetFunction("pol1")->GetChisquare() / grCalib->GetFunction("pol1")->GetNDF());
 										Double_t slope = grCalib->GetFunction("pol1")->GetParameter(1);
-										Double_t offset = offset;
+                                                                                Double_t slope_err = grCalib->GetFunction("pol1")->GetParError(1);
 										
-										
+										//if (chisqNdf > 100) cout << "Extremely high ChiSquare for channel " << channel << " of value " << chisqNdf << endl;
 										
 										
 										long double ped_charge = ( chanData[kpix][channel][bucket][range]->baseFitMean ) / slope;
@@ -1190,6 +1224,7 @@ for (kpix=0; kpix<24; kpix++)
 										}
 				
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
+                                                                                slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
 										if (channel >= 0 && channel <= 127) slope_hist_0_127[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
 				
 										slope_vs_channel[kpix][bucket]->SetBinContent( channel+1, slope  /* /pow(10,15) */);
@@ -1199,7 +1234,7 @@ for (kpix=0; kpix<24; kpix++)
 										RMSfC_vs_channel[kpix][bucket]->SetBinContent( channel+1, ped_charge_err  /* *pow(10,15) */);
 										
 				
-										slope_residual[kpix][bucket]->Fill( offset);
+                                                                                slope_residual[kpix][bucket]->Fill(meanRes);
 									
 
 										if (chanData[kpix][channel][bucket][range]->baseHistRMS == 0)
