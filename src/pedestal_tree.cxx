@@ -371,8 +371,8 @@ int main ( int argc, char **argv )
 					bucketFound[kpix][channel][bucket] = true;
 					channelFound[kpix][channel] = true;
 					kpixFound[kpix] = true;
-					if (kpix == 0)
-					cout <<"Weird!" << " k" << kpix << " c" << channel << " b" << bucket << " charge " << value << endl;
+                                        //if (kpix == 0)
+                                        //cout <<"Weird!" << " k" << kpix << " c" << channel << " b" << bucket << " charge " << value << endl;
 					if (calibration_check == 1)
 					{
 						double charge = value/calib_slope[kpix][channel];

@@ -1245,7 +1245,8 @@ for (kpix=0; kpix<24; kpix++)
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
                                         slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
                                         slope_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, slope );
-                                        RMSfC_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, ped_charge_err );
+										if (fabs(ped_charge_err) < 10)
+											RMSfC_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, ped_charge_err );
                                                                                
 										if (channel >= 0 && channel <= 127) slope_hist_0_127[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
 				

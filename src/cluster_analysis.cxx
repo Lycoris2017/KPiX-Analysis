@@ -148,10 +148,10 @@ int main ( int argc, char **argv )
 	
 	const unsigned int n_buckets = 4;
 	const unsigned int n_kpix = 24;
-	const unsigned int n_blocks = 32;
+//	const unsigned int n_blocks = 32;
 	const unsigned int n_channels = 1024;
 	const unsigned int n_BCC = 8192;
-	const unsigned int n_strips = 1840;
+//	const unsigned int n_strips = 1840;
 	
 	// cycles to skip in front:
 	long int                   skip_cycles_front;
@@ -163,7 +163,7 @@ int main ( int argc, char **argv )
 	uint                   currPct;
 	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
 	bool                   channelFound[n_kpix][n_channels] = {false};
-	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
+//	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
 	uint                   x;
 	uint                   value;
 	uint                   kpix;
@@ -450,7 +450,7 @@ int main ( int argc, char **argv )
 					//cout << kpix << endl;
 					kpixFound[kpix]          = true;
 					channelFound[kpix][channel] = true;
-					bucketFound[kpix][channel][bucket] = true;
+//					bucketFound[kpix][channel][bucket] = true;
 					//cout << "Found KPIX " << kpix << endl;
 					if (bucket == 0)
 					{
@@ -967,12 +967,12 @@ int main ( int argc, char **argv )
 	
 	 // END OF PREREAD
 	 // BEGIN OF NOISE CALCULATION
-	for (int k = 0; k < n_kpix; ++k)
+	for (unsigned int k = 0; k < n_kpix; ++k)
 	{
 		if (kpixFound[k])
 		{
 			int sensor = k/2;
-			for (int c = 0; c < n_channels; ++c)
+			for (unsigned int c = 0; c < n_channels; ++c)
 			{
 				if (channelFound[k][c])
 				{
@@ -996,7 +996,7 @@ int main ( int argc, char **argv )
 				}
 				
 			}
-			for (int t = 0; t < n_BCC ; ++t)
+			for (unsigned int t = 0; t < n_BCC ; ++t)
 			{
 				noise_v_time[sensor]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
 			}	
@@ -1116,7 +1116,7 @@ int main ( int argc, char **argv )
 					Input.Elements = cluster_Events_after_cut[sensor];
 					Input.Noise = cluster_Noise_after_cut[sensor];
 					int num_of_clusters = 0;
-					while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left or the number of clusters is higher than X (currently 5)
+										while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left
 					{
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
@@ -1125,6 +1125,7 @@ int main ( int argc, char **argv )
 						Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
 						MaximumSoN[sensor][Input.MaxSoN()]+=weight;
 						NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
+
 						if (num_of_clusters == 0)
 						{
 							cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -1317,8 +1318,42 @@ int main ( int argc, char **argv )
 						}
 					}
 				}
+				if (sensor1 < 4)
+				{
+					for (int s = 1; s < 5; ++s)
+					{
+						double sigma_cut = double(s);
+						for (int c = 1; c < 5; ++c)
+						{
+							double charge_cut = double(c);
+							for (int size_cut = 1; size_cut < 6; ++size_cut)
+							{
+								tmp.str("");
+								tmp << "cluster_position_y_s" << sensor1 << "_b0" << "_SigmaCut_" << sigma_cut << "_ChargeCut_" << charge_cut << "_SizeCut_" << size_cut;
+								TH1F* test = new TH1F(tmp.str().c_str(), "cluster position test; #mum; #Entries", 1840,-46000, 46000);
+								TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), 'cluster_pos', 900, 1600);
+								canvas1->cd();
+								for (auto const& s1 : multi_cluster[1][sensor1])
+								{
+									if (s1.Charge > charge_cut && s1.Significance2 > sigma_cut && s1.Elements.size() < size_cut )
+									{
+										test->Fill(s1.CoG);
+									}
+								}
+								test->Draw("pe");
+								stringstream tmp2;
+								tmp2.str("");
+								tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+								//											cout << tmp2.str() << endl;
+								canvas1->SaveAs(tmp2.str().c_str());
+								test = nullptr;
+								delete test;
+							}
+						}
+					}
+				}
+
 			}
-			
 		}
 	////   Show progress
 		filePos  = dataRead.pos();

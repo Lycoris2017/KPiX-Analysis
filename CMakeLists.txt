@@ -235,9 +235,6 @@ add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS pedestal_tree)
 
-add_executable(testing_functions ${PROJECT_SOURCE_DIR}/src/testing_functions.cxx)
-target_link_libraries(testing_functions ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS testing_functions)
 
 
 # tree builders:
