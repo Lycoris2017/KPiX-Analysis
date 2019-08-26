@@ -323,7 +323,7 @@ int main ( int argc, char **argv ) {
 	TH1F 				*pearson_vs_channel[24][4];
 	
 	TH2F 				*slope_mapped[24][4];
-	TH2F 				*RMSfC_mapped[24][4];
+	TH2F 				*RMSADC_mapped[24][4];
   
   
   
@@ -800,10 +800,10 @@ int main ( int argc, char **argv ) {
 				slope_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
 				
 				tmp.str("");
-				tmp << "RMSfC_mapped_k" << kpix << "_b" << bucket;
+				tmp << "RMSADC_mapped_k" << kpix << "_b" << bucket;
 				tmp_units.str("");
-				tmp_units << "RMSfC_mapped; kpix_x; kpix_y; RMSfC";
-				RMSfC_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
+				tmp_units << "RMSADC_mapped; kpix_x; kpix_y; RMSfC";
+				RMSADC_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
 				
 				
 			}
@@ -1218,6 +1218,9 @@ for (kpix=0; kpix<24; kpix++)
 										long double ped_charge = ( chanData[kpix][channel][bucket][range]->baseFitMean ) / slope;
 										long double ped_charge_err = (chanData[kpix][channel][bucket][range]->baseHistRMS) / slope ; // simple err
 										
+										long double ped_adc = ( chanData[kpix][channel][bucket][range]->baseFitMean );
+										long double ped_adc_err = (chanData[kpix][channel][bucket][range]->baseHistRMS); // simple err
+										
 										
 										pedestals_fc[kpix][bucket]->Fill( ped_charge /* *pow(10,15) */ );
 										if (channel >= 0 && channel <= 127) pedestals_fc_0_127[kpix][bucket]->Fill( ped_charge  /* *pow(10,15) */ );
@@ -1245,8 +1248,8 @@ for (kpix=0; kpix<24; kpix++)
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
                                         slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
                                         slope_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, slope );
-										if (fabs(ped_charge_err) < 10)
-											RMSfC_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, ped_charge_err );
+										if (fabs(ped_adc_err) < 400)
+											RMSADC_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, ped_adc_err );
                                                                                
 										if (channel >= 0 && channel <= 127) slope_hist_0_127[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
 				
