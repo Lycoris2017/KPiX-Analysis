@@ -222,6 +222,7 @@ int main ( int argc, char **argv ) {
   TH1F                   *hist;
   TH1F                   *resid[256];
   stringstream           tmp;
+  stringstream           tmp_units;
  // bool                   defresid=true;
   double                 grX[256];
   double                 grDAC[256];
@@ -320,6 +321,9 @@ int main ( int argc, char **argv ) {
 	
 	TH1F				*pearson_hist[24][4];
 	TH1F 				*pearson_vs_channel[24][4];
+	
+	TH2F 				*slope_mapped[24][4];
+	TH2F 				*RMSfC_mapped[24][4];
   
   
   
@@ -789,6 +793,18 @@ int main ( int argc, char **argv ) {
                                 tmp << "MissinCalDacChannel_k" << kpix << "_b" << bucket;
                                 MissingCalDacChannel[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; Channel;#Entries", 1024, -0.5, 1023.5);
 				
+				tmp.str("");
+				tmp << "slope_mapped_k" << kpix << "_b" << bucket;
+				tmp_units.str("");
+				tmp_units << "slope_mapped; kpix_x; kpix_y; slope";
+				slope_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
+				
+				tmp.str("");
+				tmp << "RMSfC_mapped_k" << kpix << "_b" << bucket;
+				tmp_units.str("");
+				tmp_units << "RMSfC_mapped; kpix_x; kpix_y; RMSfC";
+				RMSfC_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
+				
 				
 			}
 		}
@@ -1018,6 +1034,9 @@ for (kpix=0; kpix<24; kpix++)
 			// Channel is valid
 			if ( chanFound[kpix][channel] ) 
 			{
+				
+				int kpix_x = channel/32;
+				int kpix_y = channel%32;
 
 	  
 				// Each bucket
@@ -1054,7 +1073,7 @@ for (kpix=0; kpix<24; kpix++)
 									// Calibration point is valid
 									if ( chanData[kpix][channel][bucket][range]->calibCount[x] > 0 ) 
 									{
-										if (chanData[kpix][channel][bucket][range]->calibCount[x] > 1) cout << "Found " << chanData[kpix][channel][bucket][range]->calibCount[x] << " values calibration values for DAC " << x << endl;
+										if (chanData[kpix][channel][bucket][range]->calibCount[x] > 1) cout << "Found " << chanData[kpix][channel][bucket][range]->calibCount[x] << " values calibration values for DAC " << x << " channel " << channel << " kpix " << kpix << endl;
 										//cout << " Number of CalDacCounts for DAC " << x << " is " << chanData[kpix][channel][bucket][range]->calibCount[x] << endl;
 										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));
@@ -1096,7 +1115,7 @@ for (kpix=0; kpix<24; kpix++)
                                                                         {
                                                                             MissingCalDac[kpix][bucket]->Fill(x);
                                                                             MissingCalDacChannel[kpix][bucket]->Fill(channel);
-                                                                            cout << "We have no calibration points for DAC value " << x << endl;
+                                                                            cout << "We have no calibration points for DAC value " << x << " channel " << channel << " kpix " << kpix << endl;
                                                                         }
 								}
 								meanx = meanx/grCount;
@@ -1224,7 +1243,10 @@ for (kpix=0; kpix<24; kpix++)
 										}
 				
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
-                                                                                slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
+                                        slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
+                                        slope_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, slope );
+                                        RMSfC_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, ped_charge_err );
+                                                                               
 										if (channel >= 0 && channel <= 127) slope_hist_0_127[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
 				
 										slope_vs_channel[kpix][bucket]->SetBinContent( channel+1, slope  /* /pow(10,15) */);
