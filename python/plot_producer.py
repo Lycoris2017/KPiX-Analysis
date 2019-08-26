@@ -113,14 +113,21 @@ def hist_plotter():
 	if ('stack' in args.draw_option or 'nostack' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-
-		drawing_option = args.draw_option #exchange the same with a NOSTACK as I am using THStack
+		if ('nostack' not in args.draw_option):
+			f = args.draw_option.find('stack')
+			fend = f+5 ## End of stack
+			l = len(args.draw_option)
+			drawing_option = args.draw_option[0:f]+args.draw_option[fend:l] ##cutting out 'stack' from the string of drawing options
+			print "Using draw options: ", drawing_option
+		else:
+			drawing_option = args.draw_option #exchange the same with a NOSTACK as I am using THStack
+			print "Using draw options: ", drawing_option
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
 		
-		statBoxW = 0.2
-		statBoxH = 0.14
+		statBoxW = 0.15
+		statBoxH = 0.105
 		legend = ROOT.TLegend(args.legendloc[0], args.legendloc[1], args.legendloc[0]+statBoxW, args.legendloc[1]+statBoxH)
 		hist_comp = ROOT.THStack()
 		counter = 1
@@ -267,8 +274,8 @@ def hist_plotter():
 		c1.cd()
 		#c1.SetFillColor(0)
 		
-		statBoxW = 0.2
-		statBoxH = 0.14
+		statBoxW = 0.1
+		statBoxH = 0.07
 		print args.legendloc[0]
 		legend = ROOT.TLegend(0.8, 0.85, 0.8+statBoxW, 0.85+statBoxH)
 		counter = 1
@@ -395,13 +402,14 @@ def hist_plotter():
 		
 		c1.Modified()
 		c1.Update()
+		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+filename_list[0]+'_'+args.output_name
+			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
 		else:
-			outname = folder_loc+filename_list[0]+'_'+graph.GetName()
+			outname = folder_loc+run_name+'_'+graph.GetName()
 			print 'Creating '+outname+'.pvg'
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
@@ -480,14 +488,15 @@ def hist_plotter():
 				x_axis.SetTitle(args.xtitle)
 			if (args.ytitle):
 				y_axis.SetTitle(args.ytitle)
-			obj.Draw(args.draw_option)			
+			obj.Draw(args.draw_option)
+			run_name = filename_list[0][:-1]			
 			if (args.output_name):
-				outname = folder_loc+filename_list[0]+'_'+args.output_name
+				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
 				#c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
 			else:
-				outname = folder_loc+filename_list[0]+'_'+histogram.GetName()
+				outname = folder_loc+run_name+'_'+histogram.GetName()
 				print 'Creating '+outname+'.pvg'
 				#c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
@@ -507,8 +516,8 @@ def graph_plotter():
 			c1 = ROOT.TCanvas( 'test', 'Test', args.aratio[0], args.aratio[1] ) #
 		c1.cd()
 		c1.SetFillColor(0)
-		statBoxW = 0.2
-		statBoxH = 0.14
+		statBoxW = 0.15
+		statBoxH = 0.28
 		legend = ROOT.TLegend(args.legendloc[0], args.legendloc[1], args.legendloc[0]+statBoxW, args.legendloc[1]+statBoxH)
 		multi_graph = ROOT.TMultiGraph()
 		counter = 1
@@ -533,6 +542,11 @@ def graph_plotter():
 			#print 'Number of entries =', obj.GetEntries()
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
+			
+			#chi_andreas_test = obj.GetFunction('pol1').GetChisquare()
+			#print "CHI ANDREAS TEST = ", chi_andreas_test
+			obj.GetFunction('pol1').SetRange(0.0, 0.0, 0.01, 0.01)
+			obj.GetFunction('pol1').SetLineColor(797)
 			
 			##------------------
 			##adjust the xrange
@@ -577,7 +591,7 @@ def graph_plotter():
 		##draw histogram + components and save the file
 		multi_graph.Draw(drawing_option)
 		legend.Draw()
-		c1.BuildLegend()
+		#c1.BuildLegend()
 		xaxis = multi_graph.GetXaxis()
 		xaxis.SetTitle(x_title)
 		if 9999 not in args.xaxisrange:
@@ -589,9 +603,9 @@ def graph_plotter():
 		yaxis.SetTitle(y_title)
 		#if (args.ylog is True):
 		
-		
+		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+filename_list[0]+'_'+args.output_name
+			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
@@ -600,7 +614,7 @@ def graph_plotter():
 			for q in args.name:
 				search_name = search_name + '_' + q
 			print search_name
-			outname = folder_loc+filename_list[0]+'graphs_w'+search_name
+			outname = folder_loc+run_name+'graphs_w'+search_name
 			print 'Creating '+outname+'.png'
 			#c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.png')
@@ -635,8 +649,9 @@ def graph_plotter():
 			obj.Draw(args.draw_option)
 			#ROOT.gROOT.SetBatch(0)
 			#raw_input('Press Enter to look at the next histogram')
+			run_name = filename_list[0][:-1]
 			if (args.output_name):
-				outname = folder_loc+filename_list[0]+'_'+args.output_name
+				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
 				#c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
@@ -645,7 +660,7 @@ def graph_plotter():
 				for q in args.name:
 					search_name = search_name + '_' + q
 				print search_name
-				outname = folder_loc+filename_list[0]+'_'+graph.GetName()
+				outname = folder_loc+run_name+'_'+graph.GetName()
 				print 'Creating '+outname+'.pvg'
 				#c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
@@ -770,6 +785,7 @@ parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to
 parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
 parser.add_argument('--zlog', dest='zlog', help='if given as an option, set z axis to logarithmic.')
 parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  908, 435, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
+#parser.add_argument('--color', dest='color', default=[590, 591, 593, 596, 600, 602, 604, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
