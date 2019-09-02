@@ -33,6 +33,8 @@ using namespace std;
 
 // Process the data
 int main ( int argc, char **argv ) {
+  uint                   numofkpix = 24;
+  
   bool                   printalot=false;
   bool                   print10evts=false;
   bool                   print10hits=false;
@@ -42,20 +44,22 @@ int main ( int argc, char **argv ) {
   KpixEvent              event;
   KpixSample             *sample;
   
-  bool                   bucketFound[32][1024][4];
-  bool                   chanFound[32][1024];
-  bool                   kpixFound[32];
+  bool                   bucketFound[numofkpix][1024][4];
+  bool                   chanFound[numofkpix][1024];
+  bool                   kpixFound[numofkpix];
   KpixSample::SampleType type;
 
   uint                   kpix;
   uint                   channel;
   uint                   bucket;
-  uint                   kpixeventcount;
+  uint                   kpixeventcount=0;
+  uint                   extTrigCount=0;
+  uint                   DataSampleCount=0;
   double                 weight; // normalize to total kpix acq. cycles
     
   stringstream           tmp;
   TFile                  *rFile;
-  TH1F*                  channel_entries[32][5]; //entries per bucket for each kpix, [kpix][bucket], bucket=5 is the bucket inclusive one;
+  TH1F*                  channel_entries[numofkpix][5]; //entries per bucket for each kpix, [kpix][bucket], bucket=5 is the bucket inclusive one;
   
   // Data file is the first and only arg
   if ( argc != 2  ) {
@@ -72,7 +76,6 @@ int main ( int argc, char **argv ) {
   cout << "Opened data file: " << argv[1] << endl;
   //fileSize = dataRead.size();
   //filePos  = dataRead.pos();
-  kpixeventcount = 0;
   cout << "\rReading File: 0 %" << flush;
   // Open root file
   tmp.str("");
@@ -114,7 +117,7 @@ int main ( int argc, char **argv ) {
       
       if ( type == KpixSample::Data ){
 	DataTypeEvtCount++;
-	
+	DataSampleCount++;
 	kpixFound[kpix]          = true;
 	chanFound[kpix][channel] = true;
 	bucketFound[kpix][channel][bucket] = true;
@@ -125,6 +128,12 @@ int main ( int argc, char **argv ) {
 	  tenhits++;
 	}
       }
+
+
+      if ( type == KpixSample::Timestamp){
+	extTrigCount++;
+      }
+      
       
       kpixFound[0] = false; // in any case, kpix=0 is a virtual index
     }
@@ -137,6 +146,9 @@ int main ( int argc, char **argv ) {
   cout<< "In total, we have #"
       << kpixeventcount
       << " events :)\n"<<endl;
+  cout<< "More counting:\n"
+      << "# of Data Samples : " << DataSampleCount << '\n'
+      << "# of Ext Triggers : " << extTrigCount << '\n';
 
   if (kpixeventcount>0) weight = 1.0/kpixeventcount;
   else {
@@ -150,7 +162,7 @@ int main ( int argc, char **argv ) {
   
   //  Initialize all histograms
   vector<uint> numkpix_vec;
-  for (kpix=0; kpix<32; kpix++) {
+  for (kpix=0; kpix<numofkpix; kpix++) {
     if (kpixFound[kpix]){
       numkpix_vec.push_back(kpix);
 
