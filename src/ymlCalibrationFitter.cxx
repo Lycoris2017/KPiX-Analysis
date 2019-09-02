@@ -313,6 +313,7 @@ int main ( int argc, char **argv ) {
 	TH1F				*pedestalsRMS_fc_0_127[24][4];
 	TH1F				*pedestalsRMS_fc_disc[24][4];
 	TH1F				*pedestalsRMS_fc_conn[24][4];
+	TH1F				*slope_fit_at_zero[24][4];
 	TH1F				*slopeRMS[24][4];
 	TH1F				*slope_vs_channel[24][4];
 	TH1F				*slope_vs_right_strip[24][4];
@@ -573,7 +574,7 @@ int main ( int argc, char **argv ) {
 				if ( calState == "Idle" ) chanData[kpix][channel][bucket][range]->addBasePoint(value);
 				
 				// Filter for time
-                                else if ( tstamp > injectTime[bucket] && tstamp < injectTime[bucket+1] ) {
+					else if ( tstamp > injectTime[bucket] && tstamp < injectTime[bucket+1] ) {
 					goodTimes++;
 					//cout << "Timestamp = " << tstamp << endl;
 					//cout << "Inject time of Bucket " << bucket << " = " << injectTime[bucket] << endl;
@@ -604,9 +605,12 @@ int main ( int argc, char **argv ) {
 				}
 				else {
 					badTimes++;
-					//cout << "Timestamp = " << tstamp << endl;
-					//cout << "Inject time of Bucket " << bucket << " = " << injectTime[bucket] << endl;
-                                        //cout << "Inject time of Bucket " << bucket+1 << " = " << injectTime[bucket+1] << endl << endl;
+//					if ( calState == "Inject" && calDac != minDac && badTimes%1000 == 0)
+//					{
+//						cout << "Timestamp = " << tstamp << endl;
+//						cout << "Inject time of Bucket " << bucket << " = " << injectTime[bucket] << endl;
+//						cout << "Inject time of Bucket " << bucket+1 << " = " << injectTime[bucket+1] << endl << endl;
+//					}
 				}
 				
 			}
@@ -768,6 +772,10 @@ int main ( int argc, char **argv ) {
 				tmp.str("");
 				tmp << "slopeRMS_k" << kpix << "_b" << bucket;
 				slopeRMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope RMS; Slope [ADC/fC]; #entries", 1000, 0, 20);
+
+				tmp.str("");
+				tmp << "slope_fit_at_zero_k" << kpix << "_b" << bucket;
+				slope_fit_at_zero[kpix][bucket] = new TH1F(tmp.str().c_str(), "slope_fit_at_zero; Offset (ADC); #entries", 8192, 0, 8191);
 				
 				tmp.str("");
 				tmp << "slope_vs_channel_k" << kpix << "_b" << bucket;
@@ -804,7 +812,7 @@ int main ( int argc, char **argv ) {
 				tmp_units.str("");
 				tmp_units << "RMSADC_mapped; kpix_x; kpix_y; RMSfC";
 				RMSADC_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
-				
+
 				
 			}
 		}
@@ -1210,7 +1218,8 @@ for (kpix=0; kpix<24; kpix++)
 									{
 										chisqNdf = (grCalib->GetFunction("pol1")->GetChisquare() / grCalib->GetFunction("pol1")->GetNDF());
 										Double_t slope = grCalib->GetFunction("pol1")->GetParameter(1);
-                                                                                Double_t slope_err = grCalib->GetFunction("pol1")->GetParError(1);
+										Double_t fit_offset = grCalib->GetFunction("pol1")->GetParameter(0);
+										Double_t slope_err = grCalib->GetFunction("pol1")->GetParError(1);
 										
 										//if (chisqNdf > 100) cout << "Extremely high ChiSquare for channel " << channel << " of value " << chisqNdf << endl;
 										
@@ -1260,8 +1269,8 @@ for (kpix=0; kpix<24; kpix++)
 										RMSfC_vs_channel[kpix][bucket]->SetBinContent( channel+1, ped_charge_err  /* *pow(10,15) */);
 										
 				
-                                                                                slope_residual[kpix][bucket]->Fill(meanRes);
-									
+										slope_residual[kpix][bucket]->Fill(meanRes);
+										slope_fit_at_zero[kpix][bucket]->Fill(fit_offset);
 
 										if (chanData[kpix][channel][bucket][range]->baseHistRMS == 0)
 										{

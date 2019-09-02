@@ -125,7 +125,6 @@ def hist_plotter():
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
-		
 		statBoxW = 0.15
 		statBoxH = 0.105
 		legend = ROOT.TLegend(args.legendloc[0], args.legendloc[1], args.legendloc[0]+statBoxW, args.legendloc[1]+statBoxH)
@@ -187,7 +186,9 @@ def hist_plotter():
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1]+3)
-			obj.SetFillColor(args.color[counter-1])
+			if (args.fill):
+				obj.SetFillColor(args.color[counter-1])
+
 
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -273,7 +274,6 @@ def hist_plotter():
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
-		
 		statBoxW = 0.1
 		statBoxH = 0.07
 		print args.legendloc[0]
@@ -335,7 +335,8 @@ def hist_plotter():
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1])
-			obj.SetFillColor(args.color[counter-1])
+			if (args.fill):
+				obj.SetFillColor(args.color[counter-1])
 			
 			if (args.xtitle):
 				x_title = args.xtitle
@@ -472,7 +473,10 @@ def hist_plotter():
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
 				y_axis.SetRangeUser(y_low, y_high)
-			obj.SetLineColor(4) #Blue
+			obj.SetLineColor(args.color[0]) #Blue
+			obj.SetMarkerColor(args.color[0]) #Blue
+			if (args.fill):
+				obj.SetFillColor(args.color[0])
 			
 			##------------------
 			##set y axis to log
@@ -552,7 +556,8 @@ def graph_plotter():
 			##adjust the xrange
 			obj.SetLineColor(args.color[counter-1])
 			obj.SetMarkerColor(args.color[counter-1])
-			obj.SetFillColor(args.color[counter-1])
+			if (args.fill):
+				obj.SetFillColor(args.color[counter-1])
 			
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -602,7 +607,6 @@ def graph_plotter():
 			print 'test'
 		yaxis.SetTitle(y_title)
 		#if (args.ylog is True):
-		
 		run_name = filename_list[0][:-1]
 		if (args.output_name):
 			outname = folder_loc+run_name+'_'+args.output_name
@@ -705,8 +709,8 @@ mystyle.SetOptTitle(0)
 ##set the margins
 ##mystyle.SetPadBottomMargin(0.18)
 ##mystyle.SetPadTopMargin(0.08)
-##mystyle.SetPadRightMargin(0.08)
-##mystyle.SetPadLeftMargin(0.17)
+mystyle.SetPadRightMargin(0.08)
+mystyle.SetPadLeftMargin(0.14)
 #
 ##set axis label and title text sizes
 mystyle.SetLabelFont(42,"xyz")
@@ -715,7 +719,7 @@ mystyle.SetLabelOffset(0.003,"yz")
 mystyle.SetLabelOffset(0.00,"x")
 mystyle.SetTitleFont(42,"xyz")
 mystyle.SetTitleSize(0.06,"xyz")
-mystyle.SetTitleOffset(0.87,"yz")
+mystyle.SetTitleOffset(1.1,"yz")
 mystyle.SetTitleOffset(0.75,"x")
 mystyle.SetStatFont(42)
 mystyle.SetStatFontSize(0.03)
@@ -789,16 +793,20 @@ parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  90
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
-parser.add_argument('-q', '--newdaq', dest='newdaq', default=True, help='give as a command when using files from the new daq to ensure filename check etc. are correct')
+parser.add_argument('-q', '--olddaq', dest='olddaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
-parser.add_argument('-f', dest='folder', default='summer', help='tb is testbeam folder elab is elab folder. default is elab folder.')
+parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
+parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
 	sys.exit(1)
 print ''
 
+
+if (args.fill):
+	print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 if ('everything' in args.name2):
 	args.name2 = args.name
@@ -825,12 +833,13 @@ filename_list = []
 for root_file in args.file_in:
 	root_file_list.append(ROOT.TFile(root_file))
 	
-	#if (args.newdaq is True):
-		#print "HUH"
-	if '/Run_' in root_file:
-		filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
-	elif '/Calibration_' in root_file:
-		filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
+	if (args.olddaq):
+		filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
+	else:
+		if '/Run_' in root_file:
+			filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
+		elif '/Calibration_' in root_file:
+			filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
 	#else:
 		#filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
 print filename_list
@@ -840,7 +849,7 @@ for x in root_file_list:
 if ('elab' in args.folder):
 	folder_loc = '/home/lycoris-admin/Documents/elab201904/'
 elif ('tb' in args.folder):
-	folder_loc = '/home/lycoris-admin/Documents/testbeamPCMAG201904_05/'
+	folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
 elif ('summer' in args.folder):
 	folder_loc = '/home/lycoris-admin/Documents/summer_student/'
 ##-----------------	
