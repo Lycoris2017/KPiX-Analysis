@@ -1442,8 +1442,8 @@ int main ( int argc, char **argv )
 					tmp.str("");
 					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
 					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
-					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-					canvas1->cd();
+//					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+//					canvas1->cd();
 					for (unsigned int evt = 0; evt < acqCount; evt++)
 					{
 						//cout << "Evt " << evt << endl;
@@ -1455,7 +1455,7 @@ int main ( int argc, char **argv )
 								{
 									for (auto const s2 : *all_clusters_pointer[sens2][evt])
 									{
-										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
 										{
 											double y1 = yParameterSensor(s1.CoG, sens);
 											double y2 = yParameterSensor(s2.CoG, sens2);
@@ -1480,10 +1480,10 @@ int main ( int argc, char **argv )
 					cuts_entries[0][sens][sens2]->SetBinContent(s, entries);
 					cuts_purity[0][sens][sens2]->SetBinContent(s, efficiency);
 					cuts_performance[0][sens][sens2]->SetBinContent(s, efficiency*entries);
-					stringstream tmp2;
-					tmp2.str("");
-					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-					canvas1->SaveAs(tmp2.str().c_str());
+//					stringstream tmp2;
+//					tmp2.str("");
+//					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+//					canvas1->SaveAs(tmp2.str().c_str());
 					test = nullptr;
 					delete test;
 
@@ -1527,8 +1527,8 @@ int main ( int argc, char **argv )
 					tmp.str("");
 					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
 					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
-					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-					canvas1->cd();
+//					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+//					canvas1->cd();
 					for (unsigned int evt = 0; evt < acqCount; evt++)
 					{
 						//cout << "Evt " << evt << endl;
@@ -1540,7 +1540,7 @@ int main ( int argc, char **argv )
 								{
 									for (auto const s2 : *all_clusters_pointer[sens2][evt])
 									{
-										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
 										{
 											double y1 = yParameterSensor(s1.CoG, sens);
 											double y2 = yParameterSensor(s2.CoG, sens2);
@@ -1565,10 +1565,10 @@ int main ( int argc, char **argv )
 					cuts_entries[1][sens][sens2]->SetBinContent(c, entries);
 					cuts_purity[1][sens][sens2]->SetBinContent(c, efficiency);
 					cuts_performance[1][sens][sens2]->SetBinContent(c, efficiency*entries);
-					stringstream tmp2;
-					tmp2.str("");
-					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-					canvas1->SaveAs(tmp2.str().c_str());
+//					stringstream tmp2;
+//					tmp2.str("");
+//					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+//					canvas1->SaveAs(tmp2.str().c_str());
 					test = nullptr;
 					delete test;
 				}
@@ -1607,8 +1607,8 @@ int main ( int argc, char **argv )
 					tmp.str("");
 					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
 					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
-					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-					canvas1->cd();
+//					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+//					canvas1->cd();
 					for (unsigned int evt = 0; evt < acqCount; evt++)
 					{
 						//cout << "Evt " << evt << endl;
@@ -1620,7 +1620,7 @@ int main ( int argc, char **argv )
 								{
 									for (auto const s2 : *all_clusters_pointer[sens2][evt])
 									{
-										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
 										{
 											double y1 = yParameterSensor(s1.CoG, sens);
 											double y2 = yParameterSensor(s2.CoG, sens2);
@@ -1635,7 +1635,7 @@ int main ( int argc, char **argv )
 					test->Draw("pe");
 
 					int binmax = test->GetMaximumBin();
-					double signal = test->Integral(binmax-4, binmax+4);
+					double signal = test->Integral(binmax-1, binmax+1);
 					double entries = test->GetEntries();
 					double efficiency = 0;
 					if (entries != 0)
@@ -1645,10 +1645,10 @@ int main ( int argc, char **argv )
 					cuts_entries[2][sens][sens2]->SetBinContent(size_cut, entries);
 					cuts_purity[2][sens][sens2]->SetBinContent(size_cut, efficiency);
 					cuts_performance[2][sens][sens2]->SetBinContent(size_cut, efficiency*entries);
-					stringstream tmp2;
-					tmp2.str("");
-					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-					canvas1->SaveAs(tmp2.str().c_str());
+//					stringstream tmp2;
+//					tmp2.str("");
+//					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+//					canvas1->SaveAs(tmp2.str().c_str());
 					test = nullptr;
 					delete test;
 				}
