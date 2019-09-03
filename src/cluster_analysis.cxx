@@ -201,7 +201,11 @@ int main ( int argc, char **argv )
 	TH2F					*cluster_correlation[8][n_kpix][n_kpix-1];
 	TH1F					*cluster_offset_y[8][n_kpix/2][n_kpix/2-1];
 	TH1F					*cluster_offset_x[8][n_kpix/2][n_kpix/2-1];
-		
+
+	TH1F					*cuts_entries[3][n_kpix/2][n_kpix/2-1];
+	TH1F					*cuts_purity[3][n_kpix/2][n_kpix/2-1];
+	TH1F					*cuts_performance[3][n_kpix/2][n_kpix/2-1];
+
 	TH1F					*noise_distribution[n_kpix];
 	TH1F					*noise_distribution_sensor[n_kpix/2];
 	TH1F					*noise_v_position[n_kpix/2];
@@ -221,7 +225,7 @@ int main ( int argc, char **argv )
 	ofstream				noise_file;
 	ofstream               xml;
 	ofstream               csv;
-	uint                   acqCount; // acquisitionCount
+	uint                   acqCount = 0; // acquisitionCount
 	uint                   acqProcessed;
 	string                 outRoot;
 	TFile                  *rFile;
@@ -549,101 +553,134 @@ int main ( int argc, char **argv )
 			
 			for (int s = sensor+1; s < n_kpix/2; ++s)
 			{
-				tmp.str("");
-				tmp << "cluster_offset_seed_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_seed_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_seed_sens0" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_all_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_all_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_1fC_3size_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_1fC_3size_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_4sigma_1fC_3size_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[2][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_HighSigmaCluster_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_HighSigmaCluster_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_HighSigmaCluster_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[3][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_2fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[4][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_2fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[4][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_4sigma_2fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[4][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_3fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[5][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_3fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[5][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_4sigma_3fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[5][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_2_5fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[6][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_4sigma_2_5fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[6][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_4sigma_2_5fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[6][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-				
-				tmp.str("");
-				tmp << "cluster_offset_test_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_y[7][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
-				tmp.str("");
-				tmp << "cluster_offset_test_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
-				cluster_offset_x[7][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
-				tmp.str("");
-				tmp << "cluster_correlation_test_sens_sens" << sensor << "_to_sens" << s << "_b0";
-				tmp_units.str("");
-				tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-				cluster_correlation[7][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+				if (kpixFound[(s*2)] || kpixFound[(s*2+1)])
+				{
+					tmp.str("");
+					tmp << "cluster_offset_seed_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_seed_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_seed_sens0" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_all_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_all_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_1fC_3size_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_1fC_3size_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_4sigma_1fC_3size_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[2][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_HighSigmaCluster_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_HighSigmaCluster_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_HighSigmaCluster_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[3][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_2fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[4][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_2fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[4][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_4sigma_2fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[4][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_3fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[5][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_3fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[5][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_4sigma_3fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[5][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_2_5fC_3size_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[6][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_4sigma_2_5fC_3size_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[6][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_4sigma_2_5fC_3size_sens_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[6][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_test_sens_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[7][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_test_sens_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[7][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_test_sens_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[7][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "sigma_cut_purity_s" << sensor << "_s" << s << "_b0";
+					cuts_purity[0][sensor][s] = new TH1F(tmp.str().c_str(), "sigma_cut_puritye; cuts (#sigma); purity", 70, 0, 35);
+					tmp.str("");
+					tmp << "charge_cut_purity_s" << sensor << "_s" << s << "_b0";
+					cuts_purity[1][sensor][s] = new TH1F(tmp.str().c_str(), "charge_cut_purity; cuts (fC); purity", 70, 0, 35);
+					tmp.str("");
+					tmp << "size_cut_purity_s" << sensor << "_s" << s << "_b0";
+					cuts_purity[2][sensor][s] = new TH1F(tmp.str().c_str(), "size_cut_purity; cuts; purity", 35, 0, 35);
+
+					tmp.str("");
+					tmp << "sigma_cut_entries_s" << sensor << "_s" << s << "_b0";
+					cuts_entries[0][sensor][s] = new TH1F(tmp.str().c_str(), "sigma_cut_entries; cuts (#sigma); entries", 70, 0, 35);
+					tmp.str("");
+					tmp << "charge_cut_entries_s" << sensor << "_s" << s << "_b0";
+					cuts_entries[1][sensor][s] = new TH1F(tmp.str().c_str(), "charge_cut_entries; cuts (fc); entries", 70, 0, 35);
+					tmp.str("");
+					tmp << "size_cut_entries_s" << sensor << "_s" << s << "_b0";
+					cuts_entries[2][sensor][s] = new TH1F(tmp.str().c_str(), "size_cut_entries; cuts; entries", 35, 0, 35);
+
+					tmp.str("");
+					tmp << "sigma_cut_performance_s" << sensor << "_s" << s << "_b0";
+					cuts_performance[0][sensor][s] = new TH1F(tmp.str().c_str(), "sigma_cut_performance; cuts (#sigma); entries*purity", 70, 0, 35);
+					tmp.str("");
+					tmp << "charge_cut_performance_s" << sensor << "_s" << s << "_b0";
+					cuts_performance[1][sensor][s] = new TH1F(tmp.str().c_str(), "charge_cut_performance; cuts (fC); entries*purity", 70, 0, 35);
+					tmp.str("");
+					tmp << "size_cut_performance_s" << sensor << "_s" << s << "_b0";
+					cuts_performance[2][sensor][s] = new TH1F(tmp.str().c_str(), "size_cut_performance; cuts; entries*purity", 35, 0, 35);
+				}
 				
 			}
 			
@@ -1008,7 +1045,8 @@ int main ( int argc, char **argv )
 	dataRead.open(argv[1]);
 	
 	int global_trig_counter = 0;
-	
+//	std::vector<clustr> all_clusters[n_kpix/2];
+	std::vector<clustr>* all_clusters_pointer[n_kpix/2][acqCount] = {nullptr};
 	while ( dataRead.next(&event) )
 	{
 		int not_empty= 0;
@@ -1116,7 +1154,18 @@ int main ( int argc, char **argv )
 					Input.Elements = cluster_Events_after_cut[sensor];
 					Input.Noise = cluster_Noise_after_cut[sensor];
 					int num_of_clusters = 0;
-										while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left
+					if (all_clusters_pointer[sensor][event.eventNumber()] == nullptr)
+					{
+						all_clusters_pointer[sensor][event.eventNumber()] = new std::vector<clustr>;
+						if (all_clusters_pointer[sensor][event.eventNumber()]==nullptr)
+						{
+							std::cerr << "Memory allocation error for vector kpix " <<
+							kpix <<std::endl;
+							exit(-1); // probably best to bail out
+						}
+					}
+
+					while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left
 					{
 						PacMan NomNom;
 						//cout << "Maximum Signal over Noise Strip " << Input.MaxSoN() << endl;
@@ -1147,6 +1196,11 @@ int main ( int argc, char **argv )
 						cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
 						cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
 						multi_cluster[1][sensor].push_back(NomNom.getCluster());
+
+//						all_clusters[sensor].push_back(NomNom.getCluster());
+						all_clusters_pointer[sensor][event.eventNumber()]->push_back(NomNom.getCluster());
+
+
 						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 1.0 && NomNom.getClusterElementssize() < 3)
 						{
 							cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -1318,40 +1372,6 @@ int main ( int argc, char **argv )
 						}
 					}
 				}
-				if (sensor1 < 4)
-				{
-					for (int s = 1; s < 5; ++s)
-					{
-						double sigma_cut = double(s);
-						for (int c = 1; c < 5; ++c)
-						{
-							double charge_cut = double(c);
-							for (int size_cut = 1; size_cut < 6; ++size_cut)
-							{
-								tmp.str("");
-								tmp << "cluster_position_y_s" << sensor1 << "_b0" << "_SigmaCut_" << sigma_cut << "_ChargeCut_" << charge_cut << "_SizeCut_" << size_cut;
-								TH1F* test = new TH1F(tmp.str().c_str(), "cluster position test; #mum; #Entries", 1840,-46000, 46000);
-								TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), 'cluster_pos', 900, 1600);
-								canvas1->cd();
-								for (auto const& s1 : multi_cluster[1][sensor1])
-								{
-									if (s1.Charge > charge_cut && s1.Significance2 > sigma_cut && s1.Elements.size() < size_cut )
-									{
-										test->Fill(s1.CoG);
-									}
-								}
-								test->Draw("pe");
-								stringstream tmp2;
-								tmp2.str("");
-								tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-								//											cout << tmp2.str() << endl;
-								canvas1->SaveAs(tmp2.str().c_str());
-								test = nullptr;
-								delete test;
-							}
-						}
-					}
-				}
 
 			}
 		}
@@ -1395,8 +1415,260 @@ int main ( int argc, char **argv )
 		//cout << "Number of bad entries in this sensor is " << badentries << endl;
 	//}
 	//noise_file.close();
-	
-	
+	for (unsigned int sens = 0; sens<n_kpix/2; sens++ )
+	{
+		for (unsigned int sens2 = sens+1; sens2<n_kpix/2; sens2++ )
+		{
+			if (kpixFound[sens*2] && kpixFound[sens2*2])
+			{
+//				TH1F* cut_performance = nullptr;
+//				TH1F* cut_entries = nullptr;
+//				TCanvas *canvas2 = nullptr;
+//				TCanvas *canvas3 = nullptr;
+//				tmp.str("");
+//				tmp << "sigma_cut_performance_s" << sens << "_s" << sens2 << "_b0";
+//				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 416, 0, 416);
+//				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
+
+//				tmp.str("");
+//				tmp << "sigma_cut_entries_s" << sens << "_s" << sens2 << "_b0";
+//				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 60, 0, 30);
+//				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
+				for (int s = 0; s < 30; ++s)
+				{
+					double sigma_cut = double(s)/2;
+					double charge_cut = 2.0;
+					int size_cut =3;
+					tmp.str("");
+					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
+					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
+					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+					canvas1->cd();
+					for (unsigned int evt = 0; evt < acqCount; evt++)
+					{
+						//cout << "Evt " << evt << endl;
+						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
+						{
+							for (auto const s1 : *all_clusters_pointer[sens][evt])
+							{
+								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
+								{
+									for (auto const s2 : *all_clusters_pointer[sens2][evt])
+									{
+										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										{
+											double y1 = yParameterSensor(s1.CoG, sens);
+											double y2 = yParameterSensor(s2.CoG, sens2);
+											double clstroffset_y  = y1 - y2;
+											test->Fill(clstroffset_y);
+										}
+									}
+								}
+							}
+						}
+					}
+					test->Draw("pe");
+
+					int binmax = test->GetMaximumBin();
+					double signal = test->Integral(binmax-4, binmax+4);
+					double entries = test->GetEntries();
+					double efficiency = 0;
+					if (entries != 0)
+						efficiency = signal/entries;
+//					cut_performance->Fill(sigma_cut, efficiency);
+//					cut_entries->Fill(sigma_cut, entries);
+					cuts_entries[0][sens][sens2]->SetBinContent(s, entries);
+					cuts_purity[0][sens][sens2]->SetBinContent(s, efficiency);
+					cuts_performance[0][sens][sens2]->SetBinContent(s, efficiency*entries);
+					stringstream tmp2;
+					tmp2.str("");
+					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+					canvas1->SaveAs(tmp2.str().c_str());
+					test = nullptr;
+					delete test;
+
+
+
+
+				}
+//				canvas2->cd();
+//				cut_performance->Draw("p");
+//				canvas2->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/sigma_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas2->SaveAs(tmp.str().c_str());
+
+//				canvas3->cd();
+//				cut_entries->Draw("p");
+//				canvas3->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/sigma_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas3->SaveAs(tmp.str().c_str());
+
+
+//				tmp.str("");
+//				tmp << "charge_cut_performance_s" << sens << "_s" << sens2 << "_b0";
+//				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 40, 0, 20);
+//				cut_performance->SetCanExtend(TH1::kAllAxes);
+//				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
+
+//				tmp.str("");
+//				tmp << "charge_cut_entries_s" << sens << "_s" << sens2 << "_b0";
+//				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 40, 0, 20);
+//				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
+
+
+				for (int c = 0; c < 20; ++c)
+				{
+					double charge_cut = double(c)/2;
+					double sigma_cut = 6.0;
+					int size_cut = 3;
+
+					tmp.str("");
+					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
+					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
+					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+					canvas1->cd();
+					for (unsigned int evt = 0; evt < acqCount; evt++)
+					{
+						//cout << "Evt " << evt << endl;
+						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
+						{
+							for (auto const s1 : *all_clusters_pointer[sens][evt])
+							{
+								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
+								{
+									for (auto const s2 : *all_clusters_pointer[sens2][evt])
+									{
+										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										{
+											double y1 = yParameterSensor(s1.CoG, sens);
+											double y2 = yParameterSensor(s2.CoG, sens2);
+											double clstroffset_y  = y1 - y2;
+											test->Fill(clstroffset_y);
+										}
+									}
+								}
+							}
+						}
+					}
+					test->Draw("pe");
+
+					int binmax = test->GetMaximumBin();
+					double signal = test->Integral(binmax-4, binmax+4);
+					double entries = test->GetEntries();
+					double efficiency = 0;
+					if (entries != 0)
+						efficiency = signal/entries;
+//					cut_performance->Fill(charge_cut, efficiency);
+//					cut_entries->Fill(charge_cut, entries);
+					cuts_entries[1][sens][sens2]->SetBinContent(c, entries);
+					cuts_purity[1][sens][sens2]->SetBinContent(c, efficiency);
+					cuts_performance[1][sens][sens2]->SetBinContent(c, efficiency*entries);
+					stringstream tmp2;
+					tmp2.str("");
+					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+					canvas1->SaveAs(tmp2.str().c_str());
+					test = nullptr;
+					delete test;
+				}
+//				canvas2->cd();
+//				cut_performance->Draw("p");
+//				canvas2->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/charge_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas2->SaveAs(tmp.str().c_str());
+
+//				canvas3->cd();
+//				cut_entries->Draw("p");
+//				canvas3->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/charge_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas3->SaveAs(tmp.str().c_str());
+
+
+
+
+//				tmp.str("");
+//				tmp << "size_cut_performance_s" << sens << "_s" << sens2 << "_b0";
+//				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 416, 0, 416);
+//				cut_performance->SetCanExtend(TH1::kAllAxes);
+//				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
+
+//				tmp.str("");
+//				tmp << "size_cut_entries_s" << sens << "_s" << sens2 << "_b0";
+//				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 12, 0, 12);
+//				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
+
+				for (int size_cut = 0; size_cut < 12; ++size_cut)
+				{
+					double charge_cut = 2.0;
+					double sigma_cut = 6.0;
+					tmp.str("");
+					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
+					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; #Entries", 100,-10000, 10000);
+					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
+					canvas1->cd();
+					for (unsigned int evt = 0; evt < acqCount; evt++)
+					{
+						//cout << "Evt " << evt << endl;
+						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
+						{
+							for (auto const s1 : *all_clusters_pointer[sens][evt])
+							{
+								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
+								{
+									for (auto const s2 : *all_clusters_pointer[sens2][evt])
+									{
+										if (s2.Charge > charge_cut && s2.Significance2 > sigma_cut && s2.Elements.size() < size_cut )
+										{
+											double y1 = yParameterSensor(s1.CoG, sens);
+											double y2 = yParameterSensor(s2.CoG, sens2);
+											double clstroffset_y  = y1 - y2;
+											test->Fill(clstroffset_y);
+										}
+									}
+								}
+							}
+						}
+					}
+					test->Draw("pe");
+
+					int binmax = test->GetMaximumBin();
+					double signal = test->Integral(binmax-4, binmax+4);
+					double entries = test->GetEntries();
+					double efficiency = 0;
+					if (entries != 0)
+						efficiency = signal/entries;
+//					cut_performance->Fill(size_cut, efficiency);
+//					cut_entries->Fill(size_cut, entries);
+					cuts_entries[2][sens][sens2]->SetBinContent(size_cut, entries);
+					cuts_purity[2][sens][sens2]->SetBinContent(size_cut, efficiency);
+					cuts_performance[2][sens][sens2]->SetBinContent(size_cut, efficiency*entries);
+					stringstream tmp2;
+					tmp2.str("");
+					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
+					canvas1->SaveAs(tmp2.str().c_str());
+					test = nullptr;
+					delete test;
+				}
+//				canvas2->cd();
+//				cut_performance->Draw("p");
+//				canvas2->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/size_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas2->SaveAs(tmp.str().c_str());
+
+//				canvas3->cd();
+//				cut_entries->Draw("p");
+//				canvas3->SetGridx();
+//				tmp.str("");
+//				tmp << "/home/lycoris-dev/Documents/cut_test/size_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
+//				canvas3->SaveAs(tmp.str().c_str());
+			}
+		}
+	}
+
 	
 	claus_file.close();
 	
@@ -1409,7 +1681,7 @@ int main ( int argc, char **argv )
 	rFile->Close();
 	
 	
-	
+
 	dataRead.close();
 	return(0);
 }

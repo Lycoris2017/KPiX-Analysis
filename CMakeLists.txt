@@ -51,6 +51,10 @@ ADD_DEFINITIONS("-Wunused-value -Wall -pedantic -Wshadow -fdiagnostics-color=aut
 find_package(LibXml2 REQUIRED)
 find_package(ROOT REQUIRED)
 #find_package(ROOT COMPONENTS RooStats)
+#find_package(eudaq)
+if (eudaq_FOUND)
+  message("debug: ${EUDAQ_LIBRARIES_DIRS} ${EUDAQ_LIBRARIES}")
+endif(eudaq_FOUND)
 
 ##-- everything needed for YAML: 'libyaml-dev' used
 if (USE_YAML)
@@ -82,6 +86,13 @@ if (USE_KPIX)
   include_directories( ${PROJECT_SOURCE_DIR}/extern/include)
 
   aux_source_directory( ${PROJECT_SOURCE_DIR}/extern/src LIB_SRC)
+  
+  if (NOT eudaq_FOUND)
+    message("debug: remove the euDataRead.cxx")
+    list(REMOVE_ITEM LIB_SRC ${PROJECT_SOURCE_DIR}/extern/src/euDataRead.cpp)
+  endif()
+    
+  
   add_library(${KPIX_LOCAL_LIB} SHARED ${LIB_SRC})
   set_target_properties(${KPIX_LOCAL_LIB} PROPERTIES SOVERSION 2)
 
