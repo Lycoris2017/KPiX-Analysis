@@ -146,7 +146,7 @@ mystyle.SetOptTitle(0)
 mystyle.SetPadBottomMargin(0.15)
 mystyle.SetPadTopMargin(0.04)
 mystyle.SetPadRightMargin(0.18)
-mystyle.SetPadLeftMargin(0.12)
+mystyle.SetPadLeftMargin(0.125)
 #
 ##set axis label and title text sizes
 mystyle.SetLabelFont(42,"xyz")
@@ -155,9 +155,10 @@ mystyle.SetLabelSize(0.06,"z")
 mystyle.SetLabelOffset(0.003,"yz")
 mystyle.SetLabelOffset(0.00,"x")
 mystyle.SetTitleFont(42,"xyz")
-mystyle.SetTitleSize(0.08,"xyz")
+mystyle.SetTitleSize(0.08,"xy")
+mystyle.SetTitleSize(0.08,"z")
 mystyle.SetTitleOffset(0.75,"yz")
-mystyle.SetTitleOffset(0.75,"x")
+mystyle.SetTitleOffset(0.85,"x")
 mystyle.SetStatFont(42)
 mystyle.SetStatFontSize(0.03)
 
@@ -420,7 +421,7 @@ if (len(hist_list) is not 0):
 	c1.Update()
 	run_name = filename_list[0][:-1]
 	if (args.output_name):
-		outname = folder_loc+run_name+'_'+args.output_name
+		outname = folder_loc+args.output_name+'_'+run_name
 		print 'Creating '+outname
 		#c1.SaveAs(outname+'.svg')
 		c1.SaveAs(outname+'.png')
