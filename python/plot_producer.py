@@ -215,7 +215,7 @@ def hist_plotter():
 			else:
 				y_title = y_axis.GetTitle()
 			
-			
+#			ROOT.TGaxis.SetMaxDigits(3)
 			
 		##------------------
 		##set y axis to log
@@ -245,7 +245,6 @@ def hist_plotter():
 			yaxis.SetRangeUser(y_low, y_high) 
 			print 'test'
 		yaxis.SetTitle(y_title)
-		ROOT.TGaxis.SetMaxDigits(5)
 		histListForStats = []
 		for j in range(len(new_hist_list)-1, -1, -1): 
 			histListForStats.append(hist_comp.GetStack().At(j) )
@@ -361,7 +360,7 @@ def hist_plotter():
 				yaxis.SetRangeUser(y_low, y_high) 
 				print 'test'
 			yaxis.SetTitle(y_title)
-			ROOT.TGaxis.SetMaxDigits(5)
+#			ROOT.TGaxis.SetMaxDigits(3)
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
 			
@@ -433,7 +432,7 @@ def hist_plotter():
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
-			ROOT.TGaxis.SetMaxDigits(5)
+#			ROOT.TGaxis.SetMaxDigits(3)
 			c1.cd()
 			#print obj.GetEntries()
 			##------------------
@@ -723,6 +722,9 @@ mystyle.SetTitleOffset(1.1,"yz")
 mystyle.SetTitleOffset(0.75,"x")
 mystyle.SetStatFont(42)
 mystyle.SetStatFontSize(0.03)
+
+
+ROOT.TGaxis.SetMaxDigits(4)
 
 #mystyle.SetTitleBorderSize(0)
 #mystyle.SetStatBorderSize(0)
