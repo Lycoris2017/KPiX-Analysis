@@ -461,7 +461,7 @@ int main ( int argc, char **argv )
 						if (calibration_check == 1)
 						{
 							//cout << "2nd Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
-							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
+							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0)
 							{
 								
 								if (vec_corr_charge[kpix] == nullptr)
@@ -958,7 +958,7 @@ int main ( int argc, char **argv )
 			{
 				if (bucket == 0)
 				{
-					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
+					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0) //ensuring we ignore 0 MAD channels
 					{
 						//cout << "DEBUG 1" << endl;
 						double charge_value = double(value)/calib_slope[kpix][channel];
@@ -1109,7 +1109,7 @@ int main ( int argc, char **argv )
 				//cout << tstamp << endl;
 				if (bucket == 0)
 				{
-					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] >= 0.5) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
+					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
 					{
 						
 						//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============

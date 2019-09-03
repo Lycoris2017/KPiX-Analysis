@@ -440,7 +440,7 @@ int main ( int argc, char **argv )
 						if (calibration_check == 1)
 						{
 							//cout << "Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << endl;
-							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0)
+							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0)
 							{
 								
 								if (vec_corr_charge[kpix] == NULL)
@@ -566,7 +566,7 @@ int main ( int argc, char **argv )
 					tmp << "noise_v_time_k" << kpix << "_b0";
 					tmp_units.str("");
 					tmp_units << "noise_v_time; Time (BCC); Noise (fC) ";
-					noise_v_time[kpix]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 4096, 0, 8191);
+					noise_v_time[kpix]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
 					
 					
 					for (int b = 0; b < 32; ++b)
@@ -575,7 +575,7 @@ int main ( int argc, char **argv )
 						tmp << "noise_v_time_block" << b << "_k" << kpix << "_b0";
 						tmp_units.str("");
 						tmp_units << "noise_v_time_block; Time (BCC); Noise (fC) ";
-						noise_v_time_block[kpix][b]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 4096, 0, 8191);
+						noise_v_time_block[kpix][b]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
 					}
 					
 			
@@ -620,14 +620,18 @@ int main ( int argc, char **argv )
 			{
 				if (bucket == 0)
 				{
-					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0) //ensuring we ignore 0 MAD channels
+					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0 ) //ensuring we ignore 0 MAD channels
 					{
 						//cout << "DEBUG 1" << endl;
 						double charge_value = double(value)/calib_slope[kpix][channel];
 						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
 						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-						
-						
+						if (isnan(charge_CM_corrected))
+						{
+							cout << "Slopes " << calib_slope[kpix][channel] << endl;
+							cout << "Pedestal " << pedestal_MedMAD[kpix][channel][bucket][0] << endl;
+							cout << "CommonMOde " << common_modes_median[kpix].at(event.eventNumber()) << endl;
+						}
 						if (corrected_charge_vec_time_block[kpix][int(tstamp)][block] == NULL)
 						{
 							corrected_charge_vec_time_block[kpix][int(tstamp)][block] = new std::vector<double>;
@@ -701,6 +705,15 @@ int main ( int argc, char **argv )
 					{
 						y = yParameterSensor(strip, sensor);
 						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+//						if (isnan(noise[k][c]))
+//						{
+//							cout << k << " " << c << endl;
+//							cout << calib_slope[k][c] << endl;
+//							for (auto const i:(*corrected_charge_vec[k][c]))
+//							{
+//								cout << "Bla " << i << endl;
+//							}
+//						}
 						if (strip != 9999)
 						{
 							noise_distribution[k]->Fill(noise[k][c]);
@@ -715,11 +728,9 @@ int main ( int argc, char **argv )
 			}
 			for (int t = 0; t < n_BCC ; ++t)
 			{
-				
 				for (int b = 0; b < n_blocks;  ++b)
 				{
 					noise_v_time_block[k][b]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
-					
 				}
 				noise_v_time[k]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
 				x[t] = t;

@@ -105,14 +105,21 @@ double MAD(vector<double>* v)
 	}
 	else
 	{
-		double med = median(v);
-		vector<double>* deviation;
-		deviation = new std::vector<double>;
-		
-		for (auto const i:(*v))
+		if (v->empty())
 		{
-			deviation->push_back(fabs(i - med));
+			return 0;
 		}
-		return median(deviation);
+		else
+		{
+			double med = median(v);
+			vector<double>* deviation;
+			deviation = new std::vector<double>;
+
+			for (auto const i:(*v))
+			{
+				deviation->push_back(fabs(i - med));
+			}
+			return median(deviation);
+		}
 	}
 }
