@@ -548,7 +548,7 @@ def graph_plotter():
 			
 			#chi_andreas_test = obj.GetFunction('pol1').GetChisquare()
 			#print "CHI ANDREAS TEST = ", chi_andreas_test
-			obj.GetFunction('pol1').SetRange(0.0, 0.0, 0.01, 0.01)
+			#obj.GetFunction('pol1').SetRange(0.0, 0.0, 0.01, 0.01)
 			obj.GetFunction('pol1').SetLineColor(797)
 			
 			##------------------
@@ -708,7 +708,7 @@ mystyle.SetOptTitle(0)
 ##set the margins
 ##mystyle.SetPadBottomMargin(0.18)
 ##mystyle.SetPadTopMargin(0.08)
-mystyle.SetPadRightMargin(0.08)
+mystyle.SetPadRightMargin(0.14)
 mystyle.SetPadLeftMargin(0.14)
 #
 ##set axis label and title text sizes
@@ -790,14 +790,14 @@ parser.add_argument('--yrange', dest='yaxisrange', default=[9999], nargs='*', ty
 parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to be used as legend titles instead of the default filename+histogram name')
 parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
 parser.add_argument('--zlog', dest='zlog', help='if given as an option, set z axis to logarithmic.')
-parser.add_argument('--color', dest='color', default=[60, 1, 418,  810, 402,  908, 435, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
+parser.add_argument('--color', dest='color', default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614], nargs='*', help='list of colors to be used')
 #parser.add_argument('--color', dest='color', default=[590, 591, 593, 596, 600, 602, 604, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
 parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
 parser.add_argument('-q', '--olddaq', dest='olddaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
-parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
+parser.add_argument('--folder', dest='folder', default='summer', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
 args = parser.parse_args()
@@ -853,7 +853,7 @@ if ('elab' in args.folder):
 elif ('tb' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
 elif ('summer' in args.folder):
-	folder_loc = '/home/lycoris-admin/Documents/summer_student/'
+	folder_loc = '/home/lycoris-admin/Documents/humidity/'
 ##-----------------	
 ##general output
 #print args.color
