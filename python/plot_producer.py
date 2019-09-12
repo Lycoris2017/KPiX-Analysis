@@ -185,7 +185,7 @@ def hist_plotter():
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
 			obj.SetLineColor(args.color[counter-1])
-			obj.SetMarkerColor(args.color[counter-1]+3)
+			obj.SetMarkerColor(args.color[counter-1])
 			if (args.fill):
 				obj.SetFillColor(args.color[counter-1])
 
@@ -797,7 +797,7 @@ parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y ax
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
 parser.add_argument('-q', '--olddaq', dest='olddaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
-parser.add_argument('--folder', dest='folder', default='summer', help='tb is testbeam folder elab is elab folder. default is elab folder.')
+parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
 args = parser.parse_args()
@@ -807,8 +807,6 @@ if len(sys.argv) < 2:
 print ''
 
 
-if (args.fill):
-	print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 if ('everything' in args.name2):
 	args.name2 = args.name
@@ -849,11 +847,11 @@ for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	loopdir(key_root)
 if ('elab' in args.folder):
-	folder_loc = '/home/lycoris-admin/Documents/elab201904/'
+	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
 elif ('tb' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
 elif ('summer' in args.folder):
-	folder_loc = '/home/lycoris-admin/Documents/humidity/'
+	folder_loc = '/home/lycoris-dev/Documents/humidity/'
 ##-----------------	
 ##general output
 #print args.color
