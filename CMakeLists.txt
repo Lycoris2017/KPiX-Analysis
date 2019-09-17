@@ -166,9 +166,9 @@ install( FILES ${CMAKE_CURRENT_BINARY_DIR}/libDict_rdict.pcm ${CMAKE_CURRENT_BIN
 
 ##-- add exe: # maybe cmake can be scripted with a loop using aux_source_directory func?
 
-add_executable(ymlHandler ${PROJECT_SOURCE_DIR}/src/ymlHandler.cxx)
-target_link_libraries(ymlHandler ${ROOT_LIBRARIES})
-list(APPEND INSTALL_EXE_TARGETS ymlHandler)
+#add_executable(ymlHandler ${PROJECT_SOURCE_DIR}/src/ymlHandler.cxx)
+#target_link_libraries(ymlHandler ${ROOT_LIBRARIES})
+#list(APPEND INSTALL_EXE_TARGETS ymlHandler)
 
 # simple evt loop code:
 
@@ -194,16 +194,16 @@ add_executable(DuoKpix_CalibFitter ${PROJECT_SOURCE_DIR}/src/DuoKpix_CalibFitter
 target_link_libraries(DuoKpix_CalibFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS DuoKpix_CalibFitter)
 
-add_executable(calibrationFitter ${PROJECT_SOURCE_DIR}/src/calibrationFitter.cxx)
-target_link_libraries(calibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS calibrationFitter)
+#add_executable(calibrationFitter ${PROJECT_SOURCE_DIR}/src/calibrationFitter.cxx)
+#target_link_libraries(calibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS calibrationFitter)
 
 
 # full ana:
 
-add_executable(analysisLite ${PROJECT_SOURCE_DIR}/src/analysisLite.cxx)
-target_link_libraries(analysisLite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS analysisLite)
+#add_executable(analysisLite ${PROJECT_SOURCE_DIR}/src/analysisLite.cxx)
+#target_link_libraries(analysisLite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS analysisLite)
 
 add_executable(analysis ${PROJECT_SOURCE_DIR}/src/analysis.cxx)
 target_link_libraries(analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
