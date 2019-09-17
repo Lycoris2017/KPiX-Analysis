@@ -155,30 +155,22 @@ public:
 
 // Function to compute calibration charge
 double calibCharge ( uint dac, bool positive, bool highCalib ) {
+	/*
+	 * return Charge in [fC] instead of [C]
+	 * @ Uwe's commit (Apr 9, 2019) : aca6c954f9e30335f063bcbe9ffbc4b43ee557ae
+	 */
 	double volt;
 	double charge;
 	
 	if ( dac >= 0xf6 )
-	{
-			volt = 2.5 - ((double)(0xff-dac))*50.0*0.0001;
-			//cout << "A " << volt << endl;
-	}
+		volt = 2.5 - ((double)(0xff-dac))*50.0*0.0001;
 	else
-	{
 		volt =(double)dac * 100.0 * 0.0001;
-		//cout << "B " << volt << endl;
-	}
 	
 	if ( positive )
-	{
 		 charge = (2.5 - volt) * 200;
-		 //cout << "C " << charge << endl;
-	 }
 	else
-	{
 		 charge = volt * 200;
-		//cout << "D " << charge << endl;
-	}
 	
 	if ( highCalib ) charge *= 22.0;
 	
@@ -360,8 +352,8 @@ int main ( int argc, char **argv ) {
   }
   
   // Data file is the first and only arg
-  if ( argc < 3 && argc >5 ) {
-    cout << "Usage: new_calibrationFitter config_file data_file [skip_cycles_front] [debug]\n";
+  if ( argc < 3 || argc >5 ) {
+    cout << "\nUsage: new_calibrationFitter config_file data_file [skip_cycles_front] [debug]\n\n";
     return(1);
   }
   
