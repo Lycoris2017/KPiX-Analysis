@@ -18,9 +18,9 @@ include(CMakeDependentOption)
 
 project(Lycoris VERSION 1.0)
 
-##-- Options for extern packages
+##-- Options for kpix core packages
 option(USE_KPIX 
-  "Use extern KPiX libraries to decode data!" ON)
+  "Use local KPiX core libraries to decode data!" ON)
 
 option(MODE_DEBUG
   "Use DEBUG mode, ONLY single module to compile!" OFF)
@@ -78,18 +78,18 @@ include_directories( ${ROOT_INCLUDE_DIR} )
 include_directories( ${LIBXML2_INCLUDE_DIR} )
 
 
-##-- Extern Packages to install prior
+##-- KPiX Core Packages to install prior
 if (USE_KPIX)
   message(" [INFO] local KPiX lite package used.")
 
   set(KPIX_LOCAL_LIB kpix)
-  include_directories( ${PROJECT_SOURCE_DIR}/extern/include)
+  include_directories( ${PROJECT_SOURCE_DIR}/core/include)
 
-  aux_source_directory( ${PROJECT_SOURCE_DIR}/extern/src LIB_SRC)
+  aux_source_directory( ${PROJECT_SOURCE_DIR}/core/src LIB_SRC)
   
   if (NOT eudaq_FOUND)
     message("debug: remove the euDataRead.cxx")
-    list(REMOVE_ITEM LIB_SRC ${PROJECT_SOURCE_DIR}/extern/src/euDataRead.cpp)
+    list(REMOVE_ITEM LIB_SRC ${PROJECT_SOURCE_DIR}/core/src/euDataRead.cpp)
   endif()
     
   
@@ -98,8 +98,8 @@ if (USE_KPIX)
 
   target_include_directories(${KPIX_LOCAL_LIB}
 	PUBLIC
-	$<INSTALL_INTERFACE:extern/include>
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/extern/include>
+	$<INSTALL_INTERFACE:core/include>
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/core/include>
 	PRIVATE
 	)
 
@@ -125,7 +125,7 @@ if (USE_KPIX)
 	
   else()
     # start of adding files to usr/local
-    file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/extern/include/*.h" )
+    file(GLOB KPIX_HEADER "${PROJECT_SOURCE_DIR}/core/include/*.h" )
     install(FILES ${KPIX_HEADER} DESTINATION /usr/local/include/kpix)
     install(TARGETS ${KPIX_LOCAL_LIB} LIBRARY DESTINATION /usr/local/lib/kpix)
     # end of adding files to usr/local
@@ -213,9 +213,9 @@ add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
 target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
 
-add_executable(splitFile ${PROJECT_SOURCE_DIR}/src/splitFile.cxx)
-target_link_libraries(splitFile ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS splitFile)
+#add_executable(splitFile ${PROJECT_SOURCE_DIR}/src/splitFile.cxx)
+#target_link_libraries(splitFile ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS splitFile)
 
 # add_executable(analysis_newdaq_mq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq_mq.cxx)
 # target_link_libraries(analysis_newdaq_mq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)

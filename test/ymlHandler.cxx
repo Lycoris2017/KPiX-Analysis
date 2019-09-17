@@ -4,6 +4,7 @@
 // Created       : 18/10/2018
 // Update        : 24/10/2018
 // Project       : read compact yml variables into a map
+// Definition    : CLASS PROTOTYPE
 //-----------------------------------------------------------------------------
 
 #include <iostream>
