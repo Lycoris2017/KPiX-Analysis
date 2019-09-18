@@ -141,7 +141,7 @@ int main ( int argc, char **argv )
 	bool                   chanFound[32][1024]; // variable that gives true if a channel has entries
 	bool                   kpixFound[32]; // variable that gives true if a kpix at the index n (0<=n<32) was found
 	uint                   x;
-	uint                   range;
+	//uint                   range;
 	uint                   value;
 	uint                   kpix;
 	uint                   channel;
@@ -426,7 +426,6 @@ int main ( int argc, char **argv )
 		cout << "Wrote skipped cycles to " << outtxt << endl;
 		cout << endl;
 	}
-	range = 0;
 	
 	
 	int cycle_checking;  // Program crashes when more than ~1700 cycles are checked maybe a memory issues, therefore the checking will have a maximum of 1000
@@ -455,7 +454,6 @@ int main ( int argc, char **argv )
 	
 	
 	
-	printf("mengqing debug -1");
 		
 	dataRead.close();
 	
@@ -465,8 +463,112 @@ int main ( int argc, char **argv )
 	//////////////////////////////////////////
 	// New histogram generation within subfolder structure
 	//////////////////////////////////////////
+	for (kpix = 0; kpix<32; kpix++){
+		if (!kpixFound[kpix]) continue; // no such kpix
+		
+		rFile->cd();
+		FolderName.str("");
+		FolderName << "KPiX_" << kpix;
+		rFile->mkdir(FolderName.str().c_str());
+		TDirectory *kpix_folder = rFile->GetDirectory(FolderName.str().c_str());
+		kpix_folder->cd();
+
+		tmp.str("");
+		tmp << "trig_count_k" << kpix << "_total";
+		trig_count[kpix][4]  = new TH1F (tmp.str().c_str(), "trig_count;  #triggered channels; #entries/#acq.cycles",1024, -0.5, 1023.5);
+
+		tmp.str("");
+		tmp << "ext_time_diff_k" << kpix;
+		trigger_difference[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
+
+		tmp.str("");
+		tmp << "ext_time_diff_con_k" << kpix;
+		trigger_diff_connected[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
+
+		tmp.str("");
+		tmp << "ext_time_diff_discon_k" << kpix;
+		trigger_diff_disconnected[kpix] = new TH1D (tmp.str().c_str(), "intern_extern_time_diff; #Delta T (BunchClkCount); #entries/#acq.cycles", 8001, -0.5, 1000.5);
+
+		
+		//-- START General Kpix plot at Bucket==0 ONLY
+		bucket = 0 ;
+		tmp.str("");
+		tmp << "timestamp_kpix_k" << kpix << "_b" << bucket;
+		times_kpix[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
+		//-- END General Kpix plot at Bucket==0 ONLY
+		
+
+		FolderName.str("");
+		FolderName << "Strips_and_Channels";
+		kpix_folder->mkdir(FolderName.str().c_str());
+		TDirectory *channels_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+		rFile->cd(channels_folder->GetPath());
+		
+		for (channel = 0; channel < 1024; channel++){
+			if (!chanFound[kpix][channel]) continue;
+
+			// to keep consistent with previous code: but hard coded left right kpix for S59
+			FolderName.str("");
+			if (kpix == 26)
+				FolderName << "strip_" << kpix2strip_left.at(channel) << "_channel_" << channel;
+			else if (kpix == 28)
+				FolderName << "strip_" << kpix2strip_right.at(channel) << "_channel_" << channel;
+			else
+				FolderName << "channel_" << channel;
+			channels_folder->mkdir(FolderName.str().c_str());
+			TDirectory *channel_folder = channels_folder->GetDirectory(FolderName.str().c_str());
+			rFile->cd(channel_folder->GetPath());
+
+			for (bucket = 0; bucket < 4; bucket++){
+				if (bucket!=0) continue;
 
 
+				tmp.str("");
+				tmp << "Channel_entries_k" << kpix << "_b" << bucket;
+				channel_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
+				
+				tmp.str("");
+				tmp << "Channel_entries_k" << kpix <<  "_b" << bucket << "_timed";
+				channel_entries_timed[kpix][bucket] = new TH1F(tmp.str().c_str(), "Channel_Entries_timed; KPiX_channel_address; #entries/#acq.cycles", 1024,-0.5, 1023.5);
+
+				
+				
+				
+				tmp.str("");  //set stringstream tmp to an empty string
+				tmp << "hist" << "_s" << dec <<  kpix2strip_left.at(channel);
+				tmp << "_c" << dec << setw(4) << setfill('0') << channel;
+				tmp << "_b" << dec << bucket; // add _b$bucket
+				tmp << "_k" << dec << kpix; // add _k$kpix to stringstream
+				
+				tmp_units.str(""); //set stringstream decribing histogram units to an empty string
+				tmp_units << "hist" << "_s" << dec <<  kpix2strip_left.at(channel);
+				tmp_units << "_c" << dec << setw(4) << setfill('0') << channel;
+				tmp_units << "_b" << dec << bucket; // add _b$bucket
+				tmp_units << "_k" << dec << kpix; // add _k$kpix to stringstream
+				tmp_units << "; Charge (ADC); #entries/#acq.cycles"; // add title: x label, y label to stringstream
+				hist[kpix][channel][bucket][0] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);	
+				
+				tmp.str("");
+				tmp << "hist_timed" << "_s" << dec <<  kpix2strip_left.at(channel);
+				tmp << "_c" << dec << setw(4) << setfill('0') << channel;
+				tmp << "_b" << dec << bucket;
+				tmp << "_k" << dec << kpix;
+				
+				tmp_units.str("");
+				tmp_units << "hist_timed" << "_s" << dec << kpix2strip_left.at(channel);
+				tmp_units << "_c" << dec << setw(4) << setfill('0') << channel;
+				tmp_units << "_b" << dec << bucket;
+				tmp_units << "_k" << dec << kpix;
+				tmp_units << "; Charge (ADC); #entries/#acq.cycles";
+				hist_timed[kpix][channel][bucket][0] = new TH1F(tmp.str().c_str(),tmp_units.str().c_str(),8192, -0.5,8191.5);
+				
+			}// histograms per bucket [NB! but only bucket 0 defined]
+			
+			
+		}// histograms per channel
+		
+	}// histograms per kpix
+	
 	
 	////////////////////////////////////////////
 	//// Data read for all events for detailed look into single event structure
@@ -474,23 +576,50 @@ int main ( int argc, char **argv )
 	dataRead.open(argv[1]); //open binary file
 	int cycle_num = 0;
 	int cycle_num_ext = -1;
-	
-	while ( dataRead.next(&event) ) //loop through binary file event structure until end of file
-	{
+
+	//loop through binary file event structure until end of file
+	while ( dataRead.next(&event) ) {
 		cycle_num++;
-		if ( cycle_num > skip_cycles_front)
-		{
+		if ( cycle_num > skip_cycles_front){
 			double 	trigger_counter[32] = {0}; // fill the entire list of trigger_counter with 0
 			vector<int> trigger_times[32];
 
 			//if (kpixFound[26]) acq_num_ext[26]->Fill(trigger_counter[26]); // trigger counting for monster check
 			//if (kpixFound[28]) acq_num_ext[28]->Fill(trigger_counter[28]);
 			//if (kpixFound[30]) acq_num_ext[30]->Fill(trigger_counter[30]);
-
 			
-		}
-	}
-	printf("mengqing debug -2");
+			for (x=0; x< event.count(); x++) {
+				sample = event.sample(x);
+				kpix    = sample->getKpixAddress();
+				channel = sample->getKpixChannel();
+				bucket  = sample->getKpixBucket();
+				value   = sample->getSampleValue();
+				type    = sample->getSampleType();
+				tstamp  = sample->getSampleTime();
+
+				if (bucket !=0 ) continue; // skip all non bucket0 events
+				
+				if (type == KpixSample::Timestamp) {
+					
+					if (x == 0) cycle_num_ext++;
+					double time = tstamp + double(value * 0.125);
+					
+				}// case1: find Timestamp sample
+
+				if (type == KpixSample::Data){
+					channel_entries[kpix][bucket]->Fill(channel, weight);
+					times_kpix[kpix][bucket]->Fill(tstamp, weight);
+					
+					
+				}// case2: find Data sample
+		  
+				
+				
+			}// for-loop over all kpix samples
+			
+		} // if-end, skip cycles
+	} // loop over all cycles
+	
 
 	dataRead.close(); // close file as we have looped through it and are now at the end
 	dataRead.open(argv[1]); //open file again to start from the beginning
@@ -498,7 +627,6 @@ int main ( int argc, char **argv )
 	int two_coincidence = 0;
 	int three_coincidence = 0;
 	int extern_trigger_id={0};
-	
 	
 	cycle_num = 0;
 	
@@ -531,22 +659,45 @@ int main ( int argc, char **argv )
 				value   = sample->getSampleValue();
 				type    = sample->getSampleType();
 				tstamp  = sample->getSampleTime();
-				range   = sample->getSampleRange();
-				bunchClk = sample->getBunchCount();
-				subCount = sample->getSubCount();
-		
-		
-		
-		
-				if (type == 2)// If event is of type external timestamp
-				{
-					double time = bunchClk + double(subCount * 0.125);
+				if (bucket !=0 ) continue; // skip all non bucket0 events
+
+				if (type == KpixSample::Timestamp){
+					
+					double time = tstamp + double(value * 0.125);
+					
 					time_external->Fill(time, weight);
 					time_ext.push_back(time);
 					//cout << "DEBUG: channel in timestmap = " << channel << endl;
 					//cout << "DEBUG: bucket in timestmap = " << bucket << endl;
 				}
-		
+
+				if (type == KpixSample::Data) {
+					// NB: hard code to process only strip data
+					//	if (kpix != 26 || kpix != 28) continue;
+
+					hist[kpix][channel][bucket][0]->Fill(value, weight);
+					
+					if ( time_ext.size() > 0 ){
+					double trig_diff = smallest_time_diff(time_ext, tstamp); //Calculation of minimal time difference 
+
+					bool isconn = true;
+					if (kpix == 26) isconn = (kpix2strip_left.at(channel) = 9999 );
+					if (kpix == 28) isconn = (kpix2strip_right.at(channel) = 9999 );
+
+					trigger_difference[kpix]->Fill(trig_diff, weight);
+					if (isconn)
+						trigger_diff_connected[kpix]->Fill(trig_diff,weight);
+					else
+						trigger_diff_disconnected[kpix]->Fill(trig_diff,weight);
+					
+					if ( trig_diff >= 0.0 && trig_diff <= 3.0 ){
+						hist_timed[kpix][channel][bucket][0]->Fill(value, weight);
+					}
+					
+												
+					}// if--end, algorithm with External Timestamp
+				}
+				
 		
 			}
 		
@@ -570,7 +721,6 @@ int main ( int argc, char **argv )
 		
 	}
 	
-	printf("mengqing debug -3");
 		
 	cout <<  endl << "Full coincidence of sensors with external trigger: " << full_coincidence_channel_entries->GetEntries() << endl;
 	cout << "Three coincidence of sensors: " << three_coincidence << endl;
@@ -581,12 +731,12 @@ int main ( int argc, char **argv )
 	
 
 	
-	for (int k = 0; k < 1024; k++)
-	{
-	cout << "DEBUG channel number: " << k << endl;
-	cout << "DEBUG X coord: " << pixel_kpix[k].x << endl;
-	cout << "DEBUG y coord: " << pixel_kpix[k].y << endl << endl;
-	}
+	// for (int k = 0; k < 1024; k++)
+	// {
+	// cout << "DEBUG channel number: " << k << endl;
+	// cout << "DEBUG X coord: " << pixel_kpix[k].x << endl;
+	// cout << "DEBUG y coord: " << pixel_kpix[k].y << endl << endl;
+	// }
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
