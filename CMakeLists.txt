@@ -194,16 +194,16 @@ add_executable(DuoKpix_CalibFitter ${PROJECT_SOURCE_DIR}/src/DuoKpix_CalibFitter
 target_link_libraries(DuoKpix_CalibFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS DuoKpix_CalibFitter)
 
-#add_executable(calibrationFitter ${PROJECT_SOURCE_DIR}/src/calibrationFitter.cxx)
-#target_link_libraries(calibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS calibrationFitter)
+add_executable(calibrationFitter ${PROJECT_SOURCE_DIR}/src/calibrationFitter.cxx)
+target_link_libraries(calibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS calibrationFitter)
 
 
 # full ana:
 
-#add_executable(analysisLite ${PROJECT_SOURCE_DIR}/src/analysisLite.cxx)
-#target_link_libraries(analysisLite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS analysisLite)
+add_executable(analysisLite ${PROJECT_SOURCE_DIR}/src/analysisLite.cxx)
+target_link_libraries(analysisLite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS analysisLite)
 
 add_executable(analysis ${PROJECT_SOURCE_DIR}/src/analysis.cxx)
 target_link_libraries(analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)

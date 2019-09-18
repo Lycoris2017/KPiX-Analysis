@@ -945,9 +945,9 @@ int main ( int argc, char **argv )
 	
 		
 			//if (trigger_counter[26] > 4) cout << trigger_counter[26] << endl;
-			if (kpixFound[26]) acq_num_ext[26]->Fill(trigger_counter[26]); // trigger counting for monster check
-			if (kpixFound[28]) acq_num_ext[28]->Fill(trigger_counter[28]);
-			if (kpixFound[30]) acq_num_ext[30]->Fill(trigger_counter[30]);
+			// if (kpixFound[26]) acq_num_ext[26]->Fill(trigger_counter[26]); // trigger counting for monster check
+			// if (kpixFound[28]) acq_num_ext[28]->Fill(trigger_counter[28]);
+			// if (kpixFound[30]) acq_num_ext[30]->Fill(trigger_counter[30]);
 			//cout << trigger_times[26].size() << endl;
 			//for (int i = 0; i<32; ++i)
 			//{
