@@ -495,6 +495,14 @@ int main ( int argc, char **argv )
 		tmp.str("");
 		tmp << "timestamp_kpix_k" << kpix << "_b" << bucket;
 		times_kpix[kpix][bucket] = new TH1F(tmp.str().c_str(), "timestamp_kpix; time [#bunch_clk_count]; #entries/#acq.cycles", 8192,-0.5, 8191.5);
+
+		tmp.str("");
+		tmp << "timed_left_strip_entries_k" << kpix << "_b" << bucket;
+		timed_left_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920,-0.5, 919.5);
+		tmp.str("");
+		tmp << "timed_right_strip_entries_k" << kpix << "_b" << bucket;
+		timed_right_strip_entries[kpix][bucket] = new TH1F(tmp.str().c_str(), "Timed_Strip_Entries; Strip_address; #entries/#acq.cycles", 920, 919.5, 1839.5);
+		
 		//-- END General Kpix plot at Bucket==0 ONLY
 		
 
@@ -681,8 +689,8 @@ int main ( int argc, char **argv )
 					double trig_diff = smallest_time_diff(time_ext, tstamp); //Calculation of minimal time difference 
 
 					bool isconn = true;
-					if (kpix == 26) isconn = (kpix2strip_left.at(channel) = 9999 );
-					if (kpix == 28) isconn = (kpix2strip_right.at(channel) = 9999 );
+					if (kpix == 26) isconn = (kpix2strip_left.at(channel) == 9999 );
+					if (kpix == 28) isconn = (kpix2strip_right.at(channel) == 9999 );
 
 					trigger_difference[kpix]->Fill(trig_diff, weight);
 					if (isconn)
@@ -691,7 +699,12 @@ int main ( int argc, char **argv )
 						trigger_diff_disconnected[kpix]->Fill(trig_diff,weight);
 					
 					if ( trig_diff >= 0.0 && trig_diff <= 3.0 ){
-						hist_timed[kpix][channel][bucket][0]->Fill(value, weight);
+						hist_timed[kpix][channel][bucket][0] -> Fill(value, weight);
+						if (kpix == 26)
+							timed_left_strip_entries[kpix][bucket] -> Fill(kpix2strip_left.at(channel), weight);
+							
+						if (kpix == 28)
+							timed_right_strip_entries[kpix][bucket] -> Fill(kpix2strip_right.at(channel), weight);
 					}
 					
 												
