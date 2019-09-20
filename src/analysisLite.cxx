@@ -14,7 +14,7 @@
 // 05/30/2012: created
 // 06/28/2017: large scale rewrite of original calibrationFitter.cpp
 // 22/03/2018: clean up ecal plots and add strip plots by <mengqing.wu@desy.de>
-// 18/09/2019: fix bugs and remove usage of multi-dimentional arrays by <mengqing.wu@desy.de>
+// 18/09/2019: fix bugs and add necessary plots by <mengqing.wu@desy.de>
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -459,6 +459,7 @@ int main ( int argc, char **argv )
 	
 	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
 	double weight = 1.0/acqProcessed;
+	printf("INFO: acq. cycles processed = %d\n", acqProcessed);
 	
 	//////////////////////////////////////////
 	// New histogram generation within subfolder structure

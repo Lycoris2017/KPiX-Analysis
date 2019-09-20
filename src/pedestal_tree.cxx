@@ -156,7 +156,7 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	const unsigned int n_kpix = 24;
+	const unsigned int n_kpix = 32;//24;
 	const unsigned int n_buckets = 4;
 	const unsigned int n_channels = 1024;
 	

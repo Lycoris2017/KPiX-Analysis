@@ -693,7 +693,7 @@ int main ( int argc, char **argv ) {
 			for (bucket = 0; bucket < 4; bucket++)
 			{
 				FolderName.str("");
-				FolderName << "Bucket " << bucket;
+				FolderName << "Bucket_" << bucket;
 				buckets_folder->mkdir(FolderName.str().c_str());
 				TDirectory *bucket_folder = buckets_folder->GetDirectory(FolderName.str().c_str());
 				rFile->cd(bucket_folder->GetPath());
