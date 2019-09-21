@@ -1,3 +1,6 @@
+*_C.*
+*.pcm
+*.eps
 cmake/
 *.bin
 *~

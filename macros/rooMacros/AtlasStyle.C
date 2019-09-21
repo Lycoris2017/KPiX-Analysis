@@ -81,8 +81,8 @@ TStyle* AtlasStyle()
   atlasStyle->SetOptTitle(0);
   //atlasStyle->SetOptStat(1111);
   atlasStyle->SetOptStat(0);
-  //atlasStyle->SetOptFit(1111);
-  atlasStyle->SetOptFit(0);
+  atlasStyle->SetOptFit(1111);
+  //atlasStyle->SetOptFit(0);
 
   // put tick marks on top and RHS of plots
   atlasStyle->SetPadTickX(1);
