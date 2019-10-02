@@ -1,18 +1,7 @@
 //-----------------------------------------------------------------------------
-// File          : analysis.cpp
-// Author        : Uwe Krämer (orig. Ryan Herbst) <uwe.kraemer@desy.de>
-// Created       : 06/28/2017
-// Project       : KPiX Analysis
-//-----------------------------------------------------------------------------
-// Description :
-// General analysis of KPiX data.
-//-----------------------------------------------------------------------------
-// Copyright (c) 2012 by SLAC. All rights reserved.
-// Proprietary and confidential to SLAC.
-//-----------------------------------------------------------------------------
-// Modification history :
-// 05/30/2012: created
-// 06/28/2017: large scale rewrite of original calibrationFitter.cpp
+// Mengqing Wu <mengqing.wu@desy.de>
+//
+// Target: simple code to validate data with different counts
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <iomanip>

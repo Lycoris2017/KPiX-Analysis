@@ -405,7 +405,12 @@ int main ( int argc, char **argv )
 	tmp.str("");
 	tmp << argv[1] << "_" << pedestalname << ".cluster.root";
 	outRoot = tmp.str();
-	
+
+	tmp.str("");
+	tmp << argv[1] << ".GBL_input.txt" ;
+	cout << "Name of GBL input file is - " << tmp.str();
+	//claus_file.open("claus_file_new.txt");
+	claus_file.open(tmp.str());
 	
 	//////////////////////////////////////////
 	// Read Data
@@ -921,8 +926,6 @@ int main ( int argc, char **argv )
 	//////////////////////////////////////////
 	dataRead.open(argv[1]); //open file again to start from the beginning
 	
-	claus_file.open("claus_file_new.txt");
-
 	int header = 1;
 	
 
@@ -1087,7 +1090,7 @@ int main ( int argc, char **argv )
 
 			y = yParameter(strip, kpix); //Testbeam position parameter. Already adjusted for flipped sensors and kpix 1/2 position. NOT for the stereo angle
 	
-			if (type == 2)// If event is of type external timestamp
+			if (type == KpixSample::Timestamp)// If event is of type external timestamp
 			{
 				trig_counter++;
 				global_trig_counter++;
@@ -1259,12 +1262,19 @@ int main ( int argc, char **argv )
 							//							cluster_sigma[sensor][7]->Fill(NomNom.getClusterSigma(), weight);
 							//							multi_cluster[7][sensor].push_back(NomNom.getCluster());
 							//						}
-							if (header == 1)
-							{
+							if (header == 1){
 								header = 0;
-								claus_file <<"Event Number, Layer, position, Significance, Size, Charge, time, #trig, global_time" << endl;
+								claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,time, #trig" << endl;
 							}
-							claus_file << setw(5) << event.eventNumber()  << ", " << setw(1) << sensor2layer.at(sensor)  << ", " <<  setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << " ," << setw(7) << NomNom.getClusterSignificance() << " ," << setw(2) << NomNom.getClusterElementssize() << " ," << setw(7) << NomNom.getClusterCharge() << " ," << tmp.str().c_str() << endl;
+							claus_file << setw(5) << event.eventNumber()  << ","
+							           << setw(1) << sensor2layer.at(sensor)  << ","
+							           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << ","
+							           << setw(7) << NomNom.getClusterSignificance() << ","
+							           << setw(2) << NomNom.getClusterElementssize() << ","
+							           << setw(7) << NomNom.getClusterSignificance2() << ","
+							           << setw(7) << NomNom.getClusterCharge() << ","
+							           << tmp.str().c_str()
+							           << endl;
 
 							num_of_clusters++;
 							//cout << "Cluster Position is " << yParameterSensor(NomNom.getClusterCoG(), sensor) << endl;

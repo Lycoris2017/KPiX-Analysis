@@ -432,6 +432,7 @@ def hist_plotter():
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
+			z_axis = obj.GetZaxis()
 #			ROOT.TGaxis.SetMaxDigits(3)
 			c1.cd()
 			#print obj.GetEntries()
@@ -472,6 +473,10 @@ def hist_plotter():
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
 				y_axis.SetRangeUser(y_low, y_high)
+			if 9999 not in args.zaxisrange:
+				z_low = args.zaxisrange[0]
+				z_high = args.zaxisrange[1]
+				z_axis.SetRangeUser(z_low, z_high)
 			obj.SetLineColor(args.color[0]) #Blue
 			obj.SetMarkerColor(args.color[0]) #Blue
 			if (args.fill):
@@ -787,6 +792,7 @@ parser.add_argument('--refuse2', dest='refuse2', default= ['nothing'], nargs='*'
 parser.add_argument('--exact', dest='exact', default=False, help='if set to True, only histograms with the exact name will be used')
 parser.add_argument('--xrange', dest='xaxisrange', default=[9999], nargs='*', type=float, help='set a xrange for the plot to used with xmin xmax as the two arguments | type=float')
 parser.add_argument('--yrange', dest='yaxisrange', default=[9999], nargs='*', type=float, help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float')
+parser.add_argument('--zrange', dest='zaxisrange', default=[9999], nargs='*', type=float, help='set a zrange for the plot to used with ymin ymax as the two arguments | type=float')
 parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to be used as legend titles instead of the default filename+histogram name')
 parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
 parser.add_argument('--zlog', dest='zlog', help='if given as an option, set z axis to logarithmic.')
