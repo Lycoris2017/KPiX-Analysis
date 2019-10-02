@@ -408,7 +408,7 @@ int main ( int argc, char **argv )
 
 	tmp.str("");
 	tmp << argv[1] << ".GBL_input.txt" ;
-	cout << "Name of GBL input file is - " << tmp.str();
+	cout << "Write to GBL input file : " << tmp.str() << endl;
 	//claus_file.open("claus_file_new.txt");
 	claus_file.open(tmp.str());
 	
@@ -1090,24 +1090,25 @@ int main ( int argc, char **argv )
 
 			y = yParameter(strip, kpix); //Testbeam position parameter. Already adjusted for flipped sensors and kpix 1/2 position. NOT for the stereo angle
 	
-			if (type == KpixSample::Timestamp)// If event is of type external timestamp
-			{
+			if (type == KpixSample::Timestamp){
 				trig_counter++;
 				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
-				if (frameruntime!=0)
-					runtime = sample->getSampleRuntime64(frameruntime);
-				else
-					cerr<< "Error: frameruntime is ZEROs!"<< endl;
-				if (trig_counter == 1)
-				{
+				runtime = sample->getSampleRuntime64(frameruntime);
+				
+				if (frameruntime==0)
+					cerr<< "Warning: frameruntime is ZEROs!"<< endl;
+				
+				if (trig_counter == 1){ // only take the first trigger, which suppose to relate to bucket==0
 					//cout << "DEBUG: " << event.eventNumber() << " ," << time << " ," << trig_counter << endl;
 					tmp.str("");
-					tmp << setw(7) << time  << " ," << setw(5) << global_trig_counter << runtime ;
-					
+					tmp << runtime    << ","
+					    << runtime*5  << " ,"
+					    << global_trig_counter ;
 				}
 			}
+			
 			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{
 				
@@ -1264,14 +1265,14 @@ int main ( int argc, char **argv )
 							//						}
 							if (header == 1){
 								header = 0;
-								claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,time, #trig" << endl;
+								claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,runtime,runtime_ns,trigN" << endl;
 							}
 							claus_file << setw(5) << event.eventNumber()  << ","
 							           << setw(1) << sensor2layer.at(sensor)  << ","
 							           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << ","
 							           << setw(7) << NomNom.getClusterSignificance() << ","
-							           << setw(2) << NomNom.getClusterElementssize() << ","
 							           << setw(7) << NomNom.getClusterSignificance2() << ","
+							           << setw(2) << NomNom.getClusterElementssize() << ","
 							           << setw(7) << NomNom.getClusterCharge() << ","
 							           << tmp.str().c_str()
 							           << endl;
