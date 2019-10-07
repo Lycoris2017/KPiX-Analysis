@@ -187,20 +187,20 @@ int main ( int argc, char **argv )
 	TH1F 					*Max_SoN[n_kpix/2];
 		
 		
-	TH1F 					*cluster_position_y[n_kpix/2][3];
+	TH1F 					*cluster_position_y[n_kpix/2][4];
 	//TH1F 					*cluster_position_x[n_kpix/2][3];
-	TH1F 					*clusters[n_kpix/2][2]; // only 2 because it makes no sense to ask for the number of clusters in the seed case cause it will always be 1.
-	TH1F 					*cluster_charge[n_kpix][3];
-	TH1F 					*cluster_significance[n_kpix][3];
-	TH1F 					*cluster_significance2[n_kpix][3];
-	TH1F 					*cluster_size[n_kpix][3];
-	TH1F 					*cluster_sigma[n_kpix][3];
+	TH1F 					*clusters[n_kpix/2][3]; // only 2 because it makes no sense to ask for the number of clusters in the seed case cause it will always be 1.
+	TH1F 					*cluster_charge[n_kpix][4];
+	TH1F 					*cluster_significance[n_kpix][4];
+	TH1F 					*cluster_significance2[n_kpix][4];
+	TH1F 					*cluster_size[n_kpix][4];
+	TH1F 					*cluster_sigma[n_kpix][4];
 	
 		
 		
-	TH2F					*cluster_correlation[3][n_kpix][n_kpix-1];
-	TH1F					*cluster_offset_y[3][n_kpix/2][n_kpix/2-1];
-	TH1F					*cluster_offset_x[3][n_kpix/2][n_kpix/2-1];
+	TH2F					*cluster_correlation[4][n_kpix][n_kpix-1];
+	TH1F					*cluster_offset_y[4][n_kpix/2][n_kpix/2-1];
+	TH1F					*cluster_offset_x[4][n_kpix/2][n_kpix/2-1];
 
 	TH1F					*cuts_entries[3][n_kpix/2][n_kpix/2-1];
 	TH1F					*cuts_purity[3][n_kpix/2][n_kpix/2-1];
@@ -228,7 +228,12 @@ int main ( int argc, char **argv )
 	uint                   acqCount = 0; // acquisitionCount
 	uint                   acqProcessed;
 	string                 outRoot;
-	TFile                  *rFile;
+	TFile					*rFile;
+
+	string					outCluster;
+	TFile					*clusterFile;
+	TTree					*clusterTree;
+
 	stringstream           crossString;
 	stringstream           crossStringCsv;
 	XmlVariables           config;
@@ -537,11 +542,6 @@ int main ( int argc, char **argv )
 	double response_xmax = 19.5;
 	
 	
-	//clustr* clusttree = new clustr;
-	//int sensr;
-	//cluster_tree = new TTree("cluster_tree", "A ROOT Tree");
-	//cluster_tree->Branch("cluster", &clusttree);
-	//cluster_tree->Branch("sensor", &sensr, "sensr/I");
 
 	//TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
 	
@@ -585,16 +585,28 @@ int main ( int argc, char **argv )
 					cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
 
 					tmp.str("");
-					tmp << "cluster_offset_cuts_y_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp << "cluster_offset_CUTS_y_sens" << sensor << "_to_sens" << s << "_b0";
 					cluster_offset_y[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
 					tmp.str("");
-					tmp << "cluster_offset_cuts_x_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp << "cluster_offset_CUTS_x_sens" << sensor << "_to_sens" << s << "_b0";
 					cluster_offset_x[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
 					tmp.str("");
-					tmp << "cluster_correlation_cuts_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp << "cluster_correlation_CUTS_sens" << sensor << "_to_sens" << s << "_b0";
 					tmp_units.str("");
 					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
 					cluster_correlation[2][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_SPECIALCUTS_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					tmp.str("");
+					tmp << "cluster_offset_SPECIALCUTS_x_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_x[3][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_SPECIALCUTS_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[3][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
 
 //					tmp.str("");
 //					tmp << "cluster_offset_HighSigmaCluster_y_sens" << sensor << "_to_sens" << s << "_b0";
@@ -738,26 +750,49 @@ int main ( int argc, char **argv )
 			
 			
 			tmp.str("");
-			tmp << "cluster_position_y_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_position_y_CUTS_sens" << sensor << "_b0";
 			cluster_position_y[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-46000, 46000);
 			tmp.str("");
-			tmp << "cluster_charge_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_charge_CUTS_sens" << sensor << "_b0";
 			cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); #Entries", 200,-0.5, 49.5);
 			tmp.str("");
-			tmp << "cluster_significance_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_significance_CUTS_sens" << sensor << "_b0";
 			cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance_2; S/N; #Entries", 200,-0.5, 49.5);
 			tmp.str("");
-			tmp << "cluster_significance2_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_significance2_CUTS_sens" << sensor << "_b0";
 			cluster_significance2[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance2_2; S/N; #Entries", 200,-0.5, 49.5);
 			tmp.str("");
-			tmp << "cluster_sigma_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_sigma_CUTS_sens" << sensor << "_b0";
 			cluster_sigma[sensor][2] = new TH1F(tmp.str().c_str(), "cluster sigma2; #sigma; #Entries", 200,-0.5, 4.95);
 			tmp.str("");
-			tmp << "cluster_size_cuts_sens" << sensor << "_b0";
+			tmp << "cluster_size_CUTS_sens" << sensor << "_b0";
 			cluster_size[sensor][2] = new TH1F(tmp.str().c_str(), "cluster size2; Size; #Entries", 10,-0.5, 9.5);
 			tmp.str("");
-			tmp << "clusters_cuts_sens" << sensor << "_b0";
+			tmp << "clusters_CUTS_sens" << sensor << "_b0";
 			clusters[sensor][1] = new TH1F(tmp.str().c_str(), "Clusters; #Clusters; #Entries", 100,-0.5, 99.5);
+
+
+			tmp.str("");
+			tmp << "cluster_position_y_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_position_y[sensor][3] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-46000, 46000);
+			tmp.str("");
+			tmp << "cluster_charge_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_charge[sensor][3] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_significance_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_significance[sensor][3] = new TH1F(tmp.str().c_str(), "cluster significance_2; S/N; #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_significance2_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_significance2[sensor][3] = new TH1F(tmp.str().c_str(), "cluster significance2_2; S/N; #Entries", 200,-0.5, 49.5);
+			tmp.str("");
+			tmp << "cluster_sigma_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_sigma[sensor][3] = new TH1F(tmp.str().c_str(), "cluster sigma2; #sigma; #Entries", 200,-0.5, 4.95);
+			tmp.str("");
+			tmp << "cluster_size_SPECIALCUTS_sens" << sensor << "_b0";
+			cluster_size[sensor][3] = new TH1F(tmp.str().c_str(), "cluster size2; Size; #Entries", 10,-0.5, 9.5);
+			tmp.str("");
+			tmp << "clusters_SPECIALCUTS_sens" << sensor << "_b0";
+			clusters[sensor][2] = new TH1F(tmp.str().c_str(), "Clusters; #Clusters; #Entries", 100,-0.5, 99.5);
 			
 			
 //			tmp.str("");
@@ -1055,6 +1090,30 @@ int main ( int argc, char **argv )
 	int global_trig_counter = 0;
 //	std::vector<clustr> all_clusters[n_kpix/2];
 	std::vector<clustr>* all_clusters_pointer[n_kpix/2][acqCount] = {nullptr};
+
+	pedestalname = argv[3];
+
+	pedestalname = pedestalname.substr(name_start, name_length);
+
+	cout << "Name of output file is " <<  pedestalname << endl;
+	tmp.str("");
+	tmp << argv[1] << "_" << pedestalname << ".TreeOfClusters.root";
+	outCluster = tmp.str();
+
+
+
+	clusterFile = new TFile(outCluster.c_str(),"recreate"); // produce root file
+	clusterFile->cd(); // move into root folder base
+
+	clustr tree_input;
+	int eventNumber, sensorNumber;
+
+	clusterTree = new TTree("Tree of all clusters", "A ROOT Tree");
+	clusterTree->Branch("cluster", &tree_input, "bla/D");
+	clusterTree->Branch("eventNumber", &eventNumber, "bla/D");
+	clusterTree->Branch("sensor", &sensorNumber, "bla/D");
+
+
 	while ( dataRead.next(&event) )
 	{
 		int not_empty= 0;
@@ -1213,7 +1272,7 @@ int main ( int argc, char **argv )
 //							all_clusters_pointer[sensor][event.eventNumber()]->push_back(NomNom.getCluster());
 
 
-							if (NomNom.getClusterSignificance2() >= 7.0 && NomNom.getClusterCharge() >= 2.0 && NomNom.getClusterElementssize() <= 2)
+							if (NomNom.getClusterSignificance2() >= 7.0 && NomNom.getClusterCharge() >= 1.0 && NomNom.getClusterElementssize() <= 2)
 							{
 								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1222,6 +1281,17 @@ int main ( int argc, char **argv )
 								cluster_significance2[sensor][2]->Fill(NomNom.getClusterSignificance2(), weight);
 								cluster_sigma[sensor][2]->Fill(NomNom.getClusterSigma(), weight);
 								multi_cluster[2][sensor].push_back(NomNom.getCluster());
+							}
+
+							if (NomNom.getClusterSignificance2() >= 7.0 && NomNom.getClusterCharge() >= 1.0 && NomNom.getClusterElementssize() <= 2 && fabs(yParameterSensor(NomNom.getClusterCoG(),sensor)) <= 20000 )
+							{
+								cluster_position_y[sensor][3]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+								cluster_charge[sensor][3]->Fill(NomNom.getClusterCharge(), weight);
+								cluster_size[sensor][3]->Fill(NomNom.getClusterElementssize(), weight);
+								cluster_significance[sensor][3]->Fill(NomNom.getClusterSignificance(), weight);
+								cluster_significance2[sensor][3]->Fill(NomNom.getClusterSignificance2(), weight);
+								cluster_sigma[sensor][3]->Fill(NomNom.getClusterSigma(), weight);
+								multi_cluster[3][sensor].push_back(NomNom.getCluster());
 							}
 							//						if (NomNom.getClusterSignificance2() > 4.0 && NomNom.getClusterCharge() > 2.0 && NomNom.getClusterElementssize() < 3)
 							//						{
@@ -1337,6 +1407,17 @@ int main ( int argc, char **argv )
 								cluster_correlation[2][sensor1][sensor2]->Fill(y1,y2);
 							}
 						}
+						for (auto const& s1 : multi_cluster[3][sensor1])
+						{
+							for (auto const& s2 : multi_cluster[3][sensor2])
+							{
+								double y1 = yParameterSensor(s1.CoG, sensor1);
+								double y2 = yParameterSensor(s2.CoG, sensor2);
+								double clstroffset_y  = y1 - y2;
+								cluster_offset_y[3][sensor1][sensor2]->Fill(clstroffset_y, weight);
+								cluster_correlation[3][sensor1][sensor2]->Fill(y1,y2);
+							}
+						}
 						//					for (auto const& s1 : multi_cluster[3][sensor1])
 						//					{
 						//						for (auto const& s2 : multi_cluster[3][sensor2])
@@ -1407,6 +1488,11 @@ int main ( int argc, char **argv )
 		}
 		
 	}
+
+	clusterFile->Write();
+	gROOT->GetListOfFiles()->Remove(clusterFile); //delete cross links that make production of subfolder structure take forever
+	clusterFile->Close();
+
 	//// Noise mask generation. ONLY USE WHEN NO MASK IS PUT IN!
 //	noise_file.open("include/testbeam201907_noise_mask.h");
 //	for (int s = 0; s < 6; ++s)
@@ -1699,6 +1785,7 @@ int main ( int argc, char **argv )
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
+	cout << "Writing TTree of clusters to " << outCluster << endl;
 	cout << endl;
 	
 	rFile->Write();

@@ -312,7 +312,7 @@ int main ( int argc, char **argv )
 
 	range = 0;
 	
-	
+
 	
 	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
 	double weight = 1.0;//acqProcessed;
