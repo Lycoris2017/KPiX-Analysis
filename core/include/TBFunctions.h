@@ -13,5 +13,6 @@ double yParameterSensor(double, int);
 double xParameterSensor(double, int);
 double median(vector<double>*);
 double MAD(vector<double>*);
+double smallest_time_diff(vector<double>, int);
 
 #endif

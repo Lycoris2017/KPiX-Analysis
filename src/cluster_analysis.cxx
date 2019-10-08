@@ -203,6 +203,8 @@ int main ( int argc, char **argv )
 	TH1F 					*cluster_significance2[n_kpix][4];
 	TH1F 					*cluster_size[n_kpix][4];
 	TH1F 					*cluster_sigma[n_kpix][4];
+
+    TH1F 					*trig_diff[n_kpix];
 	
 		
 		
@@ -406,7 +408,7 @@ int main ( int argc, char **argv )
 	
 	// Create output names
 	string pedestalname = argv[3];
-	string outname = argv[1];
+    string outname = argv[1];
 	
 	
 	size_t name_start  = pedestalname.find("/Run") + 1;
@@ -452,7 +454,6 @@ int main ( int argc, char **argv )
 		{
 			acqProcessed++;
 			
-			
 			for (x=0; x < event.count(); x++)
 			{
 		
@@ -464,7 +465,9 @@ int main ( int argc, char **argv )
 				bucket  = sample->getKpixBucket();
 				value   = sample->getSampleValue();
 				type    = sample->getSampleType();
-				
+                bunchClk = sample->getBunchCount();
+                subCount = sample->getSubCount();
+
 				//cout << type <<endl;
 				//cout << "DEBUG 2" << endl;
 				if ( type == KpixSample::Data )
@@ -481,6 +484,8 @@ int main ( int argc, char **argv )
 							//cout << "2nd Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
 							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0)
 							{
+
+
 								
 								if (vec_corr_charge[kpix] == nullptr)
 								{
@@ -770,7 +775,8 @@ int main ( int argc, char **argv )
 			tmp << "cluster_significance2_CUTS_sens" << sensor << "_b0";
 			cluster_significance2[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance2_2; S/N; #Entries", 200,-0.5, 49.5);
 			tmp.str("");
-			tmp << "cluster_sigma_CUTS_sens" << sensor << "_b0";
+            tmp << "cluster_sigma_CUTS_sens" <<
+ sensor << "_b0";
 			cluster_sigma[sensor][2] = new TH1F(tmp.str().c_str(), "cluster sigma2; #sigma; #Entries", 200,-0.5, 4.95);
 			tmp.str("");
 			tmp << "cluster_size_CUTS_sens" << sensor << "_b0";
@@ -842,6 +848,7 @@ int main ( int argc, char **argv )
 //			tmp << "cluster_size_4sigma_2fC_3size_sens" << sensor << "_b0";
 //			cluster_size[sensor][4] = new TH1F(tmp.str().c_str(), "cluster size4; Size; #Entries", 10,-0.5, 9.5);
 			
+
 			
 //			tmp.str("");
 //			tmp << "cluster_position_y_4sigma_3fC_3size_sens" << sensor << "_b0";
@@ -949,6 +956,7 @@ int main ( int argc, char **argv )
 					tmp.str("");
 					tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
 					fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+
 					
 					tmp.str("");
 					tmp << "noise_distribution_k" << kpix << "_b0";
@@ -958,6 +966,10 @@ int main ( int argc, char **argv )
 					tmp.str("");
 					tmp << "noise_v_channel_k" << kpix << "_b0";
 					noise_v_channel[kpix]  = new TH1F(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
+
+                    tmp.str("");
+                    tmp << "trig_diff_k" << kpix << "_b0";
+                    trig_diff[kpix] = new TH1F(tmp.str().c_str(), "Trigger difference; #Delta t (BCC); #Entries", 80, 0, 10);
 			
 				}
 			}
@@ -981,6 +993,7 @@ int main ( int argc, char **argv )
 	unordered_map<uint, uint> noise_mask[6];
 	noise_mask[0] = noise_sensor_0();
 	noise_mask[1] = noise_sensor_1();
+
 	noise_mask[2] = noise_sensor_2();
 	noise_mask[3] = noise_sensor_3();
 	noise_mask[4] = noise_sensor_4();
@@ -989,6 +1002,7 @@ int main ( int argc, char **argv )
 	while ( dataRead.next(&event) ) //preread to determine noise value of each channel in each KPiX.
 	{
 		int not_empty= 0;
+        std::vector<double> time_ext;
 		for (x=0; x < event.count(); x++)
 		{
 			//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
@@ -1004,13 +1018,24 @@ int main ( int argc, char **argv )
 			unsigned int block = channel/32;
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
-		
+
+            if (type == 2)// If event is of type external timestamp
+            {
+                double time = bunchClk + double(subCount * 0.125);
+                time_ext.push_back(time);
+                //cout << "DEBUG: channel in timestmap = " << channel << endl;
+                //cout << "DEBUG: bucket in timestmap = " << bucket << endl;
+            }
 			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{
 				if (bucket == 0)
 				{
 					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0) //ensuring we ignore 0 MAD channels
 					{
+
+                        double time_diff_triggers = smallest_time_diff(time_ext, tstamp);
+                        trig_diff[kpix]->Fill(time_diff_triggers);
+
 						//cout << "DEBUG 1" << endl;
 						double charge_value = double(value)/calib_slope[kpix][channel];
 						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
@@ -1281,6 +1306,8 @@ int main ( int argc, char **argv )
 							cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
 							cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
                             multi_cluster[1][sensor].push_back(NomNom.getCluster());
+
+                            clustr testcluster = NomNom.getCluster();
                             tree_input.CoG = NomNom.getClusterCoG();
                             tree_input.Significance2 = NomNom.getClusterSignificance2();
                             tree_input.Charge = NomNom.getClusterCharge();

@@ -87,14 +87,19 @@ int main ( int argc, char **argv )
 	const unsigned int		n_channels = 1024;
 	const unsigned int		n_BCC = 8192;
 //	const unsigned int		n_strips = 1840;
+	unsigned int			n_events = 0;
+
+	uint                   lastPct;
+	uint                   currPct;
 
 	bool					sensorFound[n_sensor] = {false};
 	stringstream			FolderName;
 
 	TFile					*rFile;
 	int eventNumber, sensor, eventTime;
-	tree_cluster_input clusters;
+	tree_cluster_input		tree_clusters;
 	stringstream           tmp;
+	stringstream           tmp_units;
 	string                 outRoot;
 
 	TH1F 					*cluster_position_y[n_sensor][2];
@@ -104,6 +109,10 @@ int main ( int argc, char **argv )
 	TH1F 					*cluster_significance2[n_sensor][2];
 	TH1F 					*cluster_size[n_sensor][2];
 	TH1F 					*cluster_sigma[n_sensor][2];
+
+	TH2F					*cluster_correlation[4][n_sensor][n_sensor-1];
+	TH1F					*cluster_offset_y[2][n_sensor][n_sensor-1];
+//	TH1F					*cluster_offset_x[4][n_kpix/2][n_kpix/2-1];
 
 
 	string InName = argv[1];
@@ -117,7 +126,7 @@ int main ( int argc, char **argv )
 	tmp.str("");
 	tmp << InName << ".cluster_analysed.root";
 	outRoot = tmp.str();
-
+	cout << "\rReading File: 0 %" << flush;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
 
@@ -127,11 +136,11 @@ int main ( int argc, char **argv )
 	TFile *clusterFile = TFile::Open(argv[1]);
 	TTree* clusterTree = (TTree*)clusterFile->Get("clusterTree");
 
-	clusterTree->SetBranchAddress("CoG", &clusters.CoG);
-	clusterTree->SetBranchAddress("Size", &clusters.Size);
-	clusterTree->SetBranchAddress("Significance2", &clusters.Significance2);
-	clusterTree->SetBranchAddress("Sigma", &clusters.Sigma);
-	clusterTree->SetBranchAddress("Charge", &clusters.Charge);
+	clusterTree->SetBranchAddress("CoG", &tree_clusters.CoG);
+	clusterTree->SetBranchAddress("Size", &tree_clusters.Size);
+	clusterTree->SetBranchAddress("Significance2", &tree_clusters.Significance2);
+	clusterTree->SetBranchAddress("Sigma", &tree_clusters.Sigma);
+	clusterTree->SetBranchAddress("Charge", &tree_clusters.Charge);
 	clusterTree->SetBranchAddress("eventNumber", &eventNumber);
 	clusterTree->SetBranchAddress("eventTime", &eventTime);
 	clusterTree->SetBranchAddress("sensor", &sensor);
@@ -140,9 +149,10 @@ int main ( int argc, char **argv )
 	for (long int i = 0; i < NEntries; ++i)
 	{
 		clusterTree->GetEntry(i);
-		cout << "Sensor " << sensor << endl;
+//		cout << "Sensor " << sensor << endl;
 		sensorFound[sensor]          = true;
-
+		if (eventNumber >= n_events)
+			n_events = eventNumber;
 	}
 
 	for (sensor = 0; sensor < n_sensor; sensor++) //looping through all possible kpix
@@ -155,6 +165,35 @@ int main ( int argc, char **argv )
 			rFile->mkdir(FolderName.str().c_str());
 			TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
 			sensor_folder->cd();
+			for (int s = sensor+1; s < n_sensor; ++s)
+			{
+				if (sensorFound[s])
+				{
+					tmp.str("");
+					tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					//			tmp.str("");
+					//			tmp << "cluster_offset_all_x_sens" << sensor << "_to_sens" << s << "_b0";
+					//			cluster_offset_x[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_all_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+
+					tmp.str("");
+					tmp << "cluster_offset_CUTS_y_sens" << sensor << "_to_sens" << s << "_b0";
+					cluster_offset_y[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 100, -10000, 10000);
+					//			tmp.str("");
+					//			tmp << "cluster_offset_CUTS_x_sens" << sensor << "_to_sens" << s << "_b0";
+					//			cluster_offset_x[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; #entries", 200, -4000, 4000);
+					tmp.str("");
+					tmp << "cluster_correlation_CUTS_sens" << sensor << "_to_sens" << s << "_b0";
+					tmp_units.str("");
+					tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+					cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+				}
+			}
 
 
 			tmp.str("");
@@ -198,6 +237,83 @@ int main ( int argc, char **argv )
 	}
 
 
+	uint event = 0;
+	vector<tree_cluster_input> multi_clusters[n_sensor];
+	vector<tree_cluster_input> multi_clusters2[n_sensor];
+	for (long int i = 0; i < NEntries; ++i)
+	{
+		clusterTree->GetEntry(i);
+
+		if (event != eventNumber)
+		{
+			event = eventNumber;
+			for (uint sensor1 = 0; sensor1 < n_sensor; sensor1++)
+			{
+				for (uint sensor2 = sensor1+1; sensor2 < n_sensor; sensor2++)
+				{
+					for (auto const& s1 : multi_clusters[sensor1])
+					{
+						for (auto const& s2 : multi_clusters[sensor2])
+						{
+							double y1 = yParameterSensor(s1.CoG, sensor1);
+							double y2 = yParameterSensor(s2.CoG, sensor2);
+							double clstroffset_y  = y1 - y2;
+//							cout << clstroffset_y << endl;
+							cluster_offset_y[0][sensor1][sensor2]->Fill(clstroffset_y);
+							cluster_correlation[0][sensor1][sensor2]->Fill(y1,y2);
+						}
+					}
+					for (auto const& s1 : multi_clusters2[sensor1])
+					{
+						for (auto const& s2 : multi_clusters2[sensor2])
+						{
+							double y1 = yParameterSensor(s1.CoG, sensor1);
+							double y2 = yParameterSensor(s2.CoG, sensor2);
+							double clstroffset_y  = y1 - y2;
+//							cout << clstroffset_y << endl;
+							cluster_offset_y[1][sensor1][sensor2]->Fill(clstroffset_y);
+							cluster_correlation[1][sensor1][sensor2]->Fill(y1,y2);
+						}
+					}
+				}
+			}
+			for (auto& v:multi_clusters)
+			{
+				v.clear();
+			}
+			for (auto& v:multi_clusters2)
+			{
+				v.clear();
+			}
+		}
+
+		cluster_position_y[sensor][0]->Fill(yParameterSensor(tree_clusters.CoG,sensor));
+		cluster_charge[sensor][0]->Fill(tree_clusters.Charge);
+		cluster_size[sensor][0]->Fill(tree_clusters.Size);
+		cluster_significance2[sensor][0]->Fill(tree_clusters.Significance2);
+		cluster_sigma[sensor][0]->Fill(tree_clusters.Sigma);
+
+		if (tree_clusters.Significance2 >= 7.0 && tree_clusters.Charge >= 1.0 && tree_clusters.Size <= 2)
+		{
+			cluster_position_y[sensor][1]->Fill(yParameterSensor(tree_clusters.CoG,sensor));
+			cluster_charge[sensor][1]->Fill(tree_clusters.Charge);
+			cluster_size[sensor][1]->Fill(tree_clusters.Size);
+			cluster_significance2[sensor][1]->Fill(tree_clusters.Significance2);
+			cluster_sigma[sensor][1]->Fill(tree_clusters.Sigma);
+			multi_clusters2[sensor].push_back(tree_clusters);
+		}
+
+		multi_clusters[sensor].push_back(tree_clusters);
+
+		currPct = (uint)(((double)i / (double)NEntries) * 100.0);
+		if ( currPct != lastPct )
+		{
+			cout << "\rReading File: " << currPct << " %      " << flush;
+			lastPct = currPct;
+		}
+	}
+
+
 
 	gROOT->GetListOfFiles()->Remove(clusterFile);
 	clusterFile->Close();
@@ -208,7 +324,6 @@ int main ( int argc, char **argv )
 	
 	cout << endl;
 	cout << "Writing root plots to " << outRoot << endl;
-	cout << endl;
 
 	
 	return(0);

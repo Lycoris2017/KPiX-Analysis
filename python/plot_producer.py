@@ -680,6 +680,18 @@ def graph_plotter():
 
 mystyle = ROOT.TStyle("mystyle", "My Style")
 
+
+
+ myGridStyle->SetPaintTextFormat("5.3f");//"5.2f");
+
+
+  myGridStyle->SetMarkerSize(2);
+  myGridStyle->SetMarkerStyle(8);
+
+  myGridStyle->SetOptStat(kFALSE);
+  myGridStyle->SetOptTitle(0);
+
+
 #set the background color to white
 mystyle.SetFillColor(10)
 mystyle.SetFrameFillColor(10)
@@ -711,10 +723,10 @@ mystyle.SetLegendBorderSize(0)
 mystyle.SetOptTitle(0)
 #
 ##set the margins
-##mystyle.SetPadBottomMargin(0.18)
-##mystyle.SetPadTopMargin(0.08)
-mystyle.SetPadRightMargin(0.14)
-mystyle.SetPadLeftMargin(0.14)
+mystyle.SetPadBottomMargin(0.16)
+mystyle.SetPadTopMargin(0.05)
+mystyle.SetPadRightMargin(0.15)
+mystyle.SetPadLeftMargin(0.16)
 #
 ##set axis label and title text sizes
 mystyle.SetLabelFont(42,"xyz")
@@ -727,6 +739,7 @@ mystyle.SetTitleOffset(1.1,"yz")
 mystyle.SetTitleOffset(0.75,"x")
 mystyle.SetStatFont(42)
 mystyle.SetStatFontSize(0.03)
+
 
 
 ROOT.TGaxis.SetMaxDigits(4)
@@ -760,8 +773,8 @@ mystyle.SetOptStat(1001111)
 #mystyle.SetOptFit(111)
 #
 ##marker settings
-mystyle.SetMarkerStyle(20)
-mystyle.SetMarkerSize(0.7)
+mystyle.SetMarkerStyle(8)
+mystyle.SetMarkerSize(2)
 mystyle.SetLineWidth(1) 
 
 #done
