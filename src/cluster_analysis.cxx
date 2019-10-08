@@ -65,6 +65,14 @@ vector<TH1F*> pedestal_hists;
 // Functions
 //////////////////////////////////////////
 
+struct tree_cluster_input
+{
+    double CoG ;
+    double Charge;
+    double Significance2; //Adding noises in quadrature and later dividing chargesum by this noise sum
+    double Sigma;
+    int Size;
+};
 
 void loopdir(TDirectory* dir, string histname)
 {
@@ -432,7 +440,7 @@ int main ( int argc, char **argv )
 	//goodTimes       	= 0;
 	
 	// Open root file
-	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
+    rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
 	vector<double>* vec_corr_charge[n_kpix] = {nullptr}; //delete does not work if I do not initialize all vectors
 	std::map<int, double> common_modes_median[n_kpix];
@@ -1105,13 +1113,18 @@ int main ( int argc, char **argv )
 	clusterFile = new TFile(outCluster.c_str(),"recreate"); // produce root file
 	clusterFile->cd(); // move into root folder base
 
-	clustr tree_input;
-	int eventNumber, sensorNumber;
+    tree_cluster_input tree_input;
+    int eventNumber, sensorNumber, eventTime;
 
-	clusterTree = new TTree("Tree of all clusters", "A ROOT Tree");
-	clusterTree->Branch("cluster", &tree_input, "bla/D");
-	clusterTree->Branch("eventNumber", &eventNumber, "bla/D");
-	clusterTree->Branch("sensor", &sensorNumber, "bla/D");
+    clusterTree = new TTree("clusterTree", "Tree of all clusters");
+    clusterTree->Branch("CoG", &tree_input.CoG, "CoG/D");
+    clusterTree->Branch("Charge", &tree_input.Charge, "Charge/D");
+    clusterTree->Branch("Sigma", &tree_input.Sigma, "Sigma/D");
+    clusterTree->Branch("Size", &tree_input.Size, "Size/I");
+    clusterTree->Branch("Significance2", &tree_input.Significance2, "Significance2/D");
+	clusterTree->Branch("eventNumber", &eventNumber, "eventNumber/I");
+    clusterTree->Branch("eventTime", &eventTime, "eventTime/I");
+	clusterTree->Branch("sensor", &sensorNumber, "sensorNumber/I");
 
 
 	while ( dataRead.next(&event) )
@@ -1120,13 +1133,12 @@ int main ( int argc, char **argv )
 		std::vector<double> time_ext;
 		std::map<int, double> cluster_Events_after_cut[n_kpix/2];
 		std::map<int, double> cluster_Noise_after_cut[n_kpix/2];
-		
+        int eventSample;
 		frameruntime = event.runtime();
 
 		//cout << "Beginning a new EVENT" << endl;
 		//cout << " NEW EVENT " << endl;
 		int trig_counter = 0;
-		
 		for (x=0; x < event.count(); x++)
 		{
 			//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
@@ -1188,10 +1200,12 @@ int main ( int argc, char **argv )
                 
 						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
 //						if ( charge_CM_corrected > 3*noise[kpix][channel] && strip != 9999)
-						if ( charge_CM_corrected > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 2 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
+                        if ( charge_CM_corrected > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 3 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
 							cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
 							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
+                            eventSample = x;
+//                            cout << "Time check " << tstamp << endl;
 							if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
 						}
 						//if (kpix == 0 && (channel == 9 || channel == 105)) cout << "Something is going wrong here" << endl;
@@ -1199,10 +1213,11 @@ int main ( int argc, char **argv )
 					}
 				}
 			}
-			
+
 			
 
 		}
+//        cout << "Next event" << endl;
 		if (not_empty == 1) //if event is not empty
 		{
 			//cout << "DEBUG 1" << endl;
@@ -1265,7 +1280,19 @@ int main ( int argc, char **argv )
 							cluster_significance2[sensor][1]->Fill(NomNom.getClusterSignificance2(), weight);
 							cluster_charge[sensor][1]->Fill(NomNom.getClusterCharge(), weight);
 							cluster_sigma[sensor][1]->Fill(NomNom.getClusterSigma(), weight);
-							multi_cluster[1][sensor].push_back(NomNom.getCluster());
+                            multi_cluster[1][sensor].push_back(NomNom.getCluster());
+                            tree_input.CoG = NomNom.getClusterCoG();
+                            tree_input.Significance2 = NomNom.getClusterSignificance2();
+                            tree_input.Charge = NomNom.getClusterCharge();
+                            tree_input.Sigma = NomNom.getClusterSigma();
+                            tree_input.Size = NomNom.getClusterElementssize();
+							sensorNumber = sensor;
+							eventNumber = event.eventNumber();
+                            sample = event.sample(eventSample);
+                            eventTime = sample->getSampleTime();
+//                            cout << "Cross checking whether time assumption is correct " << eventTime << endl;
+
+							clusterTree->Fill();
 
 							//						all_clusters[sensor].push_back(NomNom.getCluster());
 //							cout << "Sensor number: " << sensor << endl;

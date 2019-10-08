@@ -229,6 +229,10 @@ add_executable(cluster_analysis ${PROJECT_SOURCE_DIR}/src/cluster_analysis.cxx)
 target_link_libraries(cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS cluster_analysis)
 
+add_executable(cluster_analysis_step2 ${PROJECT_SOURCE_DIR}/src/cluster_analysis_step2.cxx)
+target_link_libraries(cluster_analysis_step2 ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS cluster_analysis_step2)
+
 add_executable(cluster_analysis_Lite ${PROJECT_SOURCE_DIR}/src/cluster_analysis_Lite.cxx)
 target_link_libraries(cluster_analysis_Lite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS cluster_analysis_Lite)
