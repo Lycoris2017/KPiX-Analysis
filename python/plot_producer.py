@@ -682,14 +682,7 @@ mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
 
- myGridStyle->SetPaintTextFormat("5.3f");//"5.2f");
-
-
-  myGridStyle->SetMarkerSize(2);
-  myGridStyle->SetMarkerStyle(8);
-
-  myGridStyle->SetOptStat(kFALSE);
-  myGridStyle->SetOptTitle(0);
+mystyle.SetPaintTextFormat("5.3f");
 
 
 #set the background color to white
@@ -768,13 +761,13 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-#mystyle.SetOptStat(0) ##removes stat box
-mystyle.SetOptStat(1001111)
+mystyle.SetOptStat(0) ##removes stat box
+#mystyle.SetOptStat(1001111)
 #mystyle.SetOptFit(111)
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(2)
+mystyle.SetMarkerSize(0.7)
 mystyle.SetLineWidth(1) 
 
 #done
