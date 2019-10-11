@@ -72,6 +72,19 @@ struct tree_cluster_input
 // Functions
 //////////////////////////////////////////
 
+Double_t test2(Double_t *x, Double_t *par)
+{
+    return TMath::Landau(x[0], par[2], par[1]);
+}
+//Double_t landau2(Double_t x, Double_t par)
+//{
+//    return TMath::Landau(x, 4.6, 1);
+//}
+
+//Double_t fitFunction(Double_t x, Double_t par)
+//{
+//    return landau1(x,par)+landau2(x,par);
+//}
 
 //////////////////////////////////////////
 // Begin of main analysis
@@ -111,7 +124,7 @@ int main ( int argc, char **argv )
     TH1F 					*cluster_sigma[n_sensor][4];
 
     TH2F					*cluster_correlation[3][n_sensor][n_sensor-1];
-    TH1F					*cluster_offset_y[3][n_sensor][n_sensor-1];
+    TH1F                	*cluster_offset_y[3][n_sensor][n_sensor-1];
 //	TH1F					*cluster_offset_x[4][n_kpix/2][n_kpix/2-1];
 
 
@@ -124,7 +137,7 @@ int main ( int argc, char **argv )
 
 	cout << "Name of output file is " <<  InName << endl;
 	tmp.str("");
-	tmp << InName << ".cluster_analysed.root";
+    tmp << InName << ".cluster_analysed.root";
 	outRoot = tmp.str();
 	cout << "\rReading File: 0 %" << flush;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
@@ -379,7 +392,7 @@ int main ( int argc, char **argv )
                 {
                     int maxbin = cluster_offset_y[1][sensor1][sensor2]->GetMaximumBin();
                     correlation_peak[sensor1][sensor2] = cluster_offset_y[1][sensor1][sensor2]->GetXaxis()->GetBinCenter(maxbin);
-                    cout << "max bin position is " << correlation_peak[sensor1][sensor2] << " for s1 : s2 " << sensor1 << " : " << sensor2 << endl;
+//                    cout << "max bin position is " << correlation_peak[sensor1][sensor2] << " for s1 : s2 " << sensor1 << " : " << sensor2 << endl;
                 }
             }
         }
@@ -447,15 +460,17 @@ int main ( int argc, char **argv )
 
     }
 
-    for (int sensor1 = 0 ; sensor1 < n_sensor; ++sensor1)
-    {
-        if (sensorFound[sensor1])
-        {
-            for (int q = 0; q < 4; ++q)
-                cluster_charge[sensor1][q]->Fit("landau");
-        }
-    }
+//    for (int sensor1 = 0 ; sensor1 < n_sensor; ++sensor1)
+//    {
+//        if (sensorFound[sensor1])
+//        {
+//            for (int q = 0; q < 4; ++q)
+//                cluster_charge[sensor1][q]->Fit("landau");
+//        }
+//    }
 
+    TF1 *fitFcn2 = new TF1("fitFcn2", test2, 0, 15, 2);
+    cluster_charge[0][3]->Fit("fitFcn2");
 
     cout << "DEBUG END" << endl;
 
