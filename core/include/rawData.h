@@ -13,20 +13,21 @@ using namespace std;
 
 class rawData
 {
-	public:
-	// Constructor
-		rawData();	
-	// Deconstructor
-		~rawData();
+ public:
+  // Constructor
+  rawData();	
+  // Deconstructor
+  ~rawData();
 		
-		int kpix;
-		int channel;
-		int bucket;
-		int range;
-		double value;
-		double time;
-		int event;
-		
+  int kpix;
+  int channel;
+  int bucket;
+  int range;
+  double value;
+  double time;
+  int event;
+
+  void loadFile(const std::string&, bool isold = false);
 	
 } ;
 

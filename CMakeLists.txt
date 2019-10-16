@@ -180,6 +180,10 @@ add_executable(count ${PROJECT_SOURCE_DIR}/src/count.cxx)
 target_link_libraries(count ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS count)
 
+add_executable(new_analysis ${PROJECT_SOURCE_DIR}/src/new_analysis.cxx)
+target_link_libraries(count ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS new_analysis)
+
 add_executable(checkTimeVars ${PROJECT_SOURCE_DIR}/src/checkTimeVars.cxx)
 target_link_libraries(checkTimeVars ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS checkTimeVars)
@@ -213,9 +217,9 @@ add_executable(analysis ${PROJECT_SOURCE_DIR}/src/analysis.cxx)
 target_link_libraries(analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysis)
 
-add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
-target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
+# add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
+# target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+# list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
 
 #add_executable(splitFile ${PROJECT_SOURCE_DIR}/src/splitFile.cxx)
 #target_link_libraries(splitFile ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
