@@ -91,7 +91,7 @@ if (USE_KPIX)
     message("debug: remove the euDataRead.cxx")
     list(REMOVE_ITEM LIB_SRC ${PROJECT_SOURCE_DIR}/core/src/euDataRead.cpp)
   endif()
-    
+ # message(${LIB_SRC})
   
   add_library(${KPIX_LOCAL_LIB} SHARED ${LIB_SRC})
   set_target_properties(${KPIX_LOCAL_LIB} PROPERTIES SOVERSION 2)
@@ -181,7 +181,7 @@ target_link_libraries(count ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIB
 list(APPEND INSTALL_EXE_TARGETS count)
 
 add_executable(new_analysis ${PROJECT_SOURCE_DIR}/src/new_analysis.cxx)
-target_link_libraries(count ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+target_link_libraries(new_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS new_analysis)
 
 add_executable(checkTimeVars ${PROJECT_SOURCE_DIR}/src/checkTimeVars.cxx)
