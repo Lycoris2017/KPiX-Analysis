@@ -24,6 +24,13 @@ int main ( int argc, char **argv ) {
   Lycoris::rawData db;
   db.loadFile(argv[1]);
   cout<< "[dev] How many cycles? "  << db.GetNEvents() << std::endl;
+
+  // auto aa = db.GetKpixList();
+  // for (auto const & a : aa)
+  //   cout << a<<' ' ;
+  // cout << '\n';
+
+  
   return 1;
  
 }

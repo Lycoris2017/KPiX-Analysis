@@ -11,3 +11,4 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD/lib
 
 # want to access executable without type its dir?
 export PATH=$PATH:$PWD/bin
+export KPIX_ANA=$PWD

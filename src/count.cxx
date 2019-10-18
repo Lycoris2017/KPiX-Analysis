@@ -16,6 +16,7 @@
 
 #include "TH1F.h"
 #include "TFile.h"
+#include <chrono>
 
 using namespace std;
 
@@ -78,7 +79,8 @@ int main ( int argc, char **argv ) {
   /////////////////////////////////////////
   // check over how many kpixes w/ how many channels connected  
   printalot = false, print10evts=true, print10hits=false;
-  
+  auto t_start = std::chrono::high_resolution_clock::now();
+
   while ( dataRead.next(&event) ) {
     kpixeventcount++;
 
@@ -95,7 +97,7 @@ int main ( int argc, char **argv ) {
       //// Get sample
       sample  = event.sample(x1);
       if (sample->getEmpty()) {
-	cout<<" [info] empty sample, jump over!"<<endl;
+	//cout<<" [info] empty sample, jump over!"<<endl;
 	continue;
       }
       
@@ -131,6 +133,10 @@ int main ( int argc, char **argv ) {
     
   }
   dataRead.close();
+  auto t_end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+  cout << " Time[s]: " << duration
+       << endl;
   
   cout<< "In total, we have #"
       << kpixeventcount

@@ -9,6 +9,8 @@
 #include <iterator>
 #include <map>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 
 /*
  Mengqing <mengqing.wu@desy.de>
@@ -58,18 +60,41 @@ namespace Lycoris
   
   
   class rawTrack{
+    /* Track is defined as per bucket, per event/cycle */
   public:
     rawTrack(){};
     ~rawTrack(){};
-    uint GetNPlanes();
-    uint GetNKpixs();
+    //uint GetNPlanes(){return m_planes.size() };
+    uint GetNKpixs() {return m_kpixs.size(); };
     void AddHit(rawHit hit){m_hits.push_back(hit);};
-    void MakePlanes(); // make plane out of all hits
+    void AddHit(uint kpix, rawHit hit){
+      if (m_kpixs.count(kpix)) {// found key
+	m_kpixs.at(kpix).push_back(hit);
+      }
+      else{
+	hits_t _hits;
+	_hits.push_back(hit);
+	m_kpixs.emplace(kpix, _hits);
+      }
+      
+    };
+
+    /* class Key{ */
+    /*   uint m_plane_id; */
+    /*   uint m_kpix_id; */
+    /* public: */
+    /* Key(): m_plane_id(9999), m_kpix_id(9999) {} */
+    /* Key(uint plane_id, uint kpix_id): m_plane_id(plane_id), m_kpix_id(kpix_id){} */
+    /* } */
     
   private:
     typedef std::vector<rawHit> hits_t;
     hits_t m_hits;
-
+    typedef std::unordered_map<uint, hits_t> hitCollections_t;
+    hitCollections_t m_kpixs;
+    //typedef std::unordered_map<Key, hits_t> planes_t;
+    //planes_t m_planes;
+    
   };
     
   
@@ -81,11 +106,20 @@ namespace Lycoris
     ~rawData();
     
     void loadFile(const std::string&, bool isold = false);
-    size_t GetNEvents(){ return m_rawdb.size(); };
-  private:
-    typedef std::map<uint, std::vector<rawTrack> > rawDB_t;
-    rawDB_t m_rawdb;
+    void loadGeo(const std::string&);
+    void loadCalib(const std::string&);
     
+    size_t GetNEvents() const{ return m_rawdb.size(); };
+    uint GetPlaneIndex(uint kpix) const {return m_kpix2plane.at(kpix); };
+    void Pedestals() const;
+  private:
+    // think about if rawDB_t can be changed to unordered_map or not to make sw faster.
+    
+    typedef std::unordered_map<uint, std::vector<rawTrack> > rawDB_t;
+    rawDB_t m_rawdb;
+    std::unordered_map<uint, uint> m_kpix2plane;
+
+    std::list<uint> m_kpixlist;
   } ;
   
 }
