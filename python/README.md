@@ -1,5 +1,12 @@
 # Simple Instructions
 
+### PrintSlopeData.py
+--------------
+
+* Description: Print out slopes data from the calibration root file, by searching for histograms called:
+`slope_vs_channel_k#_b0`, where # stands for which kpix.
+
+
 ### channel_disabler.py
 --------------
 
