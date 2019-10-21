@@ -6,37 +6,38 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <stdlib.h>
-#include <iterator>
 #include <map>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 
 /*
  Mengqing <mengqing.wu@desy.de>
  @ 2019-10-17
  Currently for external trigger only
  */
+
 namespace Lycoris
 {
-  uint INIT=9999;
+  const uint UINT_INIT=9999;
+  
+ 
   // Loading a calication and translate ADC function can be added here also.
   
   class rawHit{
   public:
   rawHit():
-    m_kpix(9999), m_channel(9999), m_bucket(9999), m_charge_adc(9999),m_ts(9999){}
+    m_kpix(9999), m_channel(9999), m_bucket(9999), m_charge_adc(9999),m_ts(9999), m_charge_fc(0.0){}
     
-  rawHit(uint kpix, uint channel, uint bucket, uint adc, uint ts ):
-    m_kpix(kpix), m_channel(channel), m_bucket(bucket), m_charge_adc(adc),m_ts(ts){}
+  rawHit(uint kpix, uint channel, uint bucket, uint adc, uint ts, double fc):
+    m_kpix(kpix), m_channel(channel), m_bucket(bucket), m_charge_adc(adc),m_ts(ts), m_charge_fc(fc){}
     
   private:
     uint m_kpix;
     uint m_channel;
     uint m_bucket;
     uint m_charge_adc;
-    uint m_charge_fc;  // need calibration data
     uint m_ts;
+    double m_charge_fc;  // need calibration data
     double m_pedestal; // over all cycle, need calculation
     double m_cm_noise; // after pedestal, need calculation
   };
@@ -119,7 +120,27 @@ namespace Lycoris
     rawDB_t m_rawdb;
     std::unordered_map<uint, uint> m_kpix2plane;
 
-    std::list<uint> m_kpixlist;
+  public:
+    class ChanKey{
+    public:
+      uint kpix;
+      uint channel;
+    ChanKey():kpix(9999), channel(9999) {}
+    ChanKey(uint _kpix, uint _channel): kpix(_kpix), channel(_channel) {}
+      
+      bool operator ==( const ChanKey &k ) const {
+	return kpix == k.kpix && channel == k.channel;
+      }
+      bool operator <(const ChanKey &k) const{
+      	return kpix < k.kpix || ( kpix == k.kpix && channel < k.channel );
+      }
+    };
+    
+    
+  private:
+  typedef std::map<ChanKey, float> calib_map_t;
+    calib_map_t m_calib_b0;
+      
   } ;
   
 }

@@ -14,27 +14,70 @@ Lycoris::rawData::rawData(){
   printf("rawData object constructor.\n");
 
   //- open default geo
-  string geo = strcat(getenv("KPIX_ANA") , "/data/plane_Geo_default.txt");
+  string geo = getenv("KPIX_ANA");
+  geo += "/data/plane_Geo_default.txt";
   loadGeo(geo);
-  loadCalib();
+string calib = getenv("KPIX_ANA");
+  calib+= "/data/calib_HG_201907T24.csv";
+  loadCalib(calib);
 }
 
 Lycoris::rawData::~rawData() { }
 
 void Lycoris::rawData::loadCalib(const std::string& calib){
-  // based on a txt file first
- 
+  // based on a csv file 
+
+  printf(" loadCalib...\n");
+  std::ifstream file (calib);
+  if ( !file ) return;
+  printf(" Open Calib file : %s\n", calib.c_str());
+  
+  std::string line;
+  char delim=',';
+
+  //m_calib_map.clear();
+  while( std::getline(file, line) ){
+
+    if (line.empty() ) continue;
+
+    while (line[0]==' ')
+      line.erase(0,1);
+
+    if (!isdigit(line[0])) continue;
+
+    std::stringstream is(line);
+    std::string value;
+    std::vector<std::string> vec;
+    while (std::getline(is, value, delim))
+      vec.push_back(value);
+    if (vec.size()<4){
+      printf("[ERROR] Missing value at");
+      for (const auto &a : vec)
+	cout << a << ' ';
+      printf("\n");
+    }
+    else{
+      auto kpix    = std::atoi(vec[0].c_str());
+      auto channel = std::atoi(vec[1].c_str());
+      auto bucket  = std::atoi(vec[2].c_str());
+      float slope  = std::atof(vec[3].c_str());
+      if (bucket==0)
+	m_calib_b0.emplace(ChanKey(kpix,channel), slope);
+    }
+  }
+
+  cout << " test: "<< m_calib_b0.at(ChanKey(11, 1000)) << endl;
+  file.close();
+  
 }
 
 void Lycoris::rawData::loadGeo(const std::string& geo){
-  if (geo.empty()) {
-    printf("[warning] You give EMPTY input for loadGeo().\n");
-    return;
-  }
+  printf(" loadGeo...\n");
  
-  printf("Open Geo file : %s\n",geo.c_str());
   ifstream file(geo);
   if (!file )  return;
+  printf(" Open Geo file : %s\n",geo.c_str());
+
   std::string line;
   char delim=',';
 
@@ -54,6 +97,7 @@ void Lycoris::rawData::loadGeo(const std::string& geo){
       m_kpix2plane.insert(std::make_pair(pair.at(0),pair.at(1)));
     }
   }
+  file.close();
 
 }
 
@@ -94,6 +138,7 @@ void Lycoris::rawData::loadFile(const std::string& fname, bool isold){
 
       uint kpix, channel, bucket, value;
       uint bunchClk, subCount, tstamp;
+      double fc;
       
       if (sample->getSampleType() == KpixSample::Data){
 	kpix    = sample->getKpixAddress();
@@ -101,8 +146,14 @@ void Lycoris::rawData::loadFile(const std::string& fname, bool isold){
 	bucket  = sample->getKpixBucket();
 	value   = sample->getSampleValue();
 	tstamp  = sample->getSampleTime();
-	Lycoris::rawHit hit(kpix, channel, bucket, value, tstamp);
-	if (bucket==0)	tracks.at(bucket).AddHit(kpix, hit);
+
+	//-currently only look at bucket0
+	if (bucket!=0) continue;
+	if (m_calib_b0.at(ChanKey(kpix, channel)))
+	  fc  =  value/m_calib_b0.at(ChanKey(kpix, channel));
+	
+	Lycoris::rawHit hit(kpix, channel, bucket, value, tstamp, fc);
+	tracks.at(bucket).AddHit(kpix, hit);
 	//tracks.at(bucket).AddHit(hit);
 
       }
@@ -136,6 +187,7 @@ void Lycoris::rawData::loadFile(const std::string& fname, bool isold){
   cout << " Time[s]: " << duration
        << endl;
 
+  dataRead.close();
 }
 
 
