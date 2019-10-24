@@ -23,13 +23,7 @@ int main ( int argc, char **argv ) {
   printf("[Info] You choose file %s\n", argv[1]);
   Lycoris::rawData db;
   db.loadFile(argv[1]);
-  cout<< "[dev] How many cycles? "  << db.GetNEvents() << std::endl;
-
-  // auto aa = db.GetKpixList();
-  // for (auto const & a : aa)
-  //   cout << a<<' ' ;
-  // cout << '\n';
-
+  //  cout<< "[dev] How many cycles? "  << db.GetNEvents() << std::endl;
   
   return 1;
  

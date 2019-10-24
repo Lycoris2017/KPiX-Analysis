@@ -67,6 +67,7 @@ double xParameterSensor(double strip, int sensor)
 
 double median(vector<double>* v)
 {
+  /* Note by Mengqing: this func has already an optimal in memory/speed*/
 	if (v  == nullptr )
 	{
 		//cout << "Found a nullpointer" << endl;
