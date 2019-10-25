@@ -31,13 +31,28 @@ namespace Lycoris{
 		~Cycle(){};
 		uint m_cyclenumber;
 		uint16_t m_ts;
+		uint m_b_level;
 		
 		// Do your own boosted map
 		vector<uint> m_v_hashkeys_b[4];
-				
+		vector<uint> hashkeys(uint i){
+			if (i<4)return m_v_hashkeys_b[i];
+			else {
+				printf("hashkeys error\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+
 		bool m_has_adc;
 		// Please make sure both ADC and TS are 16bit (see KpixSample)
 		vector<uint16_t> m_v_adc_b[4];
+		vector<uint16_t> vadc(uint i){
+			if (i<4)return m_v_adc_b[i];
+			else {
+				printf("vadc error\n");
+				exit(EXIT_FAILURE);
+			}
+		}
 		vector<uint16_t> m_v_ts_b[4];
 		
 		bool m_has_fc;
@@ -46,13 +61,15 @@ namespace Lycoris{
 		void RemovePed(std::vector<uint16_t> &ped_adc);
 		void RemoveCM_CalFc(std::vector<uint16_t> &slopes, bool remove_adc); //-> remove the m_v_adc_*
 		
-		static void AddAdcBuf(Cycle&){ };
-		static void ResetAdcBuf(){ s_buf_adc.clear(); };
+		static void AddAdcBuf(Cycle&);
+		static void ResetAdcBuf(){
+			for(uint i; i<4;i++)s_buf_adc[i].clear(); };
 		static void ResetPedDB();
 		static void CalPed();
 	private:
-		static vector<uint16_t> s_ped_adc;
-		static vector<vector<uint16_t>> s_buf_adc;
+		static vector<uint> s_hashkeys[4];
+		static vector<uint16_t> s_ped_adc[4];
+		static vector<vector<uint16_t>> s_buf_adc[4];
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf();

@@ -8,21 +8,24 @@
 #include <cstring>
 #include <chrono>
 #include <sstream>
+#include <cassert>
 using namespace std;
 using namespace Lycoris;
 
 std::unordered_map<uint, double> Cycle::s_slopes_b0;
+std::vector<uint> Cycle::s_hashkeys[4];
 std::vector<double> Cycle::s_noise_fc;
 std::vector<vector<double>> Cycle::s_buf_fc;
 
-std::vector<uint16_t> Cycle::s_ped_adc;
-std::vector<vector<uint16_t>> Cycle::s_buf_adc;
+std::vector<uint16_t> Cycle::s_ped_adc[4];
+std::vector< vector<uint16_t>> Cycle::s_buf_adc[4];
 
 Cycle::Cycle(KpixEvent &event, uint buc_level=0,
                       uint begin_ch=0, uint end_ch=1023,
                       bool isold=false ){
 
 	// Declare member variables first
+	m_b_level = buc_level;
 	m_has_adc = false;
 	m_has_fc  = false;
 	m_cyclenumber = event.eventNumber();
@@ -44,7 +47,7 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
       tstamp  = sample->getSampleTime();
 
       if (sample->getSampleType() == KpixSample::Data){
-	      if ( bucket > buc_level ) continue;
+	      if ( bucket > m_b_level ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
 	      auto key = hashCode(kpix, channel);
 
@@ -71,9 +74,19 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
       
 
     }// finish loop over all data of one cycle
-
-    for (uint i; i<4; i++)
+    for (uint i; i<4; i++){
 	    m_has_adc = m_has_adc || m_v_adc_b[i].size();
+	    
+	    // **Exception Handler - Start
+	    try{
+		    if (m_v_hashkeys_b[i].size() != m_v_adc_b[i].size())
+			    throw m_cyclenumber;
+	    }
+	    catch (uint e){
+		    cout << "ERROR: Cycle Event " << e << " has channel_keys != its value. \n";
+	    }
+	    // **Exception Handler - End
+    }
 }
 
 
@@ -204,12 +217,35 @@ void rawData::loadFile(const std::string& fname){
   dataRead.close();
 }
 
-void Cycle::AddAdcBuf(){
-	// Fill s_buf_adc vec<vec<uint16_t>>
-	if(s_buf_adc.empty()){
-		// first event, init the vectors
 
+//- Fill s_buf_adc vec<vec<uint16_t>>
+void Cycle::AddAdcBuf(Cycle& cy){
+	for (uint i = 0; i<cy.m_b_level; i++){
+
+		auto targetv = &s_buf_adc[i];
+		auto kk = cy.hashkeys(i);
+		auto vv = cy.vadc(i);
+		
+		if(targetv->empty()){
+			// first event, init the vectors
+			assert(kk.size() == vv.size());
+		    s_hashkeys[i] = kk;
+
+			for( size_t j = 0; j< vv.size(); ++j){
+				std::vector<uint16_t> vec;
+				vec.push_back(vv.at(j));
+				targetv->push_back(std::move(vec));
+			}
+			
+		}else{
+			//- External trigger has all the channels out 
+			assert(kk == s_hashkeys[i]);
+			
+		}
+			// just append the vector for each channel
+		
 	}
+
 
 
 }
