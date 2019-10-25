@@ -66,10 +66,10 @@ namespace Lycoris{
 			for(uint i; i<4;i++)s_buf_adc[i].clear(); };
 		static void ResetPedDB();
 		static void CalPed();
-	private:
+		//	private:
 		static vector<uint> s_hashkeys[4];
 		static vector<uint16_t> s_ped_adc[4];
-		static vector<vector<uint16_t>> s_buf_adc[4];
+		static unordered_map<uint, vector<uint16_t>> s_buf_adc[4];
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf();

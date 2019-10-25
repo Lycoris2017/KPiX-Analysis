@@ -18,14 +18,14 @@ std::vector<double> Cycle::s_noise_fc;
 std::vector<vector<double>> Cycle::s_buf_fc;
 
 std::vector<uint16_t> Cycle::s_ped_adc[4];
-std::vector< vector<uint16_t>> Cycle::s_buf_adc[4];
+std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc[4];
 
 Cycle::Cycle(KpixEvent &event, uint buc_level=0,
                       uint begin_ch=0, uint end_ch=1023,
                       bool isold=false ){
 
 	// Declare member variables first
-	m_b_level = buc_level;
+	m_b_level = buc_level+1;
 	m_has_adc = false;
 	m_has_fc  = false;
 	m_cyclenumber = event.eventNumber();
@@ -47,7 +47,7 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
       tstamp  = sample->getSampleTime();
 
       if (sample->getSampleType() == KpixSample::Data){
-	      if ( bucket > m_b_level ) continue;
+	      if ( bucket >= m_b_level ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
 	      auto key = hashCode(kpix, channel);
 
@@ -214,38 +214,77 @@ void rawData::loadFile(const std::string& fname){
   cout << " Time[s]: " << duration
        << endl;
 
+  //-- Debug print: Start
+  cout << "# of chann   :  " << Cycle::s_buf_adc[0].size() << endl;
+  cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
+
+  uint count=0;
+  vector<uint> chan_cys;
+  for (const auto& x : Cycle::s_buf_adc[0]){
+	  if (x.second.size()!=m_v_cycles.size() ){
+		  count++;
+		  chan_cys.push_back(x.second.size());
+		  /*cout << "chan "
+		       << Cycle::getKpix(x.first) << "."
+		       << Cycle::getChannel(x.first) 
+		       << ": "
+		       << x.second.size() << endl;
+		  */
+	  }
+  }
+  sort( chan_cys.begin(), chan_cys.end() );
+  chan_cys.erase( unique( chan_cys.begin(), chan_cys.end() ), chan_cys.end() );
+  cout << "# of cy in chan: ";
+  for (const auto& x: chan_cys)
+	  cout << x << ", ";
+  cout << "\n";
+  cout << "# of such chan? " << count << endl;
+  //-- Debug print: End
   dataRead.close();
 }
 
 
 //- Fill s_buf_adc vec<vec<uint16_t>>
 void Cycle::AddAdcBuf(Cycle& cy){
-	for (uint i = 0; i<cy.m_b_level; i++){
+	for (uint bb = 0; bb<cy.m_b_level; bb++){
+		auto target = &s_buf_adc[bb];
+		auto kk = cy.hashkeys(bb);
+		auto vv = cy.vadc(bb);
 
-		auto targetv = &s_buf_adc[i];
-		auto kk = cy.hashkeys(i);
-		auto vv = cy.vadc(i);
+		/*if (vv.size() == 0 )
+			printf("Cycle is empty: %d\n", cy.m_cyclenumber);
+		*/
 		
-		if(targetv->empty()){
+		if(target->empty()){
+			printf("Empty for evt: %d \n", cy.m_cyclenumber);
 			// first event, init the vectors
 			assert(kk.size() == vv.size());
-		    s_hashkeys[i] = kk;
 
-			for( size_t j = 0; j< vv.size(); ++j){
+			for( size_t cc = 0; cc < vv.size(); ++cc){
 				std::vector<uint16_t> vec;
-				vec.push_back(vv.at(j));
-				targetv->push_back(std::move(vec));
+				vec.push_back(vv.at(cc));
+				// key is kk.at(cc), value is vv.at(cc)
+				target->insert(std::make_pair(kk.at(cc), std::move(vec)) );
 			}
 			
 		}else{
-			//- External trigger has all the channels out 
-			assert(kk == s_hashkeys[i]);
+			for (size_t cc=0; cc < vv.size(); ++cc){
+				auto key = kk.at(cc);
+				auto val = vv.at(cc);
+				if (target->count(key))
+					target->at(cc).push_back(std::move(val));
+				else{
+					std::vector<uint16_t> vec;
+					vec.push_back(val);
+					target->insert(std::make_pair(key, std::move(vec)));
+				}
+			}
 			
 		}
-			// just append the vector for each channel
 		
 	}
-
-
-
+			// just append the vector for each channel
+		
 }
+
+
