@@ -65,37 +65,38 @@ double xParameterSensor(double strip, int sensor)
 	}
 }
 
-double median(vector<double>* v)
-{
-  /* Note by Mengqing: this func has already an optimal in memory/speed*/
-	if (v  == nullptr )
-	{
-		//cout << "Found a nullpointer" << endl;
-		return 0;
-	}
-	else
-	{
-		if (v->empty())
-		{
-			return 0;
-		}
-		else
-		{
-			size_t n = v->size() / 2;
-			if (v->size()%2 == 0)
-			{
-				nth_element(v->begin(), v->begin()+n, v->end());
-				nth_element(v->begin(), v->begin()+n-1, v->end());
-				return (v->at(n)+v->at(n-1))/2;
-			}
-			else
-			{
-				nth_element(v->begin(), v->begin()+n, v->end());
-				return v->at(n);
-			}
-		}
-	}
-}
+// template <typename T>
+// double median(std::vector<T>* v)
+// {
+//   /* Note by Mengqing: this func has already an optimal in memory/speed*/
+// 	if (v  == nullptr )
+// 	{
+// 		//cout << "Found a nullpointer" << endl;
+// 		return 0;
+// 	}
+// 	else
+// 	{
+// 		if (v->empty())
+// 		{
+// 			return 0;
+// 		}
+// 		else
+// 		{
+// 			size_t n = v->size() / 2;
+// 			if (v->size()%2 == 0)
+// 			{
+// 				nth_element(v->begin(), v->begin()+n, v->end());
+// 				nth_element(v->begin(), v->begin()+n-1, v->end());
+// 				return (v->at(n)+v->at(n-1))/2;
+// 			}
+// 			else
+// 			{
+// 				nth_element(v->begin(), v->begin()+n, v->end());
+// 				return v->at(n);
+// 			}
+// 		}
+// 	}
+// }
 
 double MAD(vector<double>* v)
 {

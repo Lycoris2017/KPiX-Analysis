@@ -24,6 +24,8 @@ int main ( int argc, char **argv ) {
   Lycoris::rawData db;
   db.loadFile(argv[1]);
   //  cout<< "[dev] How many cycles? "  << db.GetNEvents() << std::endl;
+  Lycoris::Cycle::CalPed();
+  cout<< "debug, size of ped_adc: "<< Lycoris::Cycle::s_ped_adc[0].size()<< endl;
   
   return 1;
  

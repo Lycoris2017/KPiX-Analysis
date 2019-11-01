@@ -1,23 +1,25 @@
-#include "rawData.h"
 #include <KpixEvent.h>
 #include <KpixSample.h>
-#include <TBFunctions.h>
-#include "Data.h"
-#include "DataRead.h"
 #include <fstream>
 #include <cstring>
 #include <chrono>
 #include <sstream>
 #include <cassert>
+
+#include "rawData.h"
+#include "TBFunctions.h"
+#include "Data.h"
+#include "DataRead.h"
+
 using namespace std;
 using namespace Lycoris;
 
 std::unordered_map<uint, double> Cycle::s_slopes_b0;
-std::vector<uint> Cycle::s_hashkeys[4];
+//std::vector<uint> Cycle::s_hashkeys[4];
 std::vector<double> Cycle::s_noise_fc;
 std::vector<vector<double>> Cycle::s_buf_fc;
 
-std::vector<uint16_t> Cycle::s_ped_adc[4];
+std::unordered_map< uint, uint16_t> Cycle::s_ped_adc[4];
 std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc[4];
 
 Cycle::Cycle(KpixEvent &event, uint buc_level=0,
@@ -215,7 +217,7 @@ void rawData::loadFile(const std::string& fname){
        << endl;
 
   //-- Debug print: Start
-  cout << "# of chann   :  " << Cycle::s_buf_adc[0].size() << endl;
+  cout << "# of chan    :  " << Cycle::s_buf_adc[0].size() << endl;
   cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
 
   uint count=0;
@@ -243,48 +245,61 @@ void rawData::loadFile(const std::string& fname){
   dataRead.close();
 }
 
+//- Fill s_ped_adc unordered_map<uint, uint16_t>
+void Cycle::CalPed(uint level){
+  for (uint bb=0; bb<level; bb++){
+    if (s_buf_adc[bb].empty()) continue;
+    for( auto &buf : s_buf_adc[bb]){
+      
+      // buf.first, buf.second -> median
+      auto value = median(&buf.second);
+      s_ped_adc[bb].insert(std::make_pair(buf.first, value));
+    }
+  }
+  printf("finished\n");
+}
 
-//- Fill s_buf_adc vec<vec<uint16_t>>
+//- Fill s_buf_adc unordered_map<uint, vec<uint16_t>>
 void Cycle::AddAdcBuf(Cycle& cy){
-	for (uint bb = 0; bb<cy.m_b_level; bb++){
-		auto target = &s_buf_adc[bb];
-		auto kk = cy.hashkeys(bb);
-		auto vv = cy.vadc(bb);
-
-		/*if (vv.size() == 0 )
-			printf("Cycle is empty: %d\n", cy.m_cyclenumber);
-		*/
-		
-		if(target->empty()){
-			printf("Empty for evt: %d \n", cy.m_cyclenumber);
-			// first event, init the vectors
-			assert(kk.size() == vv.size());
-
-			for( size_t cc = 0; cc < vv.size(); ++cc){
-				std::vector<uint16_t> vec;
-				vec.push_back(vv.at(cc));
-				// key is kk.at(cc), value is vv.at(cc)
-				target->insert(std::make_pair(kk.at(cc), std::move(vec)) );
-			}
-			
-		}else{
-			for (size_t cc=0; cc < vv.size(); ++cc){
-				auto key = kk.at(cc);
-				auto val = vv.at(cc);
-				if (target->count(key))
-					target->at(cc).push_back(std::move(val));
-				else{
-					std::vector<uint16_t> vec;
-					vec.push_back(val);
-					target->insert(std::make_pair(key, std::move(vec)));
-				}
-			}
-			
-		}
-		
+  for (uint bb = 0; bb<cy.m_b_level; bb++){
+    auto target = &s_buf_adc[bb];
+    auto kk = cy.hashkeys(bb);
+    auto vv = cy.vadc(bb);
+    
+    /*if (vv.size() == 0 )
+      printf("Cycle is empty: %d\n", cy.m_cyclenumber);
+    */
+    
+    if(target->empty()){
+      printf("Empty for evt: %d \n", cy.m_cyclenumber);
+      // first event, init the vectors
+      assert(kk.size() == vv.size());
+      
+      for( size_t cc = 0; cc < vv.size(); ++cc){
+	std::vector<uint16_t> vec;
+	vec.push_back(vv.at(cc));
+	// key is kk.at(cc), value is vv.at(cc)
+	target->insert(std::make_pair(kk.at(cc), std::move(vec)) );
+      }
+      
+    }else{
+      for (size_t cc=0; cc < vv.size(); ++cc){
+	auto key = kk.at(cc);
+	auto val = vv.at(cc);
+	if (target->count(key))
+	  target->at(cc).push_back(std::move(val));
+	else{
+	  std::vector<uint16_t> vec;
+	  vec.push_back(val);
+	  target->insert(std::make_pair(key, std::move(vec)));
 	}
-			// just append the vector for each channel
-		
+      }
+      
+    }
+    
+  }
+  // just append the vector for each channel
+  
 }
 
 
