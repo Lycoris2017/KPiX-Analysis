@@ -98,33 +98,33 @@ double xParameterSensor(double strip, int sensor)
 // 	}
 // }
 
-double MAD(vector<double>* v)
-{
-	if (v  == nullptr )
-	{
-		//cout << "Found a nullpointer" << endl;
-		return 0;
-	}
-	else
-	{
-		if (v->empty())
-		{
-			return 0;
-		}
-		else
-		{
-			double med = median(v);
-			vector<double>* deviation;
-			deviation = new std::vector<double>;
+// double MAD(vector<double>* v)
+// {
+// 	if (v  == nullptr )
+// 	{
+// 		//cout << "Found a nullpointer" << endl;
+// 		return 0;
+// 	}
+// 	else
+// 	{
+// 		if (v->empty())
+// 		{
+// 			return 0;
+// 		}
+// 		else
+// 		{
+// 			double med = median(v);
+// 			vector<double>* deviation;
+// 			deviation = new std::vector<double>;
 
-			for (auto const i:(*v))
-			{
-				deviation->push_back(fabs(i - med));
-			}
-			return median(deviation);
-		}
-	}
-}
+// 			for (auto const i:(*v))
+// 			{
+// 				deviation->push_back(fabs(i - med));
+// 			}
+// 			return median(deviation);
+// 		}
+// 	}
+// }
 double smallest_time_diff( vector<double> ext_list, int int_value)
 {
     double trigger_diff = 8200.0;

@@ -11,7 +11,6 @@
 double yParameter(double, int);
 double yParameterSensor(double, int);
 double xParameterSensor(double, int);
-double MAD(std::vector<double>*);
 double smallest_time_diff(std::vector<double>, int);
 
 template <typename T>
@@ -38,4 +37,27 @@ T median(std::vector<T>* vec){
   }
 }
 
+template <typename T>
+T MAD(std::vector<T>* v){
+  if (v  == nullptr )
+    {
+      //cout << "Found a nullpointer" << endl;
+      return 0;
+    }
+  else
+    {
+      if (v->empty())
+	  return 0;
+      else{
+	T med = median(v);
+	std::vector<T>* deviation;
+	deviation = new std::vector<T>;
+	
+	for (auto const i:(*v)){
+	  deviation->push_back(fabs(i - med));
+	}
+	return median(deviation);
+      }
+    }
+}
 #endif

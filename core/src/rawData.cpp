@@ -15,12 +15,12 @@ using namespace std;
 using namespace Lycoris;
 
 std::unordered_map<uint, double> Cycle::s_slopes_b0;
-//std::vector<uint> Cycle::s_hashkeys[4];
 std::vector<double> Cycle::s_noise_fc;
 std::vector<vector<double>> Cycle::s_buf_fc;
 
-std::unordered_map< uint, uint16_t> Cycle::s_ped_adc;
+//std::unordered_map<uint, bool> Cycle::s_mad;
 std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc;
+std::unordered_map< uint, std::pair<uint, uint> > Cycle::s_ped_adc_mad;
 
 Cycle::Cycle(KpixEvent &event, uint nbuckets,
                       uint begin_ch, uint end_ch,
@@ -256,16 +256,24 @@ void rawData::loadFile(const std::string& fname){
 }
 
 //- Fill s_ped_adc unordered_map<uint, uint16_t>
-void Cycle::CalPed(uint nbuckets){
-  
+void Cycle::CalPedMad(uint nbuckets){
+
   if (s_buf_adc.empty()) return;
+
+  s_ped_adc_mad.clear();
+  
   for( auto &buf : s_buf_adc){
     
-    // buf.first, buf.second -> median
-    auto value = median(&buf.second);
-    s_ped_adc.insert(std::make_pair(buf.first, value));
+    // skip not requested buckets
+    if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ) { 
+	// buf.first, buf.second -> median
+	auto ped = median(&buf.second);
+	auto mad = MAD(&buf.second);
+	//printf("debug: median = %d, MAD = %d\n", ped, mad);
+	s_ped_adc_mad.insert(std::make_pair(buf.first, std::make_pair(ped, mad) ));
+    }
   }
-  printf("Pedestal calculation finished\n");
+  printf("Pedestal & MAD calculation finished\n");
 
   // after pedestal calculation, clean the buffer:
   Cycle::ResetAdcBuf();
@@ -321,7 +329,9 @@ void Cycle::AddAdcBuf(Cycle& cy){
 
 void rawData::doRmPed(bool rmMAD0){
 
-  Cycle::CalPed();
+  if (rmMAD0) printf("[info] Remove channels with MAD==0\n");
+  
+  Cycle::CalPedMad(m_nbuckets);
   size_t                  cySize = m_v_cycles.size();  //
   uint                 currPos=0.0;   //
   uint                   currPct;
@@ -332,7 +342,7 @@ void rawData::doRmPed(bool rmMAD0){
       continue; // skip empty cycles
     }
     
-    cy.RemovePed(Cycle::s_ped_adc);  
+    cy.RemovePed(Cycle::s_ped_adc_mad, rmMAD0);  
 
     currPos++;
     currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
@@ -343,28 +353,45 @@ void rawData::doRmPed(bool rmMAD0){
   
 }
 
-void Cycle::RemovePed(std::unordered_map<uint, uint16_t> &ped_adc){
+void Cycle::RemovePed(std::unordered_map<uint, std::pair<uint, uint> > &ped_adc_mad, bool rmMAD0){
+
+  if (rmMAD0) printf("Removing mad0 channels.\n");
   for (uint b=0; b < m_nbuckets; b++){ // loop over buckets
       auto vv = vadc(b);
       auto kk = hashkeys(b);
+      std::vector<uint> mad0;
       for ( size_t cc=0; cc<vv.size(); ++cc){
     	auto val = vv.at(cc);
-	auto key = (getKpix(kk.at(cc)),
-		    getChannel(kk.at(cc)),
-		    b);
-	auto ped = ped_adc.at(key);
-      
-    	vv.at(cc) = val - ped;
-	
+	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
+				   getChannel(kk.at(cc)),
+				   b);
+	auto ped = ped_adc_mad.at(key).first;
+	auto mad = ped_adc_mad.at(key).second;
+	//printf("debug: adc = %d, median = %d, mad = %d \n", val, ped, mad);
+
+	vv.at(cc) = val - ped;
+
+	if (rmMAD0 && mad == 0 )
+	  mad0.push_back(cc);
       }
+      //printf(" channel number without MAD0 cut: %d\n", vv.size());
+      printf("how many mad0 channels? %d \n", mad0.size());
+     
+      //printf(" channel number w/ MAD0 cut: %d\n", vv.size());
     }
   
 }
 
 void Cycle::RemoveCM_CalFc(std::unordered_map<uint, double> &slopes, bool remove_adc){
-
-  for (uint b = 0; b< m_nbuckets; b++){
+  // currently only work for bucket0
+  printf("[warn] Common mode and ADC to fC: only works for [Bucket 0]!");
+  uint bucket=0;
+  auto target = &m_v_fc_b[bucket];
+  auto vv = vadc(bucket);
+  auto kk = hashkeys(bucket);
+  for ( size_t cc=0; cc< vv.size(); ++cc) {
 
   }
   
 }
+

@@ -19,7 +19,9 @@
  */
 
 namespace Lycoris{
-	
+
+  constexpr uint G_BUCKET_HASH_UNIT { 100000 };
+  
 	class Cycle{
 	public:
 		// Global channel num = kpix_index*2014+channel;
@@ -32,6 +34,7 @@ namespace Lycoris{
 		uint m_cyclenumber;
 		uint16_t m_ts;
 		uint m_nbuckets;
+		double m_cm_noise;
 		
 		// Do your own boosted map
 		vector<uint> m_v_hashkeys_b[4];
@@ -45,7 +48,7 @@ namespace Lycoris{
 
 		bool m_has_adc;
 		// Please make sure both ADC and TS are 16bit (see KpixSample)
-		vector<uint16_t> m_v_adc_b[4];
+		std::vector<uint16_t> m_v_adc_b[4];
 		const vector<uint16_t>& vadc(uint b) const{
 			if (b<4) return m_v_adc_b[b];
 			else {
@@ -58,22 +61,23 @@ namespace Lycoris{
 		bool m_has_fc;
 		vector<double> m_v_fc_b[4];
 
-		void RemovePed(std::unordered_map<uint, uint16_t> &ped_adc);
-		void RemoveCM_CalFc(std::unordered_map<uint, double> &slopes, bool remove_adc); //-> remove the m_v_adc_*
+		void RemovePed(std::unordered_map<uint, std::pair<uint, uint>> &, bool);
+		void RemoveCM_CalFc(std::unordered_map<uint, double> &, bool ); //-> remove the m_v_adc_*
 		
 		static void AddAdcBuf(Cycle&);
 		static void ResetAdcBuf(){
 		  s_buf_adc.clear();
 		  printf("[info] Static map ADC Buffer cleared.\n");
 		}
-		static void ResetPed(){
-		  s_ped_adc.clear();
+		static void ResetPedMad(){
+		  s_ped_adc_mad.clear();
 		  printf("[info] Static map Ped ADC cleared");
 		}
-		static void CalPed(uint nbuckets =1);
+		static void CalPedMad(uint nbuckets =1);
 		//	private:
-		static unordered_map<uint, uint16_t> s_ped_adc; 
 		static unordered_map<uint, vector<uint16_t>> s_buf_adc;
+		static unordered_map<uint, std::pair<uint, uint> > s_ped_adc_mad;
+
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf();
@@ -88,10 +92,10 @@ namespace Lycoris{
 		
 		// Hash table
 		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
-		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*100000 + kpix*1024+channel;}
+		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
 		static uint getKpix(uint hashcode){ return hashcode/1024;}
 		static uint getChannel(uint hashcode){ return hashcode%1024;}
-		static uint getBucketRm(uint hashcode, uint bucket) { return hashcode - bucket*100000;}
+		static uint getBucketRm(uint hashcode, uint bucket) { return hashcode - bucket*G_BUCKET_HASH_UNIT;}
 
 	};
 	
