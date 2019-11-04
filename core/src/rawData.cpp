@@ -19,15 +19,15 @@ std::unordered_map<uint, double> Cycle::s_slopes_b0;
 std::vector<double> Cycle::s_noise_fc;
 std::vector<vector<double>> Cycle::s_buf_fc;
 
-std::unordered_map< uint, uint16_t> Cycle::s_ped_adc[4];
-std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc[4];
+std::unordered_map< uint, uint16_t> Cycle::s_ped_adc;
+std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc;
 
-Cycle::Cycle(KpixEvent &event, uint buc_level=0,
-                      uint begin_ch=0, uint end_ch=1023,
-                      bool isold=false ){
+Cycle::Cycle(KpixEvent &event, uint nbuckets,
+                      uint begin_ch, uint end_ch,
+                      bool isold ){
 
 	// Declare member variables first
-	m_b_level = buc_level+1;
+	m_nbuckets = nbuckets;
 	m_has_adc = false;
 	m_has_fc  = false;
 	m_cyclenumber = event.eventNumber();
@@ -49,7 +49,7 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
       tstamp  = sample->getSampleTime();
 
       if (sample->getSampleType() == KpixSample::Data){
-	      if ( bucket >= m_b_level ) continue;
+	      if ( bucket >= m_nbuckets ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
 	      auto key = hashCode(kpix, channel);
 
@@ -76,8 +76,9 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
       
 
     }// finish loop over all data of one cycle
-    for (uint i; i<4; i++){
-	    m_has_adc = m_has_adc || m_v_adc_b[i].size();
+    for (uint i=0; i<4; i++){
+      //printf("adc vec size : %d\n", m_v_adc_b[i].size() );
+      m_has_adc = m_has_adc || m_v_adc_b[i].size();
 	    
 	    // **Exception Handler - Start
 	    try{
@@ -93,7 +94,11 @@ Cycle::Cycle(KpixEvent &event, uint buc_level=0,
 
 
 void Cycle::loadCalib(const std::string& fname){
-	// based on a csv file 
+  /* 
+     Read Calib from a csv file
+     cols needs to be:
+     kpix >> channel >> bucket >> slope
+   */
 	s_slopes_b0.clear();
 	printf(" loadCalib...\n");
 	std::ifstream file (fname);
@@ -176,6 +181,9 @@ void rawData::loadFile(const std::string& fname){
   uint                   lastPct;
   uint                   currPct;
   KpixEvent              event;    //
+  uint                   ncys=0;
+  
+  m_v_cycles.clear();
 
   if ( ! dataRead.open(fname.c_str())  ) {
     cout << "Error opening data file " << fname << endl;
@@ -193,13 +201,15 @@ void rawData::loadFile(const std::string& fname){
 
   Cycle::ResetAdcBuf();
   while ( dataRead.next(&event) ){
+    if (m_nmax!=0 && ncys > m_nmax) break;
+    ncys++;
 
-    Cycle cy(event);
+    Cycle cy(event, m_nbuckets );
     // For pedestal calculation:
     Cycle::AddAdcBuf(cy); 
     // !!Once after std::move, you should never use this object
     m_v_cycles.push_back(std::move(cy));
-        
+    
     //---- fancy bar - Start 
     filePos  = dataRead.pos();
     currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
@@ -216,53 +226,55 @@ void rawData::loadFile(const std::string& fname){
   cout << " Time[s]: " << duration
        << endl;
 
-  //-- Debug print: Start
-  cout << "# of chan    :  " << Cycle::s_buf_adc[0].size() << endl;
-  cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
+  // //-- Debug print: Start
+  // cout << "# of chan    :  " << Cycle::s_buf_adc[0].size() << endl;
+  // cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
 
-  uint count=0;
-  vector<uint> chan_cys;
-  for (const auto& x : Cycle::s_buf_adc[0]){
-	  if (x.second.size()!=m_v_cycles.size() ){
-		  count++;
-		  chan_cys.push_back(x.second.size());
-		  /*cout << "chan "
-		       << Cycle::getKpix(x.first) << "."
-		       << Cycle::getChannel(x.first) 
-		       << ": "
-		       << x.second.size() << endl;
-		  */
-	  }
-  }
-  sort( chan_cys.begin(), chan_cys.end() );
-  chan_cys.erase( unique( chan_cys.begin(), chan_cys.end() ), chan_cys.end() );
-  cout << "# of cy in chan: ";
-  for (const auto& x: chan_cys)
-	  cout << x << ", ";
-  cout << "\n";
-  cout << "# of such chan? " << count << endl;
-  //-- Debug print: End
+  // uint count=0;
+  // vector<uint> chan_cys;
+  // for (const auto& x : Cycle::s_buf_adc[0]){
+  // 	  if (x.second.size()!=m_v_cycles.size() ){
+  // 		  count++;
+  // 		  chan_cys.push_back(x.second.size());
+  // 		  /*cout << "chan "
+  // 		       << Cycle::getKpix(x.first) << "."
+  // 		       << Cycle::getChannel(x.first) 
+  // 		       << ": "
+  // 		       << x.second.size() << endl;
+  // 		  */
+  // 	  }
+  // }
+  // sort( chan_cys.begin(), chan_cys.end() );
+  // chan_cys.erase( unique( chan_cys.begin(), chan_cys.end() ), chan_cys.end() );
+  // cout << "# of cy in chan: ";
+  // for (const auto& x: chan_cys)
+  // 	  cout << x << ", ";
+  // cout << "\n";
+  // cout << "# of such chan? " << count << endl;
+  // //-- Debug print: End
   dataRead.close();
 }
 
 //- Fill s_ped_adc unordered_map<uint, uint16_t>
-void Cycle::CalPed(uint level){
-  for (uint bb=0; bb<level; bb++){
-    if (s_buf_adc[bb].empty()) continue;
-    for( auto &buf : s_buf_adc[bb]){
-      
-      // buf.first, buf.second -> median
-      auto value = median(&buf.second);
-      s_ped_adc[bb].insert(std::make_pair(buf.first, value));
-    }
+void Cycle::CalPed(uint nbuckets){
+  
+  if (s_buf_adc.empty()) return;
+  for( auto &buf : s_buf_adc){
+    
+    // buf.first, buf.second -> median
+    auto value = median(&buf.second);
+    s_ped_adc.insert(std::make_pair(buf.first, value));
   }
-  printf("finished\n");
+  printf("Pedestal calculation finished\n");
+
+  // after pedestal calculation, clean the buffer:
+  Cycle::ResetAdcBuf();
 }
 
 //- Fill s_buf_adc unordered_map<uint, vec<uint16_t>>
 void Cycle::AddAdcBuf(Cycle& cy){
-  for (uint bb = 0; bb<cy.m_b_level; bb++){
-    auto target = &s_buf_adc[bb];
+  for (uint bb = 0; bb<cy.m_nbuckets; bb++){
+    auto target = &s_buf_adc;
     auto kk = cy.hashkeys(bb);
     auto vv = cy.vadc(bb);
     
@@ -279,15 +291,20 @@ void Cycle::AddAdcBuf(Cycle& cy){
 	std::vector<uint16_t> vec;
 	vec.push_back(vv.at(cc));
 	// key is kk.at(cc), value is vv.at(cc)
-	target->insert(std::make_pair(kk.at(cc), std::move(vec)) );
+	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
+				   getChannel(kk.at(cc)),
+				   bb);
+	target->insert(std::make_pair(key, std::move(vec)) );
       }
       
     }else{
       for (size_t cc=0; cc < vv.size(); ++cc){
-	auto key = kk.at(cc);
+	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
+				   getChannel(kk.at(cc)),
+				   bb);
 	auto val = vv.at(cc);
 	if (target->count(key))
-	  target->at(cc).push_back(std::move(val));
+	  target->at(key).push_back(std::move(val));
 	else{
 	  std::vector<uint16_t> vec;
 	  vec.push_back(val);
@@ -302,4 +319,52 @@ void Cycle::AddAdcBuf(Cycle& cy){
   
 }
 
+void rawData::doRmPed(bool rmMAD0){
 
+  Cycle::CalPed();
+  size_t                  cySize = m_v_cycles.size();  //
+  uint                 currPos=0.0;   //
+  uint                   currPct;
+  
+  // remove ped:
+  for (auto &cy : m_v_cycles){
+    if (!cy.m_has_adc){
+      continue; // skip empty cycles
+    }
+    
+    cy.RemovePed(Cycle::s_ped_adc);  
+
+    currPos++;
+    currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
+    cout << "\rProcessing cycles to remove pedestal: "
+	 << currPct << "%  " << flush;
+  }
+  cout << "\n";
+  
+}
+
+void Cycle::RemovePed(std::unordered_map<uint, uint16_t> &ped_adc){
+  for (uint b=0; b < m_nbuckets; b++){ // loop over buckets
+      auto vv = vadc(b);
+      auto kk = hashkeys(b);
+      for ( size_t cc=0; cc<vv.size(); ++cc){
+    	auto val = vv.at(cc);
+	auto key = (getKpix(kk.at(cc)),
+		    getChannel(kk.at(cc)),
+		    b);
+	auto ped = ped_adc.at(key);
+      
+    	vv.at(cc) = val - ped;
+	
+      }
+    }
+  
+}
+
+void Cycle::RemoveCM_CalFc(std::unordered_map<uint, double> &slopes, bool remove_adc){
+
+  for (uint b = 0; b< m_nbuckets; b++){
+
+  }
+  
+}

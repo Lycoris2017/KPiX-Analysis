@@ -24,18 +24,18 @@ namespace Lycoris{
 	public:
 		// Global channel num = kpix_index*2014+channel;
 		Cycle(KpixEvent &event,
-		      uint buc_level,
-		      uint begin_ch,
-		      uint end_ch,
-		      bool isold);
+		      uint nbuckets = 1,
+		      uint begin_ch = 0,
+		      uint end_ch   = 1023,
+		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
 		uint16_t m_ts;
-		uint m_b_level;
+		uint m_nbuckets;
 		
 		// Do your own boosted map
 		vector<uint> m_v_hashkeys_b[4];
-		vector<uint> hashkeys(uint i){
+		const vector<uint>& hashkeys(uint i) const{
 			if (i<4)return m_v_hashkeys_b[i];
 			else {
 				printf("hashkeys error\n");
@@ -46,8 +46,8 @@ namespace Lycoris{
 		bool m_has_adc;
 		// Please make sure both ADC and TS are 16bit (see KpixSample)
 		vector<uint16_t> m_v_adc_b[4];
-		vector<uint16_t> vadc(uint i){
-			if (i<4)return m_v_adc_b[i];
+		const vector<uint16_t>& vadc(uint b) const{
+			if (b<4) return m_v_adc_b[b];
 			else {
 				printf("vadc error\n");
 				exit(EXIT_FAILURE);
@@ -57,24 +57,27 @@ namespace Lycoris{
 		
 		bool m_has_fc;
 		vector<double> m_v_fc_b[4];
-		
-		void RemovePed(std::vector<uint16_t> &ped_adc);
-		void RemoveCM_CalFc(std::vector<uint16_t> &slopes, bool remove_adc); //-> remove the m_v_adc_*
+
+		void RemovePed(std::unordered_map<uint, uint16_t> &ped_adc);
+		void RemoveCM_CalFc(std::unordered_map<uint, double> &slopes, bool remove_adc); //-> remove the m_v_adc_*
 		
 		static void AddAdcBuf(Cycle&);
 		static void ResetAdcBuf(){
-		  for(uint i; i<4;i++)s_buf_adc[i].clear(); }
-		static void ResetPedDB(){
-		  for(uint i; i<4; i++) s_ped_adc[i].clear(); }
-		static void CalPed(uint level =1);
+		  s_buf_adc.clear();
+		  printf("[info] Static map ADC Buffer cleared.\n");
+		}
+		static void ResetPed(){
+		  s_ped_adc.clear();
+		  printf("[info] Static map Ped ADC cleared");
+		}
+		static void CalPed(uint nbuckets =1);
 		//	private:
-		//static vector<uint> s_hashkeys[4];
-		static unordered_map<uint, uint16_t> s_ped_adc[4];
-		static unordered_map<uint, vector<uint16_t>> s_buf_adc[4];
+		static unordered_map<uint, uint16_t> s_ped_adc; 
+		static unordered_map<uint, vector<uint16_t>> s_buf_adc;
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf();
-		static void ResetFcDB();
+		static void ResetNoise();
 		static void CalNoise();
 	private:
 		static vector<double> s_noise_fc;
@@ -85,20 +88,36 @@ namespace Lycoris{
 		
 		// Hash table
 		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
+		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*100000 + kpix*1024+channel;}
 		static uint getKpix(uint hashcode){ return hashcode/1024;}
 		static uint getChannel(uint hashcode){ return hashcode%1024;}
+		static uint getBucketRm(uint hashcode, uint bucket) { return hashcode - bucket*100000;}
 
 	};
 	
 	class rawData{
 	public:
-		rawData(){};
-		~rawData(){};
+	rawData(): m_nbuckets(1), m_nmax(0){};
+	  ~rawData(){};
 
-		void loadFile(const std::string&);
-
+	  void loadFile(const std::string&);
+	  void doRmPed(bool rmMAD0=true); // TBD: MAD0 not yet 
+	  void doRmCMnoise(bool rmAdc=true);
+	  
+	  void setNBuckets(uint level){
+	    if (level<1 || level>4) return;
+	    else m_nbuckets = level;
+	  }
+	  uint getNBuckets(){return m_nbuckets;}
+	  void setMaxCycles(uint nmax){
+	    printf("[info] Set max cycles to load: %d\n",nmax);
+	    m_nmax = nmax;
+	  }
+	  
 	private:
 		std::vector<Cycle> m_v_cycles;
+		uint m_nbuckets;
+		uint m_nmax;
 	};
 
 

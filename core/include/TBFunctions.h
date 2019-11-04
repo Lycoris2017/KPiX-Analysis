@@ -15,35 +15,27 @@ double MAD(std::vector<double>*);
 double smallest_time_diff(std::vector<double>, int);
 
 template <typename T>
-T median(std::vector<T>* v){
+T median(std::vector<T>* vec){
   /* Note by Mengqing: this func has already an optimal in memory/speed*/
-  if (v  == nullptr )
-    {
+  if (vec  == nullptr ){
       //cout << "Found a nullpointer" << endl;
-      return 0;
+    return 0;
+  }
+  else{
+    if (vec->empty())  return 0;
+    else{
+      size_t n = vec->size() / 2;
+      if (vec->size()%2 == 0){
+	std::nth_element(vec->begin(), vec->begin()+n, vec->end());
+	std::nth_element(vec->begin(), vec->begin()+n-1, vec->end());
+	return (vec->at(n)+vec->at(n-1))/2;
+      }
+      else{
+	std::nth_element(vec->begin(), vec->begin()+n, vec->end());
+	return vec->at(n);
+      }
     }
-  else
-    {
-      if (v->empty())
-	{
-	  return 0;
-	}
-      else
-	{
-	  size_t n = v->size() / 2;
-	  if (v->size()%2 == 0)
-	    {
-	      std::nth_element(v->begin(), v->begin()+n, v->end());
-	      std::nth_element(v->begin(), v->begin()+n-1, v->end());
-	      return (v->at(n)+v->at(n-1))/2;
-	    }
-	  else
-	    {
-	      std::nth_element(v->begin(), v->begin()+n, v->end());
-	      return v->at(n);
-	    }
-	}
-    }
+  }
 }
 
 #endif

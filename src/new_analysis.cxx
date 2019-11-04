@@ -22,10 +22,13 @@ int main ( int argc, char **argv ) {
 
   printf("[Info] You choose file %s\n", argv[1]);
   Lycoris::rawData db;
+  db.setMaxCycles(1000);
   db.loadFile(argv[1]);
   //  cout<< "[dev] How many cycles? "  << db.GetNEvents() << std::endl;
-  Lycoris::Cycle::CalPed();
-  cout<< "debug, size of ped_adc: "<< Lycoris::Cycle::s_ped_adc[0].size()<< endl;
+  db.doRmPed();
+  //  cout<< "debug, size of ped_adc: "<< Lycoris::Cycle::s_ped_adc[0].size()<< endl;
+  Lycoris::Cycle::loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_201907T24.csv");
+  db.doRmCMnoise();
   
   return 1;
  
