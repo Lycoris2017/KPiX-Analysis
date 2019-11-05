@@ -4,36 +4,40 @@
 #include <cstring>
 #include <chrono>
 #include <sstream>
-#include <cassert>
+#include <cassert> // assert
 
 #include "rawData.h"
 #include "TBFunctions.h"
 #include "Data.h"
 #include "DataRead.h"
 
+
 using namespace std;
 using namespace Lycoris;
 
-std::unordered_map<uint, double> Cycle::s_slopes_b0;
-std::vector<double> Cycle::s_noise_fc;
-std::vector<vector<double>> Cycle::s_buf_fc;
+//std::unordered_map<uint, double> Cycle::s_slopes_b0;
 
-//std::unordered_map<uint, bool> Cycle::s_mad;
-std::unordered_map< uint, vector<uint16_t>> Cycle::s_buf_adc;
-std::unordered_map< uint, std::pair<uint, uint> > Cycle::s_ped_adc_mad;
+std::unordered_map< uint, std::vector<double>> Cycle::s_buf_fc;
+std::unordered_map<uint, double> Cycle::s_noise_fc;
+
+std::unordered_map< uint, std::vector<uint16_t>> Cycle::s_buf_adc;
+std::unordered_map< uint, uint> Cycle::s_ped_adc;
+std::unordered_map< uint, uint> Cycle::s_ped_mad;
+//std::vector<uint> Cycle::s_v_mad0_chn;
 
 Cycle::Cycle(KpixEvent &event, uint nbuckets,
                       uint begin_ch, uint end_ch,
                       bool isold ){
 
 	// Declare member variables first
-	m_nbuckets = nbuckets;
-	m_has_adc = false;
-	m_has_fc  = false;
-	m_cyclenumber = event.eventNumber();
-	if (isold) m_ts = event.timestamp();
-    else       m_ts = event.runtime();
-	
+  m_cm_noise[4]={0.0};
+  m_nbuckets = nbuckets;
+  m_has_adc = false;
+  m_has_fc  = false;
+  m_cyclenumber = event.eventNumber();
+  if (isold) m_ts = event.timestamp();
+  else       m_ts = event.runtime();
+  
 
     KpixSample *sample;   //
     for (uint ev=0; ev< event.count(); ev++){
@@ -93,54 +97,54 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 }
 
 
-void Cycle::loadCalib(const std::string& fname){
+void rawData::loadCalib(const std::string& fname){
   /* 
      Read Calib from a csv file
      cols needs to be:
      kpix >> channel >> bucket >> slope
    */
-	s_slopes_b0.clear();
-	printf(" loadCalib...\n");
-	std::ifstream file (fname);
-	if ( !file ) return;
-	printf(" Open Calib file : %s\n", fname.c_str());
-	
-	std::string line;
-	char delim=',';
-	
-	//m_calib_map.clear();
-	while( std::getline(file, line) ){
-		
-		if (line.empty() ) continue;
-		
-		while (line[0]==' ')
-			line.erase(0,1);
-		
-		if (!isdigit(line[0])) continue;
-		
-		std::stringstream is(line);
-		std::string value;
-		std::vector<std::string> vec;
-		while (std::getline(is, value, delim))
-			vec.push_back(value);
-		if (vec.size()<4){
-			printf("[ERROR] Missing value at");
-			for (const auto &a : vec)
-				cout << a << ' ';
-			printf("\n");
-		}
-		else{
-			auto kpix    = std::atoi(vec[0].c_str());
-			auto channel = std::atoi(vec[1].c_str());
-			auto bucket  = std::atoi(vec[2].c_str());
-			float slope  = std::atof(vec[3].c_str());
-			if (bucket==0)
-				Cycle::s_slopes_b0.emplace(hashCode(kpix,channel), slope);
-		}
-	}
-	
-	cout << " test: "<< Cycle::s_slopes_b0.at(hashCode(11, 1000)) << endl;
-	file.close();
+  m_m_slopes_b0.clear();
+  printf(" loadCalib...\n");
+  std::ifstream file (fname);
+  if ( !file ) return;
+  printf(" Open Calib file : %s\n", fname.c_str());
+  
+  std::string line;
+  char delim=',';
+  
+  //m_calib_map.clear();
+  while( std::getline(file, line) ){
+    
+    if (line.empty() ) continue;
+    
+    while (line[0]==' ')
+      line.erase(0,1);
+    
+    if (!isdigit(line[0])) continue;
+    
+    std::stringstream is(line);
+    std::string value;
+    std::vector<std::string> vec;
+    while (std::getline(is, value, delim))
+      vec.push_back(value);
+    if (vec.size()<4){
+      printf("[ERROR] Missing value at");
+      for (const auto &a : vec)
+	cout << a << ' ';
+      printf("\n");
+    }
+    else{
+      auto kpix    = std::atoi(vec[0].c_str());
+      auto channel = std::atoi(vec[1].c_str());
+      auto bucket  = std::atoi(vec[2].c_str());
+      float slope  = std::atof(vec[3].c_str());
+      if (bucket==0)
+        m_m_slopes_b0.emplace(Cycle::hashCode(kpix,channel), slope);
+    }
+  }
+  
+  cout << " test: "<< m_m_slopes_b0.at(Cycle::hashCode(11, 1000)) << endl;
+  file.close();
 	
 }
 
@@ -201,8 +205,8 @@ void rawData::loadFile(const std::string& fname){
 
   Cycle::ResetAdcBuf();
   while ( dataRead.next(&event) ){
-    if (m_nmax!=0 && ncys > m_nmax) break;
     ncys++;
+    if (m_nmax!=0 && ncys > m_nmax) break;
 
     Cycle cy(event, m_nbuckets );
     // For pedestal calculation:
@@ -256,12 +260,16 @@ void rawData::loadFile(const std::string& fname){
 }
 
 //- Fill s_ped_adc unordered_map<uint, uint16_t>
-void Cycle::CalPedMad(uint nbuckets){
+void Cycle::CalPed(uint nbuckets, bool save_mad){
 
-  if (s_buf_adc.empty()) return;
+  if (s_buf_adc.empty()) return ;
 
-  s_ped_adc_mad.clear();
-  
+  s_ped_adc.clear();
+  s_ped_mad.clear();
+  //  s_v_mad0_chn.clear();
+
+  auto t_start = std::chrono::high_resolution_clock::now();
+
   for( auto &buf : s_buf_adc){
     
     // skip not requested buckets
@@ -269,129 +277,137 @@ void Cycle::CalPedMad(uint nbuckets){
 	// buf.first, buf.second -> median
 	auto ped = median(&buf.second);
 	auto mad = MAD(&buf.second);
+
 	//printf("debug: median = %d, MAD = %d\n", ped, mad);
-	s_ped_adc_mad.insert(std::make_pair(buf.first, std::make_pair(ped, mad) ));
+	s_ped_adc.insert(std::make_pair(buf.first, ped ));
+	if (save_mad) s_ped_mad.insert(std::make_pair(buf.first, mad));
+	//if (mad==0)  s_v_mad0_chn.push_back(buf.first);
     }
   }
-  printf("Pedestal & MAD calculation finished\n");
+  printf("Pedestal & MAD calculation finished.\t");
+
+  auto t_end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+  cout << " Time[s]: " << duration
+       << endl;
 
   // after pedestal calculation, clean the buffer:
   Cycle::ResetAdcBuf();
+
 }
 
 //- Fill s_buf_adc unordered_map<uint, vec<uint16_t>>
 void Cycle::AddAdcBuf(Cycle& cy){
-  for (uint bb = 0; bb<cy.m_nbuckets; bb++){
-    auto target = &s_buf_adc;
-    auto kk = cy.hashkeys(bb);
-    auto vv = cy.vadc(bb);
-    
-    /*if (vv.size() == 0 )
-      printf("Cycle is empty: %d\n", cy.m_cyclenumber);
-    */
-    
-    if(target->empty()){
-      printf("Empty for evt: %d \n", cy.m_cyclenumber);
-      // first event, init the vectors
-      assert(kk.size() == vv.size());
-      
-      for( size_t cc = 0; cc < vv.size(); ++cc){
-	std::vector<uint16_t> vec;
-	vec.push_back(vv.at(cc));
-	// key is kk.at(cc), value is vv.at(cc)
-	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
-				   getChannel(kk.at(cc)),
-				   bb);
-	target->insert(std::make_pair(key, std::move(vec)) );
-      }
-      
-    }else{
-      for (size_t cc=0; cc < vv.size(); ++cc){
-	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
-				   getChannel(kk.at(cc)),
-				   bb);
-	auto val = vv.at(cc);
-	if (target->count(key))
-	  target->at(key).push_back(std::move(val));
-	else{
-	  std::vector<uint16_t> vec;
-	  vec.push_back(val);
-	  target->insert(std::make_pair(key, std::move(vec)));
-	}
-      }
-      
-    }
-    
+  if (!cy.m_has_adc) return;
+  for (uint bb =0; bb< cy.m_nbuckets; bb++){
+    Cycle::AddBufferT( Cycle::s_buf_adc, cy.hashkeys(bb), cy.vadc(bb), bb);
   }
-  // just append the vector for each channel
-  
 }
 
-void rawData::doRmPed(bool rmMAD0){
 
-  if (rmMAD0) printf("[info] Remove channels with MAD==0\n");
-  
-  Cycle::CalPedMad(m_nbuckets);
+void rawData::doRmPedCM(bool rmAdc){
+
+  Cycle::CalPed(m_nbuckets, true);
   size_t                  cySize = m_v_cycles.size();  //
   uint                 currPos=0.0;   //
   uint                   currPct;
-  
+
+  auto t_start = std::chrono::high_resolution_clock::now();
+
   // remove ped:
   for (auto &cy : m_v_cycles){
     if (!cy.m_has_adc){
       continue; // skip empty cycles
     }
-    
-    cy.RemovePed(Cycle::s_ped_adc_mad, rmMAD0);  
 
+    cy.RemovePedMad0_CalFc(Cycle::s_ped_adc,
+			 m_m_slopes_b0,
+			 Cycle::s_ped_mad,
+			 true);
+    cy.RemoveCM();
+    Cycle::AddFcBuf(cy);
+    
     currPos++;
     currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
-    cout << "\rProcessing cycles to remove pedestal: "
+    cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
 	 << currPct << "%  " << flush;
   }
+    
+  auto t_end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+  cout << " Time[s]: " << duration
+       << endl;
+
   cout << "\n";
-  
+    
 }
 
-void Cycle::RemovePed(std::unordered_map<uint, std::pair<uint, uint> > &ped_adc_mad, bool rmMAD0){
-
-  if (rmMAD0) printf("Removing mad0 channels.\n");
-  for (uint b=0; b < m_nbuckets; b++){ // loop over buckets
-      auto vv = vadc(b);
-      auto kk = hashkeys(b);
-      std::vector<uint> mad0;
-      for ( size_t cc=0; cc<vv.size(); ++cc){
-    	auto val = vv.at(cc);
-	auto key = Cycle::hashCode(getKpix(kk.at(cc)),
-				   getChannel(kk.at(cc)),
-				   b);
-	auto ped = ped_adc_mad.at(key).first;
-	auto mad = ped_adc_mad.at(key).second;
-	//printf("debug: adc = %d, median = %d, mad = %d \n", val, ped, mad);
-
-	vv.at(cc) = val - ped;
-
-	if (rmMAD0 && mad == 0 )
-	  mad0.push_back(cc);
-      }
-      //printf(" channel number without MAD0 cut: %d\n", vv.size());
-      printf("how many mad0 channels? %d \n", mad0.size());
-     
-      //printf(" channel number w/ MAD0 cut: %d\n", vv.size());
-    }
-  
-}
-
-void Cycle::RemoveCM_CalFc(std::unordered_map<uint, double> &slopes, bool remove_adc){
-  // currently only work for bucket0
-  printf("[warn] Common mode and ADC to fC: only works for [Bucket 0]!");
+void Cycle::RemovePedMad0_CalFc(std::unordered_map<uint, uint> &ped_adc,
+				std::unordered_map<uint, double> &slopes,
+				std::unordered_map<uint, uint> &ped_mad,
+				bool remove_adc)
+{
+  /* Only work at bucket 0 */
   uint bucket=0;
   auto target = &m_v_fc_b[bucket];
   auto vv = vadc(bucket);
-  auto kk = hashkeys(bucket);
-  for ( size_t cc=0; cc< vv.size(); ++cc) {
+  auto kk = hashkeys(bucket);  
 
+  for (size_t cc =0; cc<vv.size(); ++cc){
+    uint key  = kk.at(cc);
+    uint keyb = key; //because bucket = 0
+    // ignore mad0 channels
+    if (s_ped_mad.at(keyb)==0) continue;
+
+    uint adc = vv.at(cc);
+    uint ped = ped_adc.at(key);
+    double slope = slopes.at(kk.at(cc));
+    double fc = (double)(adc - ped) / slope;
+    target->push_back(fc);
   }
-  
+   m_has_fc = !target->empty();
+  //printf(" How many channels in fC vec? %d\n", target->size());
+  if (remove_adc) ResetAdc();
 }
 
+
+void Cycle::RemoveCM(){
+  uint bucket=0;
+  if (m_v_fc_b[bucket].empty()) return;
+  m_cm_noise[bucket] = median(&m_v_fc_b[bucket]);
+  printf("debug: common mode noise per cycle = %.2f \n", m_cm_noise[bucket]);
+
+  for (auto &fc : m_v_fc_b[bucket])
+    fc = fc - m_cm_noise[bucket];
+}
+
+void Cycle::AddFcBuf(Cycle& cy){
+  if (!cy.m_has_fc) return;
+
+  uint bucket = 0;
+  Cycle::AddBufferT( Cycle::s_buf_fc,
+		     cy.hashkeys(bucket),
+		     cy.vfc(bucket),
+		     bucket);
+}
+
+void Cycle::CalNoise(uint& nbuckets){
+  if (s_buf_fc.empty()) return;
+
+  s_noise_fc.clear();
+  auto t_start = std::chrono::high_resolution_clock::now();
+
+  for (auto &buf: s_buf_fc){
+    if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ){
+      auto noise = 1.4826*MAD(&buf.second);
+      s_noise_fc.insert(std::make_pair(buf.first, noise));
+    }
+  }
+  printf("Noise calculation finished.\t");
+  auto t_end = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+  cout << " Time[s]: " << duration
+       << endl;
+
+  Cycle::ResetFcBuf();
+}
