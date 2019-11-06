@@ -143,7 +143,7 @@ void rawData::loadCalib(const std::string& fname){
     }
   }
   
-  cout << " test: "<< m_m_slopes_b0.at(Cycle::hashCode(11, 1000)) << endl;
+  cout << " test: "<< m_m_slopes_b0.at(Cycle::hashCode(1, 1000)) << endl;
   file.close();
 	
 }
@@ -259,7 +259,7 @@ void rawData::loadFile(const std::string& fname){
   dataRead.close();
 }
 
-//- Fill s_ped_adc unordered_map<uint, uint16_t>
+/* Static */
 void Cycle::CalPed(uint nbuckets, bool save_mad){
 
   if (s_buf_adc.empty()) return ;
@@ -275,10 +275,10 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
     // skip not requested buckets
     if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ) { 
 	// buf.first, buf.second -> median
-	auto ped = median(&buf.second);
+     	auto ped = median(&buf.second);
 	auto mad = MAD(&buf.second);
 
-	//printf("debug: median = %d, MAD = %d\n", ped, mad);
+	printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
 	s_ped_adc.insert(std::make_pair(buf.first, ped ));
 	if (save_mad) s_ped_mad.insert(std::make_pair(buf.first, mad));
 	//if (mad==0)  s_v_mad0_chn.push_back(buf.first);
@@ -296,7 +296,7 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
 
 }
 
-//- Fill s_buf_adc unordered_map<uint, vec<uint16_t>>
+/* Static */
 void Cycle::AddAdcBuf(Cycle& cy){
   if (!cy.m_has_adc) return;
   for (uint bb =0; bb< cy.m_nbuckets; bb++){
@@ -308,9 +308,9 @@ void Cycle::AddAdcBuf(Cycle& cy){
 void rawData::doRmPedCM(bool rmAdc){
 
   Cycle::CalPed(m_nbuckets, true);
-  size_t                  cySize = m_v_cycles.size();  //
-  uint                 currPos=0.0;   //
-  uint                   currPct;
+  size_t     cySize = m_v_cycles.size();  //
+  uint       currPos=0.0;   //
+  uint       currPct;
 
   auto t_start = std::chrono::high_resolution_clock::now();
 
@@ -321,16 +321,18 @@ void rawData::doRmPedCM(bool rmAdc){
     }
 
     cy.RemovePedMad0_CalFc(Cycle::s_ped_adc,
-			 m_m_slopes_b0,
-			 Cycle::s_ped_mad,
-			 true);
+			   m_m_slopes_b0,
+			   Cycle::s_ped_mad,
+			   true);
     cy.RemoveCM();
     Cycle::AddFcBuf(cy);
-    
+
+    //---> Fancy Bar
     currPos++;
     currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
     cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
 	 << currPct << "%  " << flush;
+    //---> Fancy Bar <---// 
   }
     
   auto t_end = std::chrono::high_resolution_clock::now();
@@ -362,6 +364,8 @@ void Cycle::RemovePedMad0_CalFc(std::unordered_map<uint, uint> &ped_adc,
     uint adc = vv.at(cc);
     uint ped = ped_adc.at(key);
     double slope = slopes.at(kk.at(cc));
+    // ignore channels with slope ==0
+    if (slope ==0) continue; 
     double fc = (double)(adc - ped) / slope;
     target->push_back(fc);
   }
@@ -375,12 +379,13 @@ void Cycle::RemoveCM(){
   uint bucket=0;
   if (m_v_fc_b[bucket].empty()) return;
   m_cm_noise[bucket] = median(&m_v_fc_b[bucket]);
-  printf("debug: common mode noise per cycle = %.2f \n", m_cm_noise[bucket]);
+  //  printf("debug: common mode noise per cycle = %.2f \n", m_cm_noise[bucket]);
 
   for (auto &fc : m_v_fc_b[bucket])
     fc = fc - m_cm_noise[bucket];
 }
 
+/* Static */
 void Cycle::AddFcBuf(Cycle& cy){
   if (!cy.m_has_fc) return;
 
@@ -391,6 +396,7 @@ void Cycle::AddFcBuf(Cycle& cy){
 		     bucket);
 }
 
+/* Static */
 void Cycle::CalNoise(uint& nbuckets){
   if (s_buf_fc.empty()) return;
 

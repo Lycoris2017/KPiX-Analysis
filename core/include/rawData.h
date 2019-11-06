@@ -120,20 +120,27 @@ namespace Lycoris{
 		static unordered_map<uint, double> s_noise_fc;
 		static unordered_map<uint, vector<double>> s_buf_fc;
 	public:
+		static unordered_map<uint, double>& getNoise() {
+		  return Cycle::s_noise_fc;
+		}
+
+	public:
 		
 		// Hash table
 		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
 		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
 		static uint getKpix(uint hashcode){ return hashcode/1024;}
 		static uint getChannel(uint hashcode){ return hashcode%1024;}
-		static uint getBucketRm(uint hashcode, uint bucket) { return hashcode - bucket*G_BUCKET_HASH_UNIT;}
+		static uint rmBucket(uint hashcode) { return hashcode%G_BUCKET_HASH_UNIT;}
+		static uint getBucket(uint hashcode){return hashcode/G_BUCKET_HASH_UNIT;}
+		  
 
-		
 		template <typename T>
 		static void AddBufferT(std::unordered_map<uint, vector<T>> &target,
 				       const std::vector<uint> &kk,
 				       const std::vector<T> &vv,
 				       uint &bb ){
+
 		  /* NB: Following session designed to improve speed, need more test, currently undefined.*/
 		  /* if(target.empty()){ */
 		  /*   //printf("Empty for evt: %d \n", cy.m_cyclenumber); */
@@ -177,7 +184,6 @@ namespace Lycoris{
 
 	  void loadFile(const std::string&);
 	  void doRmPedCM(bool rmAdc=true); 
-	  //void doRmCMnoise(bool rmAdc=true);
 	  
 	  void setNBuckets(uint level){
 	    if (level<1 || level>4) return;
@@ -192,7 +198,8 @@ namespace Lycoris{
 	  uint getNCycles(){return m_v_cycles.size();}
 
 	  void loadCalib(const std::string&); // Done
-
+	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
+	  
 	private:
 		std::vector<Cycle> m_v_cycles;
 		uint m_nbuckets;
