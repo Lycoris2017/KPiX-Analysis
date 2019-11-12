@@ -433,6 +433,8 @@ def hist_plotter():
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
 			z_axis = obj.GetZaxis()
+
+
 #			ROOT.TGaxis.SetMaxDigits(3)
 			c1.cd()
 			#print obj.GetEntries()
@@ -477,6 +479,7 @@ def hist_plotter():
 				z_low = args.zaxisrange[0]
 				z_high = args.zaxisrange[1]
 				z_axis.SetRangeUser(z_low, z_high)
+
 			obj.SetLineColor(args.color[0]) #Blue
 			obj.SetMarkerColor(args.color[0]) #Blue
 			if (args.fill):
@@ -497,16 +500,41 @@ def hist_plotter():
 			if (args.ytitle):
 				y_axis.SetTitle(args.ytitle)
 			obj.Draw(args.draw_option)
+#			if args.upperXaxis:
+#				print "adding an upper x axis"
+#				print x_low, y_low, x_high, y_high
+#				axis = ROOT.TGaxis(x_low, y_high, x_high, y_high, x_low, x_high, 016, "-");
+#				axis.SetLineColor(4);
+#				axis.SetLabelFont(62);
+#				axis.SetLabelSize(0.04);
+#				axis.SetLabelColor(4);
+#				axis.SetTitleFont(62);
+#				axis.SetTitleSize(0.056);
+#				axis.SetTitleOffset(1.3);
+#				axis.SetTitleColor(4);
+#				axis.SetTitle("electrons");
+#				axis.ChangeLabel(-1, -1, -1, -1, -1, -1, "99864");
+#				axis.ChangeLabel(1, -1, -1, -1, -1, -1, "0");
+#				axis.ChangeLabel(2, -1, -1, -1, -1, -1, "12483");
+#				axis.ChangeLabel(3, -1, -1, -1, -1, -1, "24966");
+#				axis.ChangeLabel(4, -1, -1, -1, -1, -1, "37449");
+#				axis.ChangeLabel(5, -1, -1, -1, -1, -1, "49932");
+#				axis.ChangeLabel(6, -1, -1, -1, -1, -1, "62415");
+#				axis.ChangeLabel(7, -1, -1, -1, -1, -1, "74898");
+#				axis.ChangeLabel(8, -1, -1, -1, -1, -1, "87381");
+#				axis.Draw()
+#				c1.SetTopMargin(0.15)
+			c1.Update()
 			run_name = filename_list[0][:-1]			
 			if (args.output_name):
 				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
-				#c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
 			else:
 				outname = folder_loc+run_name+'_'+histogram.GetName()
 				print 'Creating '+outname+'.pvg'
-				#c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.png')
 			c1.Close()
 			counter= counter+1
@@ -722,17 +750,16 @@ mystyle.SetPadRightMargin(0.15)
 mystyle.SetPadLeftMargin(0.16)
 #
 ##set axis label and title text sizes
-mystyle.SetLabelFont(42,"xyz")
-mystyle.SetLabelSize(0.055,"xyz")
+mystyle.SetLabelFont(62,"xyz")
+mystyle.SetLabelSize(0.05,"xyz")
 mystyle.SetLabelOffset(0.003,"yz")
 mystyle.SetLabelOffset(0.00,"x")
-mystyle.SetTitleFont(42,"xyz")
-mystyle.SetTitleSize(0.06,"xyz")
+mystyle.SetTitleFont(62,"xyz")
+mystyle.SetTitleSize(0.056,"xyz")
 mystyle.SetTitleOffset(1.1,"yz")
 mystyle.SetTitleOffset(0.75,"x")
-mystyle.SetStatFont(42)
-mystyle.SetStatFontSize(0.03)
-
+mystyle.SetStatFont(62)
+mystyle.SetStatFontSize(0.05)
 
 
 ROOT.TGaxis.SetMaxDigits(4)
@@ -742,7 +769,7 @@ ROOT.TGaxis.SetMaxDigits(4)
 #mystyle.SetTextFont(42)
 
 ##set legend text size etc.
-mystyle.SetLegendTextSize(0.03)
+mystyle.SetLegendTextSize(0.05)
 #
 ##set line widths
 mystyle.SetFrameLineWidth(2)
@@ -771,9 +798,9 @@ mystyle.SetMarkerSize(0.7)
 mystyle.SetLineWidth(1) 
 
 #done
-mystyle.cd()
-ROOT.gROOT.ForceStyle()
-ROOT.gStyle.ls()
+#mystyle.cd()
+#ROOT.gROOT.ForceStyle()
+#ROOT.gStyle.ls()
 
 
 
@@ -808,10 +835,13 @@ parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x ax
 parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
 parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
 parser.add_argument('-q', '--olddaq', dest='olddaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
+parser.add_argument('--other', dest='other', help='general plotting with non automatic file name generation')
+parser.add_argument('--nobox', dest='nobox', action='store_true', help='suppresses tstatbox from being added. Does not work with stack/nostack option')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
 parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
+parser.add_argument( '--upperaxis', dest='upperXaxis', action='store_true', help='needs to be adjusted manually all the time. adds a second x axis to the top of the plot')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
@@ -838,6 +868,19 @@ legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 ##-----------------	
 ##produce empty root file and filename lists.
 
+if (args.nobox):
+	if ('stack' in args.draw_option):
+		print 'ERROR: nobox does not work with stack/nostack'
+		sys.exit(1)
+	else:
+		mystyle.SetOptStat(0)
+
+# finish setting root style
+mystyle.cd()
+ROOT.gROOT.ForceStyle()
+ROOT.gStyle.ls()
+
+
 root_file_list = []
 filename_list = []
 ##-----------------
@@ -847,13 +890,13 @@ for root_file in args.file_in:
 	
 	if (args.olddaq):
 		filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
+	elif (args.other):
+		filename_list.append(root_file[0:root_file.rfind('.root')])
 	else:
 		if '/Run_' in root_file:
 			filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
 		elif '/Calibration_' in root_file:
 			filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
-	#else:
-		#filename_list.append(root_file[root_file.find('/20')+1:root_file.rfind('.external')])
 print filename_list
 for x in root_file_list:
 	key_root = x.GetListOfKeys()

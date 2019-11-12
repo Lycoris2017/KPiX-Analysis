@@ -152,13 +152,13 @@ int main ( int argc, char **argv )
 	KpixSample             *sample;   //
 	
 	const unsigned int n_buckets = 1;
-	const unsigned int n_kpix = 12;
-	const unsigned int n_blocks = 32;
+    const unsigned int n_kpix = 32;
+    const unsigned int n_blocks = 32;
 	const unsigned int n_channels = 1024;
 	const unsigned int n_BCC = 8192;
 	const unsigned int n_strips = 1840;
 	
-	const unsigned int n_input_kpix = 24;
+    const unsigned int n_input_kpix = 32;
 	const unsigned int n_input_buckets = 4;
 	const unsigned int n_input_channels = 1024;
 	
@@ -328,6 +328,7 @@ int main ( int argc, char **argv )
 			pedestal_tree->SetBranchAddress("pedestal_MAD", &pedestal_MAD);
 			
 			long int nentries = pedestal_tree->GetEntries();
+            cout << "DEEEEEEEBUUUUUUUG" << endl;
 			for (long int i = 0; i < nentries; ++i)
 			{
 				pedestal_tree->GetEntry(i);
@@ -363,9 +364,19 @@ int main ( int argc, char **argv )
 	string pedestalname = argv[3];
 	string outname = argv[1];
 	
-	
-	size_t name_start  = pedestalname.find("/Run") + 1;
-	size_t name_length = pedestalname.find(".dat") - name_start;
+    size_t name_start;
+    size_t name_length;
+
+    if (int(pedestalname.find("/Run")) != -1)
+         name_start = pedestalname.find("/Run") + 1;
+    else
+        name_start = pedestalname.find("/201") + 1;
+    if (int(pedestalname.find(".dat")) != -1)
+        name_length = pedestalname.find(".dat") - name_start;
+    else
+        name_length = pedestalname.find(".bin") - name_start;
+
+    cout << " FIND RESULT " << name_length << endl;
 	
 	pedestalname = pedestalname.substr(name_start, name_length);
 	
@@ -597,7 +608,7 @@ int main ( int argc, char **argv )
 	std::vector<double>* corrected_charge_vec[n_kpix][n_channels] = {nullptr};
 	std::vector<double>* corrected_charge_vec_cut[n_kpix][n_channels] = {nullptr};
 	std::vector<double>* corrected_charge_vec_time[n_kpix][n_BCC]  = {nullptr};
-	std::vector<double>* corrected_charge_vec_time_block[n_kpix][n_BCC][4]  = {nullptr};
+//	std::vector<double>* corrected_charge_vec_time_block[n_kpix][n_BCC][4]  = {nullptr};
 	//std::vector<double>* test[n_kpix][n_channels] = {nullptr}; // = { new std::vector<double> };
 //	cout << "DEBUG 5" << endl;
 	while ( dataRead.next(&event) ) //preread to determine noise value of each channel in each KPiX.
@@ -635,19 +646,19 @@ int main ( int argc, char **argv )
 							cout << "Pedestal " << pedestal_MedMAD[kpix][channel][bucket][0] << endl;
 							cout << "CommonMOde " << common_modes_median[kpix].at(event.eventNumber()) << endl;
 						}
-						if (block < 4)
-						{
-							if (corrected_charge_vec_time_block[kpix][int(tstamp)][block] == NULL)
-							{
-								corrected_charge_vec_time_block[kpix][int(tstamp)][block] = new std::vector<double>;
-								if (corrected_charge_vec_time_block[kpix][int(tstamp)][block]==NULL)
-								{
-									std::cerr << "Memory allocation error for vector kpix " <<
-												 kpix << " tstamp "  << tstamp  <<" " <<std::endl;
-									exit(-1); // probably best to bail out
-								}
-							}
-						}
+//						if (block < 4)
+//						{
+//							if (corrected_charge_vec_time_block[kpix][int(tstamp)][block] == NULL)
+//							{
+//								corrected_charge_vec_time_block[kpix][int(tstamp)][block] = new std::vector<double>;
+//								if (corrected_charge_vec_time_block[kpix][int(tstamp)][block]==NULL)
+//								{
+//									std::cerr << "Memory allocation error for vector kpix " <<
+//												 kpix << " tstamp "  << tstamp  <<" " <<std::endl;
+//									exit(-1); // probably best to bail out
+//								}
+//							}
+//						}
 						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
 						{
 							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
@@ -682,8 +693,8 @@ int main ( int argc, char **argv )
 						if (tstamp > 3000 && tstamp < 6000) //current cut criteria
 							corrected_charge_vec_cut[kpix][channel]->push_back(charge_CM_corrected);
 						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
-						if (block < 4)
-							corrected_charge_vec_time_block[kpix][int(tstamp)][block]->push_back(charge_CM_corrected);
+//						if (block < 4)
+//							corrected_charge_vec_time_block[kpix][int(tstamp)][block]->push_back(charge_CM_corrected);
 						
 					}
 					//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
@@ -739,7 +750,6 @@ int main ( int argc, char **argv )
 //						}
 						if (strip != 9999)
 						{
-//
 							noise_distribution[k][0]->Fill(noise[k][c]);
 							noise_distribution_sensor[k/2][0]->Fill(noise[k][c]);
 							noise_v_position[k/2][0]->Fill(y, noise[k][c]);
@@ -759,24 +769,24 @@ int main ( int argc, char **argv )
 			for (int t = 0; t < n_BCC ; ++t)
 			{
 				noise_v_time[k]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
-				for (unsigned int b = 0; b < 4; ++b)
-					noise_v_time_block[k][b]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
-				x[t] = t;
-				x_err[t] = 0;
-				y_graph[t] = 1.4826*MAD(corrected_charge_vec_time[k][t]);
-				y_graph_err[t] = 0;
+//				for (unsigned int b = 0; b < 4; ++b)
+//					noise_v_time_block[k][b]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
+//				x[t] = t;
+//				x_err[t] = 0;
+//				y_graph[t] = 1.4826*MAD(corrected_charge_vec_time[k][t]);
+//				y_graph_err[t] = 0;
 				//cout << x[t] << endl;
 			}
-			noise_v_time_graph = new TGraphErrors(2*n_BCC ,x, y_graph, x_err, y_graph_err);
-			noise_v_time_graph->Draw("Ap");
-			noise_v_time_graph->GetXaxis()->SetTitle("Time (BCC)");
-			noise_v_time_graph->GetYaxis()->SetTitle("Noise (fC)");
-			tmp.str("");
-			tmp << "noise_v_time_graph_k" << k;
+//			noise_v_time_graph = new TGraphErrors(2*n_BCC ,x, y_graph, x_err, y_graph_err);
+//			noise_v_time_graph->Draw("Ap");
+//			noise_v_time_graph->GetXaxis()->SetTitle("Time (BCC)");
+//			noise_v_time_graph->GetYaxis()->SetTitle("Noise (fC)");
+//			tmp.str("");
+//			tmp << "noise_v_time_graph_k" << k;
 			
-			noise_v_time_graph->SetTitle(tmp.str().c_str());
+//			noise_v_time_graph->SetTitle(tmp.str().c_str());
 			
-			noise_v_time_graph->Write(tmp.str().c_str());
+//			noise_v_time_graph->Write(tmp.str().c_str());
 			
 			
 		}

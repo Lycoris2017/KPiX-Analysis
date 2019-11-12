@@ -243,6 +243,7 @@ int main ( int argc, char **argv )
 	string					outCluster;
 	TFile					*clusterFile;
 	TTree					*clusterTree;
+    TTree					*otherTree;
 
 	stringstream           crossString;
 	stringstream           crossStringCsv;
@@ -1078,6 +1079,8 @@ int main ( int argc, char **argv )
 	}
 	dataRead.close();
 	
+
+    cout << "DEBUG 1" << endl;
 	 // END OF PREREAD
 	 // BEGIN OF NOISE CALCULATION
 	for (unsigned int k = 0; k < n_kpix; ++k)
@@ -1115,17 +1118,18 @@ int main ( int argc, char **argv )
 			}	
 		}
 	}
-	
+    cout << "DEBUG 2" << endl;
 	/////////////////////////////////////////////////////////
 	//// BEGIN OF CLUSTER READ
 	dataRead.open(argv[1]);
 	
 	int global_trig_counter = 0;
 //	std::vector<clustr> all_clusters[n_kpix/2];
-	std::vector<clustr>* all_clusters_pointer[n_kpix/2][acqCount] = {nullptr};
-
+    cout << "DEBUG 2.0.1" << endl;
+//	std::vector<clustr>* all_clusters_pointer[n_kpix/2][acqCount] = {nullptr};
+    cout << "DEBUG 2.0.1" << endl;
 	pedestalname = argv[3];
-
+    cout << "DEBUG 2.1" << endl;
 	pedestalname = pedestalname.substr(name_start, name_length);
 
 	cout << "Name of output file is " <<  pedestalname << endl;
@@ -1133,7 +1137,7 @@ int main ( int argc, char **argv )
 	tmp << argv[1] << "_" << pedestalname << ".TreeOfClusters.root";
 	outCluster = tmp.str();
 
-
+    cout << "DEBUG 2.2" << endl;
 
 	clusterFile = new TFile(outCluster.c_str(),"recreate"); // produce root file
 	clusterFile->cd(); // move into root folder base
@@ -1151,7 +1155,11 @@ int main ( int argc, char **argv )
     clusterTree->Branch("eventTime", &eventTime, "eventTime/I");
 	clusterTree->Branch("sensor", &sensorNumber, "sensorNumber/I");
 
+    otherTree = new TTree("otherTree", "Tree of other useful parameters");
+    otherTree->Branch("acqCount", &acqCount, "acqCount/I");
+    otherTree->Fill();
 
+    cout << "DEBUG 3" << endl;
 	while ( dataRead.next(&event) )
 	{
 		int not_empty= 0;
@@ -1264,16 +1272,16 @@ int main ( int argc, char **argv )
 						Input.Elements = cluster_Events_after_cut[sensor];
 						Input.Noise = cluster_Noise_after_cut[sensor];
 						int num_of_clusters = 0;
-						if (all_clusters_pointer[sensor][event.eventNumber()] == nullptr)
-						{
-							all_clusters_pointer[sensor][event.eventNumber()] = new std::vector<clustr>;
-							if (all_clusters_pointer[sensor][event.eventNumber()]==nullptr)
-							{
-								std::cerr << "Memory allocation error for vector kpix " <<
-											 kpix <<std::endl;
-								exit(-1); // probably best to bail out
-							}
-						}
+//						if (all_clusters_pointer[sensor][event.eventNumber()] == nullptr)
+//						{
+//							all_clusters_pointer[sensor][event.eventNumber()] = new std::vector<clustr>;
+//							if (all_clusters_pointer[sensor][event.eventNumber()]==nullptr)
+//							{
+//								std::cerr << "Memory allocation error for vector kpix " <<
+//											 kpix <<std::endl;
+//								exit(-1); // probably best to bail out
+//							}
+//						}
 
 						while (Input.Elements.size() != 0) // Keep repeating the clustering until either there are no valid candidates left
 						{
