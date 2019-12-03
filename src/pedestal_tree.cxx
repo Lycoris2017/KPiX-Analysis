@@ -257,7 +257,7 @@ int main ( int argc, char **argv )
 				//cout << "Channel Number = " << channel << endl;
 				
 				calib_slope[kpix][channel] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
+				cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
 				
 			}
 		}

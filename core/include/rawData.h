@@ -35,7 +35,9 @@ namespace Lycoris{
 		uint m_cyclenumber;
 		uint16_t m_ts;
 		uint m_nbuckets;
-		double m_cm_noise[4];
+		// cm noise is per kpix, per bucket:
+		std::unordered_map<uint, double> m_m_cm_noise;
+		//double m_cm_noise[4];
 		
 		// Do your own boosted map
 		vector<uint> m_v_hashkeys_b[4];
@@ -86,17 +88,22 @@ namespace Lycoris{
 		//		static std::vector<uint> s_v_mad0_chn;
 
 		/* == Operation per cycle == */
-		void RemovePed(std::unordered_map<uint, uint> &);
-		/* Remove ped in adc -> adc2Fc -> remove common mode noise*/
-		void RemovePedMad0_CalFc(std::unordered_map<uint, uint > &ped_adc,
-					 std::unordered_map<uint, double> &slopes,
-					 std::unordered_map<uint, uint> &ped_mad,
-					 bool remove_adc);
+		/* Remove ped in adc -> adc2Fc -> calculate common mode buffer*/
+		void RemovePed_CalCM_fC(std::unordered_map<uint, uint > &ped_adc,
+		                        std::unordered_map<uint, double> &slopes,
+		                        std::unordered_map<uint, uint> &ped_mad,
+		                        bool remove_adc,
+		                        bool cut_mad0 = true,
+		                        bool cut_slope0 = true);
 		void RemoveCM();
 
 
 		bool m_has_fc;
 		vector<double> m_v_fc_b[4];
+
+		// index by kpix, vector of its (fc-pedestal) for each cycle
+		std::unordered_map<uint, std::vector<double>> m_m_CM_buf;
+				
 		const vector<double>& vfc(uint b) const{
 		  if (b<4) return m_v_fc_b[b];
 		  else {
@@ -104,6 +111,7 @@ namespace Lycoris{
 		    exit(EXIT_FAILURE);
 		  }
 		}
+
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf(){
@@ -164,7 +172,7 @@ namespace Lycoris{
 						 bb);
 		      auto val = vv.at(cc);
 		      if (target.count(key))
-			target.at(key).push_back(std::move(val));
+			      target.at(key).push_back(std::move(val));
 		      else{
 			std::vector<T> vec;
 			vec.push_back(val);

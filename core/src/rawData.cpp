@@ -30,7 +30,6 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
                       bool isold ){
 
 	// Declare member variables first
-  m_cm_noise[4]={0.0};
   m_nbuckets = nbuckets;
   m_has_adc = false;
   m_has_fc  = false;
@@ -320,10 +319,10 @@ void rawData::doRmPedCM(bool rmAdc){
       continue; // skip empty cycles
     }
 
-    cy.RemovePedMad0_CalFc(Cycle::s_ped_adc,
-			   m_m_slopes_b0,
-			   Cycle::s_ped_mad,
-			   true);
+    cy.RemovePed_CalCM_fC(Cycle::s_ped_adc,
+                          m_m_slopes_b0,
+                          Cycle::s_ped_mad,
+                          true);
     cy.RemoveCM();
     Cycle::AddFcBuf(cy);
 
@@ -344,13 +343,18 @@ void rawData::doRmPedCM(bool rmAdc){
     
 }
 
-void Cycle::RemovePedMad0_CalFc(std::unordered_map<uint, uint> &ped_adc,
-				std::unordered_map<uint, double> &slopes,
-				std::unordered_map<uint, uint> &ped_mad,
-				bool remove_adc)
+void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
+                                std::unordered_map<uint, double> &slopes,
+                                std::unordered_map<uint, uint> &ped_mad,
+                                bool remove_adc,
+                                bool cut_mad0,
+                                bool cut_slope0)
 {
   /* Only work at bucket 0 */
   uint bucket=0;
+  // Fill in a buffer to calculate CM, indexed by kpix num:
+  std::unordered_map<uint, vector<double>> cm_noise_buf; 
+
   auto target = &m_v_fc_b[bucket];
   auto vv = vadc(bucket);
   auto kk = hashkeys(bucket);  
@@ -358,31 +362,56 @@ void Cycle::RemovePedMad0_CalFc(std::unordered_map<uint, uint> &ped_adc,
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
     uint keyb = key; //because bucket = 0
-    // ignore mad0 channels
-    if (s_ped_mad.at(keyb)==0) continue;
-
     uint adc = vv.at(cc);
     uint ped = ped_adc.at(key);
     double slope = slopes.at(kk.at(cc));
+    uint kpix = getKpix(key);
+
+    // ignore mad0 channels
+    if (s_ped_mad.at(keyb)==0) continue;
     // ignore channels with slope ==0
-    if (slope ==0) continue; 
+    if (slope ==0) continue;
+    
     double fc = (double)(adc - ped) / slope;
     target->push_back(fc);
+
+    if (cm_noise_buf.count(kpix))
+	    cm_noise_buf.at(kpix).push_back(fc);
+    else{
+	    std::vector<double> vec;
+	    vec.push_back(fc);
+	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
+    }
   }
-   m_has_fc = !target->empty();
-  //printf(" How many channels in fC vec? %d\n", target->size());
+  m_has_fc = !target->empty();
   if (remove_adc) ResetAdc();
+
+  /* Calculate CM */
+  m_m_cm_noise.clear();
+  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+  for(auto &a:cm_noise_buf ){
+	  double cm_noise = median(&a.second);
+	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
+	  printf("debug: at cycle %d, common mode for kpix %d = %.2f \n",
+	         m_cyclenumber,
+	         a.first,
+	         cm_noise);
+  }
+  
 }
 
 
 void Cycle::RemoveCM(){
   uint bucket=0;
   if (m_v_fc_b[bucket].empty()) return;
-  m_cm_noise[bucket] = median(&m_v_fc_b[bucket]);
-  //  printf("debug: common mode noise per cycle = %.2f \n", m_cm_noise[bucket]);
 
-  for (auto &fc : m_v_fc_b[bucket])
-    fc = fc - m_cm_noise[bucket];
+  auto keys = hashkeys(bucket);  
+  auto fc = vfc(bucket);
+  for ( size_t cc = 0; cc< fc.size(); ++cc){
+	  uint kpix = getKpix(keys.at(cc));
+	  double cm_noise = m_m_cm_noise.at(kpix);
+	  fc.at(cc) = fc.at(cc) - cm_noise;
+  }
 }
 
 /* Static */
@@ -391,9 +420,9 @@ void Cycle::AddFcBuf(Cycle& cy){
 
   uint bucket = 0;
   Cycle::AddBufferT( Cycle::s_buf_fc,
-		     cy.hashkeys(bucket),
-		     cy.vfc(bucket),
-		     bucket);
+                     cy.hashkeys(bucket),
+                     cy.vfc(bucket),
+                     bucket);
 }
 
 /* Static */
