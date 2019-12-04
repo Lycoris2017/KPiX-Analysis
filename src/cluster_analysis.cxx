@@ -516,6 +516,14 @@ int main ( int argc, char **argv )
 				{
 					//cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl; 
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
+					double max=*std::max_element(vec_corr_charge[k]->begin(),vec_corr_charge[k]->end());
+					double min=*std::min_element(vec_corr_charge[k]->begin(),vec_corr_charge[k]->end());;
+					printf("cycle %d common mode median kpix %d = %.2f, %d channels, min %.2f, max %.2f\n",
+					       event.eventNumber(),k,
+					       common_modes_median[k].at(event.eventNumber()),
+					       vec_corr_charge[k]->size(),
+					       min, max);
+					
 					delete vec_corr_charge[k];
 					//cout << "Common modes median of EventNumber " << event.eventNumber()  << " kpix " << k  << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
 					vec_corr_charge[k] = nullptr;

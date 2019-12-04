@@ -362,17 +362,25 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
     uint keyb = key; //because bucket = 0
+
     uint adc = vv.at(cc);
     uint ped = ped_adc.at(key);
-    double slope = slopes.at(kk.at(cc));
+    
+    double slope = slopes.at(key);
     uint kpix = getKpix(key);
-
+    uint channel = getChannel(key);
+    
     // ignore mad0 channels
     if (s_ped_mad.at(keyb)==0) continue;
     // ignore channels with slope ==0
     if (slope ==0) continue;
     
-    double fc = (double)(adc - ped) / slope;
+    double fc = (double)((int)adc - (int)ped) / slope;
+    if (m_cyclenumber ==99 && kpix==0){
+	    printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
+	           kpix, channel, fc, adc, ped, slope);
+    }
+	    
     target->push_back(fc);
 
     if (cm_noise_buf.count(kpix))
@@ -388,14 +396,18 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 
   /* Calculate CM */
   m_m_cm_noise.clear();
-  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+  //  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
+	  double max = *std::max_element(a.second.begin(), a.second.end());
+	  double min = *std::min_element(a.second.begin(), a.second.end());
+	  
 	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
-	  printf("debug: at cycle %d, common mode for kpix %d = %.2f \n",
+	  printf("debug: cycle %d, common mode for kpix %d = %.2f, %d channels, min %.2f, max %.2f \n",
 	         m_cyclenumber,
-	         a.first,
-	         cm_noise);
+	         a.first,cm_noise,
+	         a.second.size(),
+	         min, max);
   }
   
 }

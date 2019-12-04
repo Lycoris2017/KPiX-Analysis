@@ -31,7 +31,7 @@ int main ( int argc, char **argv ) {
 	
 	printf("[Info] You choose file %s\n", argv[1]);
 	rawData db;
-	db.setMaxCycles(1000);
+	db.setMaxCycles(100);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
