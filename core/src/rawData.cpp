@@ -96,7 +96,8 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 }
 
 
-void rawData::loadCalib(const std::string& fname){
+
+void rawData::loadCalibDB(const std::string& fname){
   /* 
      Read Calib from a csv file
      cols needs to be:
@@ -277,7 +278,7 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
      	auto ped = median(&buf.second);
 	auto mad = MAD(&buf.second);
 
-	printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
+	//printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
 	s_ped_adc.insert(std::make_pair(buf.first, ped ));
 	if (save_mad) s_ped_mad.insert(std::make_pair(buf.first, mad));
 	//if (mad==0)  s_v_mad0_chn.push_back(buf.first);
@@ -299,7 +300,17 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
 void Cycle::AddAdcBuf(Cycle& cy){
   if (!cy.m_has_adc) return;
   for (uint bb =0; bb< cy.m_nbuckets; bb++){
-    Cycle::AddBufferT( Cycle::s_buf_adc, cy.hashkeys(bb), cy.vadc(bb), bb);
+	  auto kk = cy.hashkeys(bb);
+	  auto vv = cy.vadc(bb);
+	  for (size_t cc=0; cc<vv.size(); ++cc){
+		  auto key = hashCode(getKpix(kk.at(cc)),
+		                      getChannel(kk.at(cc)),
+		                      bb);
+		  auto val = vv.at(cc);
+		  Cycle::AddBufferT(Cycle::s_buf_adc, key, val);
+
+	  }
+	  //    Cycle::AddBufferT( Cycle::s_buf_adc, cy.hashkeys(bb), cy.vadc(bb), bb);
   }
 }
 
@@ -355,7 +366,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
   // Fill in a buffer to calculate CM, indexed by kpix num:
   std::unordered_map<uint, vector<double>> cm_noise_buf; 
 
-  auto target = &m_v_fc_b[bucket];
+  auto target = &m_m_fc_b;
   auto vv = vadc(bucket);
   auto kk = hashkeys(bucket);  
 
@@ -376,12 +387,12 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
     if (slope ==0) continue;
     
     double fc = (double)((int)adc - (int)ped) / slope;
-    if (m_cyclenumber ==99 && kpix==0){
-	    printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
-	           kpix, channel, fc, adc, ped, slope);
-    }
+    // if (m_cyclenumber ==99 && kpix==0){
+	//     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
+	//            kpix, channel, fc, adc, ped, slope);
+    // }
 	    
-    target->push_back(fc);
+    target->insert(std::make_pair(hashCode(kpix, channel, bucket), fc));
 
     if (cm_noise_buf.count(kpix))
 	    cm_noise_buf.at(kpix).push_back(fc);
@@ -391,6 +402,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
     }
   }
+  
   m_has_fc = !target->empty();
   if (remove_adc) ResetAdc();
 
@@ -399,15 +411,16 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
   //  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
-	  double max = *std::max_element(a.second.begin(), a.second.end());
-	  double min = *std::min_element(a.second.begin(), a.second.end());
 	  
 	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
-	  printf("debug: cycle %d, common mode for kpix %d = %.2f, %d channels, min %.2f, max %.2f \n",
-	         m_cyclenumber,
-	         a.first,cm_noise,
-	         a.second.size(),
-	         min, max);
+
+	  // double max = *std::max_element(a.second.begin(), a.second.end());
+	  // double min = *std::min_element(a.second.begin(), a.second.end());
+	  // printf("debug: cycle %d, common mode for kpix %d = %.2f, %d channels, min %.2f, max %.2f \n",
+	  //        m_cyclenumber,
+	  //        a.first,cm_noise,
+	  //        a.second.size(),
+	  //        min, max);
   }
   
 }
@@ -415,14 +428,13 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 
 void Cycle::RemoveCM(){
   uint bucket=0;
-  if (m_v_fc_b[bucket].empty()) return;
+  if (m_m_fc_b.empty()) return;
 
-  auto keys = hashkeys(bucket);  
-  auto fc = vfc(bucket);
-  for ( size_t cc = 0; cc< fc.size(); ++cc){
-	  uint kpix = getKpix(keys.at(cc));
+  for ( auto &fc: m_m_fc_b){
+	  auto key = rmBucket(fc.first);
+	  uint kpix = getKpix(key);
 	  double cm_noise = m_m_cm_noise.at(kpix);
-	  fc.at(cc) = fc.at(cc) - cm_noise;
+	  fc.second = fc.second - cm_noise;
   }
 }
 
@@ -430,11 +442,10 @@ void Cycle::RemoveCM(){
 void Cycle::AddFcBuf(Cycle& cy){
   if (!cy.m_has_fc) return;
 
-  uint bucket = 0;
-  Cycle::AddBufferT( Cycle::s_buf_fc,
-                     cy.hashkeys(bucket),
-                     cy.vfc(bucket),
-                     bucket);
+  for (auto &fc: cy.m_m_fc_b){
+	  Cycle::AddBufferT( Cycle::s_buf_fc,
+	                     fc.first, fc.second);
+  }
 }
 
 /* Static */

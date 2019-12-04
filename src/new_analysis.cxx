@@ -31,12 +31,13 @@ int main ( int argc, char **argv ) {
 	
 	printf("[Info] You choose file %s\n", argv[1]);
 	rawData db;
-	db.setMaxCycles(100);
+	//	db.setMaxCycles(100);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
-	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
+	db.loadCalibDB("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
+	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes.root");
 	
 	db.doRmPedCM();
 	
@@ -84,11 +85,34 @@ int main ( int argc, char **argv ) {
 		test->Fill();
 	}
 
-	double cm_med;
-	int kpix1, bucket1;
+	double cm_med, charge_fc;
+	int kpix1, bucket1, channel1, strip1, eventnumber;
 	TTree* cycles = new TTree("cycles","cycle tree");
-	
-	
+	cycles->Branch("charge_fc", &charge_fc, "charge_fc/D");
+	cycles->Branch("kpix",   &kpix1,   "kpix/I");
+	cycles->Branch("strip",  &strip1,  "strip/I");
+	cycles->Branch("channel",  &channel1,  "channel/I");
+	cycles->Branch("bucket", &bucket1, "bucket/I");
+	cycles->Branch("eventnumber", &eventnumber, "eventnumber/D");
+
+	for (const auto &ev: db.getCycles()){
+		if (!ev.m_has_fc) continue;
+		bucket1=0;
+		eventnumber = ev.m_cyclenumber;
+		for (auto &fc: ev.m_m_fc_b){
+			auto key = fc.first;
+			kpix1 = Cycle::getKpix(key);
+			channel1 = Cycle::getChannel(key);
+			if (kpix%2) strip = kpix2strip_left.at(channel1);
+			else strip1 = kpix2strip_right.at(channel1);
+
+			charge_fc = fc.second;
+			cm_med = ev.m_m_cm_noise.at(kpix);
+			
+			cycles->Fill();
+		}
+	}
+
 	
 	fout->Write();
 	fout->Close();

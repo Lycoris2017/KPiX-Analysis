@@ -99,18 +99,20 @@ namespace Lycoris{
 
 
 		bool m_has_fc;
-		vector<double> m_v_fc_b[4];
 
-		// index by kpix, vector of its (fc-pedestal) for each cycle
+		// index by kpix/channel/bucket
+		std::unordered_map<uint, double> m_m_fc_b;
+
+		// index by kpix, vector of all channels' charge in fC
 		std::unordered_map<uint, std::vector<double>> m_m_CM_buf;
 				
-		const vector<double>& vfc(uint b) const{
-		  if (b<4) return m_v_fc_b[b];
-		  else {
-		    printf("vadc error\n");
-		    exit(EXIT_FAILURE);
-		  }
-		}
+		/* const vector<double>& vfc(uint b) const{ */
+		/*   if (b<4) return m_v_fc_b[b]; */
+		/*   else { */
+		/*     printf("vadc error\n"); */
+		/*     exit(EXIT_FAILURE); */
+		/*   } */
+		/* } */
 
 	public:
 		static void AddFcBuf(Cycle&);
@@ -144,45 +146,26 @@ namespace Lycoris{
 		  
 
 		template <typename T>
-		static void AddBufferT(std::unordered_map<uint, vector<T>> &target,
-				       const std::vector<uint> &kk,
-				       const std::vector<T> &vv,
-				       uint &bb ){
-
-		  /* NB: Following session designed to improve speed, need more test, currently undefined.*/
-		  /* if(target.empty()){ */
-		  /*   //printf("Empty for evt: %d \n", cy.m_cyclenumber); */
-		  /*   // first event, init the vectors */
-		  /*   assert(kk.size() == vv.size()); */
-		    
-		  /*   for( size_t cc = 0; cc < vv.size(); ++cc){ */
-		  /*     std::vector<uint16_t> vec; */
-		  /*     vec.push_back(vv.at(cc)); */
-		  /*     // key is kk.at(cc), value is vv.at(cc) */
-		  /*     auto key = Cycle::hashCode(getKpix(kk.at(cc)), */
-		  /* 				 getChannel(kk.at(cc)), */
-		  /* 				 bb); */
-		  /*     target.insert(std::make_pair(key, std::move(vec)) ); */
-		  /*   } */
-		    
-		  /* }else{ */
-		    for (size_t cc=0; cc < vv.size(); ++cc){
-		      auto key = Cycle::hashCode(getKpix(kk.at(cc)),
-						 getChannel(kk.at(cc)),
-						 bb);
-		      auto val = vv.at(cc);
-		      if (target.count(key))
-			      target.at(key).push_back(std::move(val));
-		      else{
-			std::vector<T> vec;
-			vec.push_back(val);
-			target.insert(std::make_pair(key, std::move(vec)));
-		      }
-		    }
-		    
-		/*   } */
-		/* }// fin */
-		}	
+    	static void AddBufferT(std::unordered_map<uint, vector<T>> &target,
+	                       //const std::vector<uint> &kk,
+	                       //const std::vector<T> &vv,
+	                       uint key,
+	                       T val
+	                       ){
+			
+			//		    for (size_t cc=0; cc < vv.size(); ++cc){
+			/* auto key = Cycle::hashCode(getKpix(kk.at(cc)), */
+			/* 			 getChannel(kk.at(cc)), */
+			/* 			 bb); */
+			/* auto val = vv.at(cc); */
+			if (target.count(key))
+				target.at(key).push_back(std::move(val));
+			else{
+				std::vector<T> vec;
+				vec.push_back(val);
+				target.insert(std::make_pair(key, std::move(vec)));
+			}
+			return;}	
 	};
 	
 	class rawData{
@@ -204,10 +187,10 @@ namespace Lycoris{
 	    m_nmax = nmax;
 	  }
 	  uint getNCycles(){return m_v_cycles.size();}
-
-	  void loadCalib(const std::string&); // Done
+	  void loadCalibDB(const std::string&); // Done
+	  //	  void loadCalib(const std::string&); 
 	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
-	  
+	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
 	private:
 		std::vector<Cycle> m_v_cycles;
 		uint m_nbuckets;
