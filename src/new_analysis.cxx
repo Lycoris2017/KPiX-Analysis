@@ -36,9 +36,10 @@ int main ( int argc, char **argv ) {
 	db.loadFile(argv[1]);
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
-	db.loadCalibDB("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes.root");
-	
+	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
+	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes.root");
+
+	//return(0);
 	db.doRmPedCM();
 	
 	uint b = 1;

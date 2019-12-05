@@ -187,8 +187,9 @@ namespace Lycoris{
 	    m_nmax = nmax;
 	  }
 	  uint getNCycles(){return m_v_cycles.size();}
-	  void loadCalibDB(const std::string&); // Done
-	  //	  void loadCalib(const std::string&); 
+	  void loadCSV(const std::string&); // Done
+	  void loadRoot(const std::string&);// todo
+	  void loadCalib(const std::string&); // read from root
 	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
 	private:

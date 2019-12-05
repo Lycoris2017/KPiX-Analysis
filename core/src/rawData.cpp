@@ -6,6 +6,12 @@
 #include <sstream>
 #include <cassert> // assert
 
+#include "TFile.h"
+#include "TKey.h"
+#include "TList.h"
+#include "TH1.h"
+#include "TObject.h"
+
 #include "rawData.h"
 #include "TBFunctions.h"
 #include "Data.h"
@@ -95,9 +101,62 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
     }
 }
 
+void rawData::loadCalib(const std::string& fname){
+	string csv =".csv";
+	string root = ".root";
+	try{
+		if (fname.find(csv) != std::string::npos)
+			loadCSV(fname);
+		else if (fname.find(root) !=std::string::npos)
+			loadRoot(fname);
+		else
+			throw std::runtime_error("loadCalib: invalid input calib file!");
+	}
+	catch(std::exception &e){
+		cout << "Caught exception: " << e.what() << "\n";
+	}
+}
 
+void rawData::loadRoot(const std::string& fname){
 
-void rawData::loadCalibDB(const std::string& fname){
+	TFile *calib = TFile::Open(fname.c_str());
+	if(!calib) {
+		throw std::runtime_error("loadRoot: invalid calib root file!");
+		return;
+	}
+
+	m_m_slopes_b0.clear();
+	//	std::string basic = "slope_vs_channel_";
+	std::string kword = "_k", bword = "_b";
+	std::string kstr, bstr;
+
+	auto keys = calib->GetListOfKeys();
+	for (auto keyasobj: *keys){
+		auto key = (TKey*) keyasobj;
+		auto hist = (TH1F*)key -> ReadObj();
+		//		std::cout << key->GetName() << " " << key->GetClassName() << std::endl;
+		std::string hname = hist->GetName();
+		auto kpos = hname.find(kword)+kword.length();
+		kstr = hname.substr(kpos, 1);
+		
+		auto bpos = hname.find(bword)+bword.length();
+		bstr = hname.substr(bpos, 1);
+		
+		//Note": bin from 1 to GetNbinsX(), while channel is bin-1
+		for (int i=1; i< hist->GetNbinsX()+1; i++){
+			auto slope = hist->GetBinContent(i);
+			// printf(" kpix %s channel %d bucket %s, slope = %.4f\n",
+			//        kstr.c_str(), i-1, bstr.c_str(),
+			//        slope );
+			auto index = Cycle::hashCode(std::atoi(kstr.c_str()), i-1);
+			m_m_slopes_b0.emplace(index, slope);
+		}
+	}
+	
+
+}
+
+void rawData::loadCSV(const std::string& fname){
   /* 
      Read Calib from a csv file
      cols needs to be:
@@ -387,8 +446,9 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
     if (slope ==0) continue;
     
     double fc = (double)((int)adc - (int)ped) / slope;
+    // // debug:
     // if (m_cyclenumber ==99 && kpix==0){
-	//     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
+    //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
 	//            kpix, channel, fc, adc, ped, slope);
     // }
 	    
@@ -408,7 +468,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 
   /* Calculate CM */
   m_m_cm_noise.clear();
-  //  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
 	  
