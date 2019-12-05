@@ -89,11 +89,11 @@ int main ( int argc, char **argv ) {
 	int kpix1, bucket1, channel1, strip1, eventnumber;
 	TTree* cycles = new TTree("cycles","cycle tree");
 	cycles->Branch("charge_fc", &charge_fc, "charge_fc/D");
-	cycles->Branch("kpix",   &kpix1,   "kpix/I");
-	cycles->Branch("strip",  &strip1,  "strip/I");
-	cycles->Branch("channel",  &channel1,  "channel/I");
-	cycles->Branch("bucket", &bucket1, "bucket/I");
-	cycles->Branch("eventnumber", &eventnumber, "eventnumber/D");
+	cycles->Branch("kpix",   &kpix1,   "kpix1/I");
+	cycles->Branch("strip",  &strip1,  "strip1/I");
+	cycles->Branch("channel",  &channel1,  "channel1/I");
+	cycles->Branch("bucket", &bucket1, "bucket1/I");
+	cycles->Branch("eventnumber", &eventnumber, "eventnumber/I");
 
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
