@@ -31,13 +31,13 @@ int main ( int argc, char **argv ) {
 	
 	printf("[Info] You choose file %s\n", argv[1]);
 	rawData db;
-	//	db.setMaxCycles(100);
+	//db.setMaxCycles(100);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes.root");
+	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
 
 	//return(0);
 	db.doRmPedCM();
@@ -79,7 +79,12 @@ int main ( int argc, char **argv ) {
 		channel = Cycle::getChannel(key);
 		if (kpix%2) strip = kpix2strip_left.at(channel);
 		else strip = kpix2strip_right.at(channel);
-		if (slopes.at(key)==0) continue;
+		if (slopes.at(key)==0) {
+			std::cout <<"k " << kpix << " c "<< channel
+			          <<" s " << slopes.at(key) << std::endl;
+			//continue;
+		}
+		
 		ped = ped/slopes.at(key);
 		mad = mad/slopes.at(key);
 		

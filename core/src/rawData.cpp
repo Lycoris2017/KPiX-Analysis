@@ -104,6 +104,8 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 void rawData::loadCalib(const std::string& fname){
 	string csv =".csv";
 	string root = ".root";
+	printf(" loadCalib ");
+
 	try{
 		if (fname.find(csv) != std::string::npos)
 			loadCSV(fname);
@@ -118,12 +120,14 @@ void rawData::loadCalib(const std::string& fname){
 }
 
 void rawData::loadRoot(const std::string& fname){
+	printf(" from ROOT...\n");
 
 	TFile *calib = TFile::Open(fname.c_str());
 	if(!calib) {
 		throw std::runtime_error("loadRoot: invalid calib root file!");
 		return;
 	}
+	printf(" Open Calib file : %s\n", fname.c_str());
 
 	m_m_slopes_b0.clear();
 	//	std::string basic = "slope_vs_channel_";
@@ -133,7 +137,7 @@ void rawData::loadRoot(const std::string& fname){
 	auto keys = calib->GetListOfKeys();
 	for (auto keyasobj: *keys){
 		auto key = (TKey*) keyasobj;
-		auto hist = (TH1F*)key -> ReadObj();
+		auto hist = (TH1D*)key -> ReadObj();
 		//		std::cout << key->GetName() << " " << key->GetClassName() << std::endl;
 		std::string hname = hist->GetName();
 		auto kpos = hname.find(kword)+kword.length();
@@ -162,8 +166,8 @@ void rawData::loadCSV(const std::string& fname){
      cols needs to be:
      kpix >> channel >> bucket >> slope
    */
+	printf(" from CSV...\n");
   m_m_slopes_b0.clear();
-  printf(" loadCalib...\n");
   std::ifstream file (fname);
   if ( !file ) return;
   printf(" Open Calib file : %s\n", fname.c_str());
@@ -468,7 +472,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 
   /* Calculate CM */
   m_m_cm_noise.clear();
-  printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+  //printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
 	  
