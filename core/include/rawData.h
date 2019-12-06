@@ -33,6 +33,9 @@ namespace Lycoris{
 		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
+
+		const uint eventNumber() const{return m_cyclenumber;}
+		
 		uint16_t m_ts;
 		uint m_nbuckets;
 		// cm noise is per kpix, per bucket:
@@ -102,18 +105,8 @@ namespace Lycoris{
 		bool m_has_fc;
 
 		// index by kpix/channel/bucket
-		std::unordered_map<uint, double> m_m_fc_b;
+		std::unordered_map<uint, double> m_m_fc;
 
-		// index by kpix, vector of all channels' charge in fC
-		std::unordered_map<uint, std::vector<double>> m_m_CM_buf;
-				
-		/* const vector<double>& vfc(uint b) const{ */
-		/*   if (b<4) return m_v_fc_b[b]; */
-		/*   else { */
-		/*     printf("vadc error\n"); */
-		/*     exit(EXIT_FAILURE); */
-		/*   } */
-		/* } */
 
 	public:
 		static void AddFcBuf(Cycle&);
@@ -197,13 +190,31 @@ namespace Lycoris{
 	  void loadCSV(const std::string&); // Done
 	  void loadRoot(const std::string&);// todo
 	  void loadCalib(const std::string&); // read from root
+	  void loadGeo(const std::string&); // read from csv
 	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
+
+	  void makeClusters(){}; // in processing 20191206
+	  uint getPlane(uint kpix){
+		  
+		  if (m_kpix2plane.empty()){
+			  printf("getPlane: invalid geo map!");
+			  exit(EXIT_FAILURE);
+		  }else if(m_kpix2plane.count(kpix)){
+			  return m_kpix2plane.at(kpix);
+		  }else {
+			  printf("getPlane: invalid kpix %d!", kpix);
+			  exit(EXIT_FAILURE);
+		  }
+
+	  };
+	  
 	private:
 		std::vector<Cycle> m_v_cycles;
 		uint m_nbuckets;
 		uint m_nmax;
 		std::unordered_map<uint, double> m_m_slopes_b0; //Done
+		std::unordered_map<uint, uint> m_kpix2plane; 
 			  
 	};
 

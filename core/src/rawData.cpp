@@ -210,35 +210,35 @@ void rawData::loadCSV(const std::string& fname){
 	
 }
 
-// void Lycoris::rawData::loadGeo(const std::string& geo){
-//   printf(" loadGeo...\n");
+void Lycoris::rawData::loadGeo(const std::string& geo){
+  printf(" loadGeo...\n");
  
-//   ifstream file(geo);
-//   if (!file )  return;
-//   printf(" Open Geo file : %s\n",geo.c_str());
+  ifstream file(geo);
+  if (!file )  return;
+  printf(" Open Geo file : %s\n",geo.c_str());
 
-//   std::string line;
-//   char delim=',';
+  std::string line;
+  char delim=',';
 
-//   m_kpix2plane.clear();
-//   while ( std::getline(file, line) ){
-//     if (!line.empty())
-//       while (line[0] == ' ') line.erase(0,1);
+  m_kpix2plane.clear();
+  while ( std::getline(file, line) ){
+    if (!line.empty())
+      while (line[0] == ' ') line.erase(0,1);
         
-//     if (!line.empty() && isdigit(line[0])){
-//       std::stringstream is(line);
+    if (!line.empty() && isdigit(line[0])){
+      std::stringstream is(line);
 
-//       std::string value;
-//       std::vector<uint> pair;
-//       while (std::getline(is, value, delim) )
-// 	pair.push_back(atoi(value.c_str()));
+      std::string value;
+      std::vector<uint> pair;
+      while (std::getline(is, value, delim) )
+	      pair.push_back(atoi(value.c_str()));
       
-//       m_kpix2plane.insert(std::make_pair(pair.at(0),pair.at(1)));
-//     }
-//   }
-//   file.close();
+      m_kpix2plane.insert(std::make_pair(pair.at(0),pair.at(1)));
+    }
+  }
+  file.close();
 
-// }
+}
 
 void rawData::loadFile(const std::string& fname){
   DataRead               dataRead;
@@ -292,32 +292,6 @@ void rawData::loadFile(const std::string& fname){
   cout << " Time[s]: " << duration
        << endl;
 
-  // //-- Debug print: Start
-  // cout << "# of chan    :  " << Cycle::s_buf_adc[0].size() << endl;
-  // cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
-
-  // uint count=0;
-  // vector<uint> chan_cys;
-  // for (const auto& x : Cycle::s_buf_adc[0]){
-  // 	  if (x.second.size()!=m_v_cycles.size() ){
-  // 		  count++;
-  // 		  chan_cys.push_back(x.second.size());
-  // 		  /*cout << "chan "
-  // 		       << Cycle::getKpix(x.first) << "."
-  // 		       << Cycle::getChannel(x.first) 
-  // 		       << ": "
-  // 		       << x.second.size() << endl;
-  // 		  */
-  // 	  }
-  // }
-  // sort( chan_cys.begin(), chan_cys.end() );
-  // chan_cys.erase( unique( chan_cys.begin(), chan_cys.end() ), chan_cys.end() );
-  // cout << "# of cy in chan: ";
-  // for (const auto& x: chan_cys)
-  // 	  cout << x << ", ";
-  // cout << "\n";
-  // cout << "# of such chan? " << count << endl;
-  // //-- Debug print: End
   dataRead.close();
 }
 
@@ -424,7 +398,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
   // Fill in a buffer to calculate CM, indexed by kpix num:
   std::unordered_map<uint, vector<double>> cm_noise_buf; 
 
-  auto target = &m_m_fc_b;
+  auto target = &m_m_fc;
   auto vv = vadc();
   auto kk = hashkeys();  
 
@@ -436,7 +410,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
     double slope = slopes.at(key);
 
     uint kpix = getKpix(key);
-    uint channel = getChannel(key);
+    //uint channel = getChannel(key);
     
     // ignore mad0 channels
     if (s_ped_mad.at(key)==0) continue;
@@ -485,10 +459,10 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 
 
 void Cycle::RemoveCM(){
-  uint bucket=0;
-  if (m_m_fc_b.empty()) return;
 
-  for ( auto &fc: m_m_fc_b){
+  if (m_m_fc.empty()) return;
+
+  for ( auto &fc: m_m_fc){
 	  auto key = rmBucket(fc.first);
 	  uint kpix = getKpix(key);
 	  double cm_noise = m_m_cm_noise.at(kpix);
@@ -500,7 +474,7 @@ void Cycle::RemoveCM(){
 void Cycle::AddFcBuf(Cycle& cy){
   if (!cy.m_has_fc) return;
 
-  for (auto &fc: cy.m_m_fc_b){
+  for (auto &fc: cy.m_m_fc){
 	  Cycle::AddBufferT( Cycle::s_buf_fc,
 	                     fc.first, fc.second);
   }

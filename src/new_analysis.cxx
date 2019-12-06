@@ -74,7 +74,6 @@ int main ( int argc, char **argv ) {
 		if (noisemap.count(key)) noise = noisemap.at(key);
 		else noise = 999;
 		
-		key  = Cycle::rmBucket(key);
 		kpix = Cycle::getKpix(key);
 		channel = Cycle::getChannel(key);
 		if (kpix%2) strip = kpix2strip_left.at(channel);
@@ -105,7 +104,7 @@ int main ( int argc, char **argv ) {
 		if (!ev.m_has_fc) continue;
 		bucket1=0;
 		eventnumber = ev.m_cyclenumber;
-		for (auto &fc: ev.m_m_fc_b){
+		for (auto &fc: ev.m_m_fc){
 			auto key = fc.first;
 			kpix1 = Cycle::getKpix(key);
 			channel1 = Cycle::getChannel(key);
