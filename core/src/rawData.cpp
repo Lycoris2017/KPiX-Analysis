@@ -60,11 +60,11 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
       if (sample->getSampleType() == KpixSample::Data){
 	      if ( bucket >= m_nbuckets ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
-	      auto key = hashCode(kpix, channel);
+	      auto key = hashCode(kpix, channel, bucket);
 
-	      m_v_hashkeys_b[bucket].push_back(key);
-	      m_v_adc_b[bucket].push_back(value);
-	      m_v_ts_b[bucket].push_back(tstamp);
+	      m_v_hashkeys.push_back(key);
+	      m_v_adc.push_back(value);
+	      m_v_ts.push_back(tstamp);
       }
       
       if (sample->getSampleType() == KpixSample::Timestamp){
@@ -85,20 +85,19 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
       
 
     }// finish loop over all data of one cycle
-    for (uint i=0; i<4; i++){
-      //printf("adc vec size : %d\n", m_v_adc_b[i].size() );
-      m_has_adc = m_has_adc || m_v_adc_b[i].size();
-	    
-	    // **Exception Handler - Start
-	    try{
-		    if (m_v_hashkeys_b[i].size() != m_v_adc_b[i].size())
-			    throw m_cyclenumber;
-	    }
-	    catch (uint e){
-		    cout << "ERROR: Cycle Event " << e << " has channel_keys != its value. \n";
-	    }
-	    // **Exception Handler - End
+
+    //printf("adc vec size : %d\n", m_v_adc_b[i].size() );
+    m_has_adc = m_has_adc || m_v_adc.size();
+    
+    // **Exception Handler - Start
+    try{
+	    if (m_v_hashkeys.size() != m_v_adc.size())
+		    throw m_cyclenumber;
     }
+    catch (uint e){
+	    cout << "ERROR: Cycle Event " << e << " has channel_keys != its value. \n";
+    }
+    // **Exception Handler - End
 }
 
 void rawData::loadCalib(const std::string& fname){
@@ -362,18 +361,14 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
 /* Static */
 void Cycle::AddAdcBuf(Cycle& cy){
   if (!cy.m_has_adc) return;
-  for (uint bb =0; bb< cy.m_nbuckets; bb++){
-	  auto kk = cy.hashkeys(bb);
-	  auto vv = cy.vadc(bb);
-	  for (size_t cc=0; cc<vv.size(); ++cc){
-		  auto key = hashCode(getKpix(kk.at(cc)),
-		                      getChannel(kk.at(cc)),
-		                      bb);
-		  auto val = vv.at(cc);
-		  Cycle::AddBufferT(Cycle::s_buf_adc, key, val);
+  //  for (uint bb =0; bb< cy.m_nbuckets; bb++) {
+  auto kk = cy.hashkeys();
+  auto vv = cy.vadc();
+  for (size_t cc=0; cc<vv.size(); ++cc){
+	  auto key = kk.at(cc);
+	  auto val = vv.at(cc);
+	  Cycle::AddBufferT(Cycle::s_buf_adc, key, val);
 
-	  }
-	  //    Cycle::AddBufferT( Cycle::s_buf_adc, cy.hashkeys(bb), cy.vadc(bb), bb);
   }
 }
 
@@ -425,27 +420,26 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
                                 bool cut_slope0)
 {
   /* Only work at bucket 0 */
-  uint bucket=0;
+	//  uint bucket=0;
   // Fill in a buffer to calculate CM, indexed by kpix num:
   std::unordered_map<uint, vector<double>> cm_noise_buf; 
 
   auto target = &m_m_fc_b;
-  auto vv = vadc(bucket);
-  auto kk = hashkeys(bucket);  
+  auto vv = vadc();
+  auto kk = hashkeys();  
 
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
-    uint keyb = key; //because bucket = 0
-
     uint adc = vv.at(cc);
+
     uint ped = ped_adc.at(key);
-    
     double slope = slopes.at(key);
+
     uint kpix = getKpix(key);
     uint channel = getChannel(key);
     
     // ignore mad0 channels
-    if (s_ped_mad.at(keyb)==0) continue;
+    if (s_ped_mad.at(key)==0) continue;
     // ignore channels with slope ==0
     if (slope ==0) continue;
     
@@ -456,7 +450,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 	//            kpix, channel, fc, adc, ped, slope);
     // }
 	    
-    target->insert(std::make_pair(hashCode(kpix, channel, bucket), fc));
+    target->insert(std::make_pair(key, fc));
 
     if (cm_noise_buf.count(kpix))
 	    cm_noise_buf.at(kpix).push_back(fc);

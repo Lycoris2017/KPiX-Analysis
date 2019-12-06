@@ -40,30 +40,31 @@ namespace Lycoris{
 		//double m_cm_noise[4];
 		
 		// Do your own boosted map
-		vector<uint> m_v_hashkeys_b[4];
-		const vector<uint>& hashkeys(uint i) const{
-			if (i<4)return m_v_hashkeys_b[i];
-			else {
+		//		vector<uint> m_v_hashkeys_b[4];
+		//index by bucket+kpix+channel
+		std::vector<uint> m_v_hashkeys;
+		const vector<uint>& hashkeys() const{
+			if (m_v_hashkeys.empty()){
 				printf("hashkeys error\n");
 				exit(EXIT_FAILURE);
-			}
+			}else return m_v_hashkeys;
 		}
 
 		bool m_has_adc;
 		// Please make sure both ADC and TS are 16bit (see KpixSample)
-		std::vector<uint16_t> m_v_adc_b[4];
-		const vector<uint16_t>& vadc(uint b) const{
-			if (b<4) return m_v_adc_b[b];
-			else {
+		//		std::vector<uint16_t> m_v_adc_b[4];
+		std::vector<uint16_t> m_v_adc; // index by bucekt+kpix+channel
+		const vector<uint16_t>& vadc() const{
+			if (m_v_adc.empty()){
 				printf("vadc error\n");
 				exit(EXIT_FAILURE);
-			}
+			}else return m_v_adc;
 		}
-		vector<uint16_t> m_v_ts_b[4];
+		//		vector<uint16_t> m_v_ts_b[4];
+		vector<uint16_t> m_v_ts; // index by bucket+kpix+channel
 		void ResetAdc(){
-		  for (uint i=0; i<4; i++) m_v_adc_b[i].clear();
-		  m_has_adc = false;
-		  //printf("Reset ADC data for 1 cycle \n");
+			m_v_adc.clear();
+			m_has_adc = false;
 		}
 		
 		
@@ -139,8 +140,14 @@ namespace Lycoris{
 		// Hash table
 		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
 		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
-		static uint getKpix(uint hashcode){ return hashcode/1024;}
-		static uint getChannel(uint hashcode){ return hashcode%1024;}
+		static uint getKpix(uint hashcode){
+			auto _hashcode = rmBucket(hashcode);
+			return _hashcode/1024;
+		}
+		static uint getChannel(uint hashcode){
+			auto _hashcode = rmBucket(hashcode);
+			return _hashcode%1024;
+		}
 		static uint rmBucket(uint hashcode) { return hashcode%G_BUCKET_HASH_UNIT;}
 		static uint getBucket(uint hashcode){return hashcode/G_BUCKET_HASH_UNIT;}
 		  
