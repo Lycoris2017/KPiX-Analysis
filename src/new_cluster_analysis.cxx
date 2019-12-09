@@ -99,7 +99,7 @@ int main ( int argc, char **argv ) {
 			kpix = Cycle::getKpix(key);
 			channel = Cycle::getChannel(key);
 
-			if (kpix%2) strip = kpix2strip_left.at(channel);
+			if (kpix%2 ==0 ) strip = kpix2strip_left.at(channel);
 			else strip= kpix2strip_right.at(channel);
 
 			sensor = db.getPlane(kpix);
@@ -127,10 +127,10 @@ int main ( int argc, char **argv ) {
 			Input.Elements = cluster_Events_after_cut[sensor];
 			Input.Noise   = cluster_Noise_after_cut[sensor];
 			int num_of_clusters=0;
-			printf("debug- start while\n");
+			//printf("debug- start while\n");
 			//- Start clustering
 			while(Input.Elements.size()!=0){
-				printf("debug- inside for %dth cluster\n",num_of_clusters);
+				//printf("debug- inside for %dth cluster\n",num_of_clusters);
 				PacMan NomNom;
 				//double SoN_order = 0;
 

@@ -47,7 +47,7 @@ int main ( int argc, char **argv ) {
 	auto noisemap = Cycle::getNoise();
 	auto pedestal = Cycle::s_ped_adc;
 	auto mads     = Cycle::s_ped_mad;
-	auto slopes = db.getSlopes();
+	auto slopes   = db.getSlopes();
 	if (noisemap.empty()) return 0;
 	
 	
