@@ -258,12 +258,14 @@ def hist_plotter():
 		if (args.output_name):
 			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
-			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		else:
 			outname = folder_loc+run_name+'_'+graph.GetName()
-			print 'Creating '+outname+'.pvg'
-			#c1.SaveAs(outname+'.svg')
+			print 'Creating '+outname+'.svg/eps/png'
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		c1.Close()
 	elif ('same' in args.draw_option):
@@ -406,12 +408,14 @@ def hist_plotter():
 		if (args.output_name):
 			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
-			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		else:
 			outname = folder_loc+run_name+'_'+graph.GetName()
-			print 'Creating '+outname+'.pvg'
-			#c1.SaveAs(outname+'.svg')
+			print 'Creating '+outname+'.png/svg/eps'
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		c1.Close()
 	else:
@@ -500,6 +504,8 @@ def hist_plotter():
 			if (args.ytitle):
 				y_axis.SetTitle(args.ytitle)
 			obj.Draw(args.draw_option)
+			if (args.fit):
+				obj.Fit(args.fit)
 #			if args.upperXaxis:
 #				print "adding an upper x axis"
 #				print x_low, y_low, x_high, y_high
@@ -530,11 +536,13 @@ def hist_plotter():
 				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
 				c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
 			else:
 				outname = folder_loc+run_name+'_'+histogram.GetName()
 				print 'Creating '+outname+'.pvg'
 				c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
 			c1.Close()
 			counter= counter+1
@@ -643,7 +651,8 @@ def graph_plotter():
 		if (args.output_name):
 			outname = folder_loc+run_name+'_'+args.output_name
 			print 'Creating '+outname
-			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		else:
 			search_name=''
@@ -652,7 +661,8 @@ def graph_plotter():
 			print search_name
 			outname = folder_loc+run_name+'graphs_w'+search_name
 			print 'Creating '+outname+'.png'
-			#c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.svg')
+			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
 		c1.Close()
 	else:
@@ -689,7 +699,8 @@ def graph_plotter():
 			if (args.output_name):
 				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
-				#c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
 			else:
 				search_name=''
@@ -698,7 +709,8 @@ def graph_plotter():
 				print search_name
 				outname = folder_loc+run_name+'_'+graph.GetName()
 				print 'Creating '+outname+'.pvg'
-				#c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.svg')
+				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
 			c1.Close()
 			counter= counter+1
@@ -714,12 +726,12 @@ mystyle.SetPaintTextFormat("5.3f");
 
 
 #set the background color to white
-mystyle.SetFillColor(10)
-mystyle.SetFrameFillColor(10)
-mystyle.SetCanvasColor(10)
-mystyle.SetPadColor(10)
+mystyle.SetFillColor(0)
+mystyle.SetFrameFillColor(0)
+mystyle.SetCanvasColor(0)
+mystyle.SetPadColor(0)
 mystyle.SetTitleFillColor(0)
-mystyle.SetStatColor(10)
+mystyle.SetStatColor(0)
 
 #dont put a colored frame around the plots
 mystyle.SetFrameBorderMode(0)
@@ -733,8 +745,7 @@ mystyle.SetLegendBorderSize(0)
 ##set the default line color for a histogram to be black
 #mystyle.SetHistLineColor(1)
 #
-##set the default line color for a fit function to be red
-#mystyle.SetFuncColor(2)
+
 #
 ##make the axis labels black
 #mystyle.SetLabelColor(1,"xyz")
@@ -751,7 +762,7 @@ mystyle.SetPadLeftMargin(0.16)
 #
 ##set axis label and title text sizes
 mystyle.SetLabelFont(62,"xyz")
-mystyle.SetLabelSize(0.05,"xyz")
+mystyle.SetLabelSize(0.04,"xyz")
 mystyle.SetLabelOffset(0.003,"yz")
 mystyle.SetLabelOffset(0.00,"x")
 mystyle.SetTitleFont(62,"xyz")
@@ -774,6 +785,8 @@ mystyle.SetLegendTextSize(0.05)
 ##set line widths
 mystyle.SetFrameLineWidth(2)
 mystyle.SetFuncWidth(2)
+##set the default line color for a fit function to be red
+mystyle.SetFuncColor(2)
 mystyle.SetHistLineWidth(2)
 #
 ##set the number of divisions to show
@@ -788,14 +801,15 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-mystyle.SetOptStat(0) ##removes stat box
-#mystyle.SetOptStat(1001111)
+#mystyle.SetOptStat(0) ##removes stat box
+mystyle.SetOptStat(1001111)
 #mystyle.SetOptFit(111)
+#mystyle.SetOptStat(0000001) #only name
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
 mystyle.SetMarkerSize(0.7)
-mystyle.SetLineWidth(1) 
+mystyle.SetLineWidth(1)
 
 #done
 #mystyle.cd()
@@ -842,6 +856,7 @@ parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbea
 parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
 parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
 parser.add_argument( '--upperaxis', dest='upperXaxis', action='store_true', help='needs to be adjusted manually all the time. adds a second x axis to the top of the plot')
+parser.add_argument( '--fit', dest='fit',  help='given if one wishes to add a fit to the histogram before plotting')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
