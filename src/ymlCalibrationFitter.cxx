@@ -18,8 +18,8 @@
 #include <iomanip>
 #include <TFile.h>
 #include <TF1.h>
-#include <TH1F.h>
-#include <TH2F.h>
+#include <TH1.h>
+#include <TH2.h>
 #include <TROOT.h>
 #include <TCanvas.h>
 #include <TMultiGraph.h>
@@ -315,7 +315,7 @@ int main ( int argc, char **argv ) {
 	TH1F				*pedestalsRMS_fc_conn[24][4];
 	TH1F				*slope_fit_at_zero[24][4];
 	TH1F				*slopeRMS[24][4];
-	TH1F				*slope_vs_channel[24][4];
+	TH1D				*slope_vs_channel[24][4];
 	TH1F				*slope_vs_right_strip[24][4];
 	TH1F				*slope_vs_left_strip[24][4];
 	TH1F				*RMSfC_vs_channel[24][4];
@@ -780,7 +780,7 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
 				tmp << "slope_vs_channel_k" << kpix << "_b" << bucket;
-				slope_vs_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope [ADC/fC]; Channel ID; Slope [ADC/fC]", 1024, -0.5, 1023.5);
+				slope_vs_channel[kpix][bucket] = new TH1D(tmp.str().c_str(), "Slope [ADC/fC]; Channel ID; Slope [ADC/fC]", 1024, -0.5, 1023.5);
 				
 				tmp.str("");
 				tmp << "slope_vs_right_strip_k" << kpix << "_b" << bucket;

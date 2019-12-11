@@ -522,8 +522,9 @@ int main ( int argc, char **argv )
 
                     CM_file << k << " " << median(vec_corr_charge[k]) << " " <<  event.eventNumber() << endl;
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
+				
 					delete vec_corr_charge[k];
-					//cout << "Common modes median of EventNumber " << event.eventNumber() << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
+					//cout << "Common modes median of EventNumber " << event.eventNumber()  << " kpix " << k  << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
 					vec_corr_charge[k] = nullptr;
 					
 				}

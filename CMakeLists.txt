@@ -184,9 +184,13 @@ add_executable(new_analysis ${PROJECT_SOURCE_DIR}/src/new_analysis.cxx)
 target_link_libraries(new_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS new_analysis)
 
-add_executable(checkTimeVars ${PROJECT_SOURCE_DIR}/src/checkTimeVars.cxx)
-target_link_libraries(checkTimeVars ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS checkTimeVars)
+add_executable(new_cluster_analysis ${PROJECT_SOURCE_DIR}/src/new_cluster_analysis.cxx)
+target_link_libraries(new_cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS new_cluster_analysis)
+
+# add_executable(checkTimeVars ${PROJECT_SOURCE_DIR}/src/checkTimeVars.cxx)
+# target_link_libraries(checkTimeVars ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+# list(APPEND INSTALL_EXE_TARGETS checkTimeVars)
 
 # calibration ana:
 

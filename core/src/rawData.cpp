@@ -6,6 +6,12 @@
 #include <sstream>
 #include <cassert> // assert
 
+#include "TFile.h"
+#include "TKey.h"
+#include "TList.h"
+#include "TH1.h"
+#include "TObject.h"
+
 #include "rawData.h"
 #include "TBFunctions.h"
 #include "Data.h"
@@ -30,7 +36,6 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
                       bool isold ){
 
 	// Declare member variables first
-  m_cm_noise[4]={0.0};
   m_nbuckets = nbuckets;
   m_has_adc = false;
   m_has_fc  = false;
@@ -55,11 +60,11 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
       if (sample->getSampleType() == KpixSample::Data){
 	      if ( bucket >= m_nbuckets ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
-	      auto key = hashCode(kpix, channel);
+	      auto key = hashCode(kpix, channel, bucket);
 
-	      m_v_hashkeys_b[bucket].push_back(key);
-	      m_v_adc_b[bucket].push_back(value);
-	      m_v_ts_b[bucket].push_back(tstamp);
+	      m_v_hashkeys.push_back(key);
+	      m_v_adc.push_back(value);
+	      m_v_ts.push_back(tstamp);
       }
       
       if (sample->getSampleType() == KpixSample::Timestamp){
@@ -80,31 +85,88 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
       
 
     }// finish loop over all data of one cycle
-    for (uint i=0; i<4; i++){
-      //printf("adc vec size : %d\n", m_v_adc_b[i].size() );
-      m_has_adc = m_has_adc || m_v_adc_b[i].size();
-	    
-	    // **Exception Handler - Start
-	    try{
-		    if (m_v_hashkeys_b[i].size() != m_v_adc_b[i].size())
-			    throw m_cyclenumber;
-	    }
-	    catch (uint e){
-		    cout << "ERROR: Cycle Event " << e << " has channel_keys != its value. \n";
-	    }
-	    // **Exception Handler - End
+
+    //printf("adc vec size : %d\n", m_v_adc_b[i].size() );
+    m_has_adc = m_has_adc || m_v_adc.size();
+    
+    // **Exception Handler - Start
+    try{
+	    if (m_v_hashkeys.size() != m_v_adc.size())
+		    throw m_cyclenumber;
     }
+    catch (uint e){
+	    cout << "ERROR: Cycle Event " << e << " has channel_keys != its value. \n";
+    }
+    // **Exception Handler - End
 }
 
-
 void rawData::loadCalib(const std::string& fname){
+	string csv =".csv";
+	string root = ".root";
+	printf(" loadCalib ");
+
+	try{
+		if (fname.find(csv) != std::string::npos)
+			loadCSV(fname);
+		else if (fname.find(root) !=std::string::npos)
+			loadRoot(fname);
+		else
+			throw std::runtime_error("loadCalib: invalid input calib file!");
+	}
+	catch(std::exception &e){
+		cout << "Caught exception: " << e.what() << "\n";
+	}
+}
+
+void rawData::loadRoot(const std::string& fname){
+	printf(" from ROOT...\n");
+
+	TFile *calib = TFile::Open(fname.c_str());
+	if(!calib) {
+		throw std::runtime_error("loadRoot: invalid calib root file!");
+		return;
+	}
+	printf(" Open Calib file : %s\n", fname.c_str());
+
+	m_m_slopes_b0.clear();
+	//	std::string basic = "slope_vs_channel_";
+	std::string kword = "_k", bword = "_b";
+	std::string kstr, bstr;
+
+	auto keys = calib->GetListOfKeys();
+	for (auto keyasobj: *keys){
+		auto key = (TKey*) keyasobj;
+		auto hist = (TH1D*)key -> ReadObj();
+		//		std::cout << key->GetName() << " " << key->GetClassName() << std::endl;
+		std::string hname = hist->GetName();
+		auto kpos = hname.find(kword)+kword.length();
+		kstr = hname.substr(kpos, 1);
+		
+		auto bpos = hname.find(bword)+bword.length();
+		bstr = hname.substr(bpos, 1);
+		
+		//Note": bin from 1 to GetNbinsX(), while channel is bin-1
+		for (int i=1; i< hist->GetNbinsX()+1; i++){
+			auto slope = hist->GetBinContent(i);
+			// printf(" kpix %s channel %d bucket %s, slope = %.4f\n",
+			//        kstr.c_str(), i-1, bstr.c_str(),
+			//        slope );
+			auto index = Cycle::hashCode(std::atoi(kstr.c_str()), i-1);
+			m_m_slopes_b0.emplace(index, slope);
+		}
+	}
+	
+
+}
+
+void rawData::loadCSV(const std::string& fname){
   /* 
      Read Calib from a csv file
      cols needs to be:
      kpix >> channel >> bucket >> slope
    */
+	printf(" from CSV...\n");
   m_m_slopes_b0.clear();
-  printf(" loadCalib...\n");
   std::ifstream file (fname);
   if ( !file ) return;
   printf(" Open Calib file : %s\n", fname.c_str());
@@ -148,35 +210,35 @@ void rawData::loadCalib(const std::string& fname){
 	
 }
 
-// void Lycoris::rawData::loadGeo(const std::string& geo){
-//   printf(" loadGeo...\n");
+void Lycoris::rawData::loadGeo(const std::string& geo){
+  printf(" loadGeo...\n");
  
-//   ifstream file(geo);
-//   if (!file )  return;
-//   printf(" Open Geo file : %s\n",geo.c_str());
+  ifstream file(geo);
+  if (!file )  return;
+  printf(" Open Geo file : %s\n",geo.c_str());
 
-//   std::string line;
-//   char delim=',';
+  std::string line;
+  char delim=',';
 
-//   m_kpix2plane.clear();
-//   while ( std::getline(file, line) ){
-//     if (!line.empty())
-//       while (line[0] == ' ') line.erase(0,1);
+  m_kpix2plane.clear();
+  while ( std::getline(file, line) ){
+    if (!line.empty())
+      while (line[0] == ' ') line.erase(0,1);
         
-//     if (!line.empty() && isdigit(line[0])){
-//       std::stringstream is(line);
+    if (!line.empty() && isdigit(line[0])){
+      std::stringstream is(line);
 
-//       std::string value;
-//       std::vector<uint> pair;
-//       while (std::getline(is, value, delim) )
-// 	pair.push_back(atoi(value.c_str()));
+      std::string value;
+      std::vector<uint> pair;
+      while (std::getline(is, value, delim) )
+	      pair.push_back(atoi(value.c_str()));
       
-//       m_kpix2plane.insert(std::make_pair(pair.at(0),pair.at(1)));
-//     }
-//   }
-//   file.close();
+      m_kpix2plane.insert(std::make_pair(pair.at(0),pair.at(1)));
+    }
+  }
+  file.close();
 
-// }
+}
 
 void rawData::loadFile(const std::string& fname){
   DataRead               dataRead;
@@ -230,32 +292,6 @@ void rawData::loadFile(const std::string& fname){
   cout << " Time[s]: " << duration
        << endl;
 
-  // //-- Debug print: Start
-  // cout << "# of chan    :  " << Cycle::s_buf_adc[0].size() << endl;
-  // cout << "# of cy in dt:  " << m_v_cycles.size() << endl;
-
-  // uint count=0;
-  // vector<uint> chan_cys;
-  // for (const auto& x : Cycle::s_buf_adc[0]){
-  // 	  if (x.second.size()!=m_v_cycles.size() ){
-  // 		  count++;
-  // 		  chan_cys.push_back(x.second.size());
-  // 		  /*cout << "chan "
-  // 		       << Cycle::getKpix(x.first) << "."
-  // 		       << Cycle::getChannel(x.first) 
-  // 		       << ": "
-  // 		       << x.second.size() << endl;
-  // 		  */
-  // 	  }
-  // }
-  // sort( chan_cys.begin(), chan_cys.end() );
-  // chan_cys.erase( unique( chan_cys.begin(), chan_cys.end() ), chan_cys.end() );
-  // cout << "# of cy in chan: ";
-  // for (const auto& x: chan_cys)
-  // 	  cout << x << ", ";
-  // cout << "\n";
-  // cout << "# of such chan? " << count << endl;
-  // //-- Debug print: End
   dataRead.close();
 }
 
@@ -278,7 +314,7 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
      	auto ped = median(&buf.second);
 	auto mad = MAD(&buf.second);
 
-	printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
+	//printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
 	s_ped_adc.insert(std::make_pair(buf.first, ped ));
 	if (save_mad) s_ped_mad.insert(std::make_pair(buf.first, mad));
 	//if (mad==0)  s_v_mad0_chn.push_back(buf.first);
@@ -299,8 +335,14 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
 /* Static */
 void Cycle::AddAdcBuf(Cycle& cy){
   if (!cy.m_has_adc) return;
-  for (uint bb =0; bb< cy.m_nbuckets; bb++){
-    Cycle::AddBufferT( Cycle::s_buf_adc, cy.hashkeys(bb), cy.vadc(bb), bb);
+  //  for (uint bb =0; bb< cy.m_nbuckets; bb++) {
+  auto kk = cy.hashkeys();
+  auto vv = cy.vadc();
+  for (size_t cc=0; cc<vv.size(); ++cc){
+	  auto key = kk.at(cc);
+	  auto val = vv.at(cc);
+	  Cycle::AddBufferT(Cycle::s_buf_adc, key, val);
+
   }
 }
 
@@ -320,10 +362,10 @@ void rawData::doRmPedCM(bool rmAdc){
       continue; // skip empty cycles
     }
 
-    cy.RemovePedMad0_CalFc(Cycle::s_ped_adc,
-			   m_m_slopes_b0,
-			   Cycle::s_ped_mad,
-			   true);
+    cy.RemovePed_CalCM_fC(Cycle::s_ped_adc,
+                          m_m_slopes_b0,
+                          Cycle::s_ped_mad,
+                          true);
     cy.RemoveCM();
     Cycle::AddFcBuf(cy);
 
@@ -344,56 +386,98 @@ void rawData::doRmPedCM(bool rmAdc){
     
 }
 
-void Cycle::RemovePedMad0_CalFc(std::unordered_map<uint, uint> &ped_adc,
-				std::unordered_map<uint, double> &slopes,
-				std::unordered_map<uint, uint> &ped_mad,
-				bool remove_adc)
+void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
+                                std::unordered_map<uint, double> &slopes,
+                                std::unordered_map<uint, uint> &ped_mad,
+                                bool remove_adc,
+                                bool cut_mad0,
+                                bool cut_slope0)
 {
   /* Only work at bucket 0 */
-  uint bucket=0;
-  auto target = &m_v_fc_b[bucket];
-  auto vv = vadc(bucket);
-  auto kk = hashkeys(bucket);  
+	//  uint bucket=0;
+  // Fill in a buffer to calculate CM, indexed by kpix num:
+  std::unordered_map<uint, vector<double>> cm_noise_buf; 
+
+  auto target = &m_m_fc;
+  auto vv = vadc();
+  auto kk = hashkeys();  
 
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
-    uint keyb = key; //because bucket = 0
-    // ignore mad0 channels
-    if (s_ped_mad.at(keyb)==0) continue;
-
     uint adc = vv.at(cc);
+
     uint ped = ped_adc.at(key);
-    double slope = slopes.at(kk.at(cc));
+    double slope = slopes.at(key);
+
+    uint kpix = getKpix(key);
+    //uint channel = getChannel(key);
+    
+    // ignore mad0 channels
+    if (s_ped_mad.at(key)==0) continue;
     // ignore channels with slope ==0
-    if (slope ==0) continue; 
-    double fc = (double)(adc - ped) / slope;
-    target->push_back(fc);
+    if (slope ==0) continue;
+    
+    double fc = (double)((int)adc - (int)ped) / slope;
+    // // debug:
+    // if (m_cyclenumber ==99 && kpix==0){
+    //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
+	//            kpix, channel, fc, adc, ped, slope);
+    // }
+	    
+    target->insert(std::make_pair(key, fc));
+
+    if (cm_noise_buf.count(kpix))
+	    cm_noise_buf.at(kpix).push_back(fc);
+    else{
+	    std::vector<double> vec;
+	    vec.push_back(fc);
+	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
+    }
   }
-   m_has_fc = !target->empty();
-  //printf(" How many channels in fC vec? %d\n", target->size());
+  
+  m_has_fc = !target->empty();
   if (remove_adc) ResetAdc();
+
+  /* Calculate CM */
+  m_m_cm_noise.clear();
+  //printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+  for(auto &a:cm_noise_buf ){
+	  double cm_noise = median(&a.second);
+	  
+	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
+
+	  // double max = *std::max_element(a.second.begin(), a.second.end());
+	  // double min = *std::min_element(a.second.begin(), a.second.end());
+	  // printf("debug: cycle %d, common mode for kpix %d = %.2f, %d channels, min %.2f, max %.2f \n",
+	  //        m_cyclenumber,
+	  //        a.first,cm_noise,
+	  //        a.second.size(),
+	  //        min, max);
+  }
+  
 }
 
 
 void Cycle::RemoveCM(){
-  uint bucket=0;
-  if (m_v_fc_b[bucket].empty()) return;
-  m_cm_noise[bucket] = median(&m_v_fc_b[bucket]);
-  //  printf("debug: common mode noise per cycle = %.2f \n", m_cm_noise[bucket]);
 
-  for (auto &fc : m_v_fc_b[bucket])
-    fc = fc - m_cm_noise[bucket];
+  if (m_m_fc.empty()) return;
+
+  for ( auto &fc: m_m_fc){
+	  auto key = rmBucket(fc.first);
+	  uint kpix = getKpix(key);
+	  double cm_noise = m_m_cm_noise.at(kpix);
+	  fc.second = fc.second - cm_noise;
+  }
 }
 
 /* Static */
 void Cycle::AddFcBuf(Cycle& cy){
   if (!cy.m_has_fc) return;
 
-  uint bucket = 0;
-  Cycle::AddBufferT( Cycle::s_buf_fc,
-		     cy.hashkeys(bucket),
-		     cy.vfc(bucket),
-		     bucket);
+  for (auto &fc: cy.m_m_fc){
+	  Cycle::AddBufferT( Cycle::s_buf_fc,
+	                     fc.first, fc.second);
+  }
 }
 
 /* Static */
