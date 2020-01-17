@@ -77,25 +77,25 @@ namespace Lycoris{
 		  printf("Static adc Buffer cleared.\n");
 		}
 		static void ResetPed(){
-		  s_ped_adc.clear();
+		  s_ped_med_adc.clear();
 		  printf("[info] Static map Ped ADC cleared");
 		}
 		static void CalPed(uint nbuckets =1, bool save_mad = false);
 		//	private:
 		/* ADC data of all cycles: */
-		static unordered_map<uint, vector<uint16_t>> s_buf_adc;
+		static unordered_map<uint, vector<int>> s_buf_adc;
 		/* Pedestal measured in a run: */
-		static unordered_map<uint, uint> s_ped_adc;
+		static unordered_map<uint, double> s_ped_med_adc;
 		/* Pedestal MAD value: */
-		static unordered_map<uint, uint> s_ped_mad;
+		static unordered_map<uint, double> s_ped_mad_adc;
 		/* Channels with a MAD==0*/
 		//		static std::vector<uint> s_v_mad0_chn;
 
 		/* == Operation per cycle == */
 		/* Remove ped in adc -> adc2Fc -> calculate common mode buffer*/
-		void RemovePed_CalCM_fC(std::unordered_map<uint, uint > &ped_adc,
-		                        std::unordered_map<uint, double> &slopes,
-		                        std::unordered_map<uint, uint> &ped_mad,
+		void RemovePed_CalCM_fC(std::unordered_map<uint, double > &ped_adc,
+		                        std::unordered_map<uint, double>  &slopes,
+		                        std::unordered_map<uint, double>  &ped_mad,
 		                        bool remove_adc,
 		                        bool cut_mad0 = true,
 		                        bool cut_slope0 = true);
