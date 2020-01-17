@@ -21,22 +21,19 @@
 using namespace std;
 using namespace Lycoris;
 
-//std::unordered_map<uint, double> Cycle::s_slopes_b0;
-
 std::unordered_map< uint, std::vector<double>> Cycle::s_buf_fc;
 std::unordered_map<uint, double> Cycle::s_noise_fc;
 
-std::unordered_map< uint, std::vector<uint16_t>> Cycle::s_buf_adc;
-std::unordered_map< uint, uint> Cycle::s_ped_adc;
-std::unordered_map< uint, uint> Cycle::s_ped_mad;
-//std::vector<uint> Cycle::s_v_mad0_chn;
+std::unordered_map< uint, std::vector<int>> Cycle::s_buf_adc;
+std::unordered_map< uint, double> Cycle::s_ped_med_adc;
+std::unordered_map< uint, double> Cycle::s_ped_mad_adc;
 
 Cycle::Cycle(KpixEvent &event, uint nbuckets,
-                      uint begin_ch, uint end_ch,
-                      bool isold ){
+             uint begin_ch, uint end_ch,
+             bool isold ){
 
 	// Declare member variables first
-  m_nbuckets = nbuckets;
+	m_nbuckets = nbuckets;
   m_has_adc = false;
   m_has_fc  = false;
   m_cyclenumber = event.eventNumber();
@@ -300,25 +297,25 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
 
   if (s_buf_adc.empty()) return ;
 
-  s_ped_adc.clear();
-  s_ped_mad.clear();
+  s_ped_med_adc.clear();
+  s_ped_mad_adc.clear();
   //  s_v_mad0_chn.clear();
 
   auto t_start = std::chrono::high_resolution_clock::now();
 
   for( auto &buf : s_buf_adc){
-    
-    // skip not requested buckets
-    if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ) { 
-	// buf.first, buf.second -> median
-     	auto ped = median(&buf.second);
-	auto mad = MAD(&buf.second);
-
-	//printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
-	s_ped_adc.insert(std::make_pair(buf.first, ped ));
-	if (save_mad) s_ped_mad.insert(std::make_pair(buf.first, mad));
-	//if (mad==0)  s_v_mad0_chn.push_back(buf.first);
-    }
+	  
+	  // skip not requested buckets
+	  if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ) { 
+		  // buf.first, buf.second -> median
+		  double ped = median(&buf.second);
+		  double mad = MAD(&buf.second);
+		  
+		  //printf("debug: buf.second size = %d, median = %d, MAD = %d\n", buf.second.size(), ped, mad);
+		  s_ped_med_adc.insert(std::make_pair(buf.first, ped ));
+		  if (save_mad) s_ped_mad_adc.insert(std::make_pair(buf.first, mad));
+		  //if (mad==0)  s_v_mad0_chn.push_back(buf.first);
+	  }
   }
   printf("Pedestal & MAD calculation finished.\t");
 
@@ -337,10 +334,10 @@ void Cycle::AddAdcBuf(Cycle& cy){
   if (!cy.m_has_adc) return;
   //  for (uint bb =0; bb< cy.m_nbuckets; bb++) {
   auto kk = cy.hashkeys();
-  auto vv = cy.vadc();
+  auto vv = cy.vadc(); 
   for (size_t cc=0; cc<vv.size(); ++cc){
-	  auto key = kk.at(cc);
-	  auto val = vv.at(cc);
+	  uint key = kk.at(cc); // uint
+	  int  val = (int)vv.at(cc); // uint16 
 	  Cycle::AddBufferT(Cycle::s_buf_adc, key, val);
 
   }
@@ -362,18 +359,20 @@ void rawData::doRmPedCM(bool rmAdc){
       continue; // skip empty cycles
     }
 
-    cy.RemovePed_CalCM_fC(Cycle::s_ped_adc,
+    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
                           m_m_slopes_b0,
-                          Cycle::s_ped_mad,
+                          Cycle::s_ped_mad_adc,
                           true);
     cy.RemoveCM();
     Cycle::AddFcBuf(cy);
 
+    // debug:
     //---> Fancy Bar
-    currPos++;
+    /*    currPos++;
     currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
     cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
 	 << currPct << "%  " << flush;
+    */
     //---> Fancy Bar <---// 
   }
     
@@ -386,12 +385,12 @@ void rawData::doRmPedCM(bool rmAdc){
     
 }
 
-void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
-                                std::unordered_map<uint, double> &slopes,
-                                std::unordered_map<uint, uint> &ped_mad,
-                                bool remove_adc,
-                                bool cut_mad0,
-                                bool cut_slope0)
+void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
+                               std::unordered_map<uint, double> &slopes,
+                               std::unordered_map<uint, double> &ped_mad,
+                               bool remove_adc,
+                               bool cut_mad0,
+                               bool cut_slope0)
 {
   /* Only work at bucket 0 */
 	//  uint bucket=0;
@@ -410,14 +409,14 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
     double slope = slopes.at(key);
 
     uint kpix = getKpix(key);
-    //uint channel = getChannel(key);
+    uint channel = getChannel(key);
     
     // ignore mad0 channels
-    if (s_ped_mad.at(key)==0) continue;
+    if (s_ped_mad_adc.at(key)==0) continue;
     // ignore channels with slope ==0
     if (slope ==0) continue;
     
-    double fc = (double)((int)adc - (int)ped) / slope;
+    double fc = (double)(1.0*adc - ped) / slope;
     // // debug:
     // if (m_cyclenumber ==99 && kpix==0){
     //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
@@ -426,34 +425,51 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, uint> &ped_adc,
 	    
     target->insert(std::make_pair(key, fc));
 
+    // if (kpix==1 && getChannel(key) == 73){
+	//     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
+	//          << adc << " adc, "
+	//          << ped << " adc, "
+	//          << slope << " slope, "
+	//          << fc << " fC "
+	//          << endl;
+    // }
+	    
     if (cm_noise_buf.count(kpix))
 	    cm_noise_buf.at(kpix).push_back(fc);
     else{
-	    std::vector<double> vec;
+	    std::vector<double > vec;
 	    vec.push_back(fc);
 	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
     }
+    if (m_cyclenumber == 21 && kpix ==1){
+	    cout << "cm input debug: ev 21 kpix 1 channel " << channel << ", "
+	         << adc << " adc, "
+	         << ped << " adc, "
+	         << slope << " slope, "
+	         << fc << " fC "
+	         << endl;
+    }
   }
   
-  m_has_fc = !target->empty();
+  m_has_fc = !(target->empty());
   if (remove_adc) ResetAdc();
 
   /* Calculate CM */
   m_m_cm_noise.clear();
   //printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
+	  
+  //std::map<uint, double> debug;
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
 	  
 	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
-
-	  // double max = *std::max_element(a.second.begin(), a.second.end());
-	  // double min = *std::min_element(a.second.begin(), a.second.end());
-	  // printf("debug: cycle %d, common mode for kpix %d = %.2f, %d channels, min %.2f, max %.2f \n",
-	  //        m_cyclenumber,
-	  //        a.first,cm_noise,
-	  //        a.second.size(),
-	  //        min, max);
-  }
+	  //  debug.insert(std::make_pair(a.first, cm_noise));
+ }
+  // for (auto &d: debug)
+  // 	  cout << "Common modes median of EventNumber " << m_cyclenumber
+  // 	       << " kpix "  << d.first
+  // 	       << " entry " << d.second << endl; // debug
+  
   
 }
 
@@ -489,8 +505,15 @@ void Cycle::CalNoise(uint& nbuckets){
 
   for (auto &buf: s_buf_fc){
     if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ){
-      auto noise = 1.4826*MAD(&buf.second);
+      double noise = 1.4826*MAD(&buf.second);
       s_noise_fc.insert(std::make_pair(buf.first, noise));
+      
+      if (getKpix(buf.first)==1 && getChannel(buf.first)==73){
+	      cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
+	      for (const auto &input: buf.second)
+		      cout << " " << input << endl;
+      }
+      
     }
   }
   printf("Noise calculation finished.\t");

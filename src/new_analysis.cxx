@@ -45,8 +45,8 @@ int main ( int argc, char **argv ) {
 	uint b = 1;
 	Cycle::CalNoise(b);
 	auto noisemap = Cycle::getNoise();
-	auto pedestal = Cycle::s_ped_adc;
-	auto mads     = Cycle::s_ped_mad;
+	auto pedestal = Cycle::s_ped_med_adc;
+	auto mads     = Cycle::s_ped_mad_adc;
 	auto slopes   = db.getSlopes();
 	if (noisemap.empty()) return 0;
 	
@@ -84,7 +84,7 @@ int main ( int argc, char **argv ) {
 			//continue;
 		}
 		
-		ped = ped/slopes.at(key);
+		//ped = ped/slopes.at(key);
 		mad = mad/slopes.at(key);
 		
 		test->Fill();
@@ -99,6 +99,7 @@ int main ( int argc, char **argv ) {
 	cycles->Branch("channel",  &channel1,  "channel1/I");
 	cycles->Branch("bucket", &bucket1, "bucket1/I");
 	cycles->Branch("eventnumber", &eventnumber, "eventnumber/I");
+	cycles->Branch("cm_med", &cm_med, "cm_med/D");
 
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -112,7 +113,7 @@ int main ( int argc, char **argv ) {
 			else strip1 = kpix2strip_right.at(channel1);
 
 			charge_fc = fc.second;
-			cm_med = ev.m_m_cm_noise.at(kpix);
+			cm_med = ev.m_m_cm_noise.at(kpix1);
 			
 			cycles->Fill();
 		}

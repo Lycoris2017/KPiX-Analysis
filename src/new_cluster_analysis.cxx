@@ -43,11 +43,11 @@ int main ( int argc, char **argv ) {
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
 	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
 
-	//return(0);
 	db.doRmPedCM();
 	db.loadGeo("/home/lycoris-dev/workspace/kpix-analysis/data/plane_Geo_default.txt");
 	uint b = 1;
 	Cycle::CalNoise(b);
+
 	auto noisemap = Cycle::getNoise();
 
 	TFile *fout = new TFile("cluster.root", "recreate");
@@ -107,6 +107,11 @@ int main ( int argc, char **argv ) {
 			charge = fc.second;
 			noise = noisemap.at(key);
 
+			// if (eventnumber == 9988 && sensor == 0 && strip ==940){
+			// 	printf("debug: ev 9988 sensor 0 strip 940 charge %.4f, noise %.4f\n",
+			// 	       charge, noise);
+			// }
+				
 			//!- If no pre-selection on the inputs for cluster, the PacMan algorithm will not erase the input element, thus jump into an infinitive while loop!
 			if (charge > 3*noise && strip != 9999 && noise_mask[sensor].at(strip) == 1 ){
 				cluster_Events_after_cut[sensor].emplace(strip, charge);
@@ -119,7 +124,7 @@ int main ( int argc, char **argv ) {
 		// 	       eventnumber, sensor, cluster_Events_after_cut[sensor].size(),
 		// 	       cluster_Noise_after_cut[sensor].size());
 		// }
-		
+
 		//!- 2) do clustering sensor by sensor
 		for (sensor =0; sensor< n_kpix/2; sensor++){
 			if (cluster_Events_after_cut[sensor].size()==0) continue;
@@ -130,7 +135,6 @@ int main ( int argc, char **argv ) {
 			//printf("debug- start while\n");
 			//- Start clustering
 			while(Input.Elements.size()!=0){
-				//printf("debug- inside for %dth cluster\n",num_of_clusters);
 				PacMan NomNom;
 				//double SoN_order = 0;
 
@@ -153,7 +157,22 @@ int main ( int argc, char **argv ) {
 				num_of_clusters++;
 				ctree->Fill();
 			}
-			printf("debug: ev %d has %d clusters.\n", eventnumber, num_of_clusters);
+			// printf("debug: ev %d sensor %d has %d elements, %d noise, %d clusters.\n",
+			//        eventnumber,
+			//        sensor,
+			//        cluster_Events_after_cut[sensor].size(),
+			//        cluster_Noise_after_cut[sensor].size(),
+			//        num_of_clusters);
+			
+			if (eventnumber==9988 && sensor==0){
+				printf("[debug] ev 9988 sensor 0 has input:\n");
+				for (const auto &a : cluster_Events_after_cut[sensor])
+					printf("\tstrip %d has %.4f charge, %.4f noise\n",
+					       a.first,
+					       a.second,
+					       cluster_Noise_after_cut[sensor].at(a.first));
+				
+			}
 			
 		}
 	}
