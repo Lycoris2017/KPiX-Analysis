@@ -589,9 +589,10 @@ def graph_plotter():
 			
 			#chi_andreas_test = obj.GetFunction('pol1').GetChisquare()
 			#print "CHI ANDREAS TEST = ", chi_andreas_test
-			#obj.GetFunction('pol1').SetRange(0.0, 0.0, 0.01, 0.01)
+			if args.nofit:
+				obj.GetFunction('pol1').SetRange(0.0, 0.0, 0.01, 0.01) #IMPORTANT: workaround to remove fit from the plot
 			obj.GetFunction('pol1').SetLineColor(797)
-			
+
 			##------------------
 			##adjust the xrange
 			obj.SetLineColor(args.color[counter-1])
@@ -609,11 +610,14 @@ def graph_plotter():
 					print "B"
 					legend.AddEntry(obj, '_'+graph.GetName())
 			else:
-				print "C"
+				print "C ", args.legend[counter-1]
 				legend.AddEntry(obj, args.legend[counter-1])
+				obj.SetName(args.legend[counter-1])
+				obj.SetTitle(args.legend[counter-1])
+
+			multi_graph.Add(obj,"PLA")
 			
-			
-			multi_graph.Add(obj,"PL")
+
 			
 			##------------------
 			##adjust legend and the x and y title name if chosen
@@ -635,8 +639,9 @@ def graph_plotter():
 		##------------------
 		##draw histogram + components and save the file
 		multi_graph.Draw(drawing_option)
-		legend.Draw()
-		#c1.BuildLegend()
+		#legend.Draw()
+		#c1.Update()
+		c1.BuildLegend(0.2,0.7,0.3,0.90)
 		xaxis = multi_graph.GetXaxis()
 		xaxis.SetTitle(x_title)
 		if 9999 not in args.xaxisrange:
@@ -721,7 +726,6 @@ def graph_plotter():
 mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
-
 mystyle.SetPaintTextFormat("5.3f");
 
 
@@ -780,7 +784,7 @@ ROOT.TGaxis.SetMaxDigits(4)
 #mystyle.SetTextFont(42)
 
 ##set legend text size etc.
-mystyle.SetLegendTextSize(0.05)
+mystyle.SetLegendTextSize(0.04)
 #
 ##set line widths
 mystyle.SetFrameLineWidth(2)
@@ -803,13 +807,13 @@ mystyle.SetHistLineWidth(2)
 ##turn off stats
 #mystyle.SetOptStat(0) ##removes stat box
 mystyle.SetOptStat(1001111)
-#mystyle.SetOptFit(111)
+mystyle.SetOptFit(111)
 #mystyle.SetOptStat(0000001) #only name
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
 mystyle.SetMarkerSize(0.7)
-mystyle.SetLineWidth(1)
+mystyle.SetLineWidth(2)
 
 #done
 #mystyle.cd()
@@ -853,10 +857,11 @@ parser.add_argument('--other', dest='other', help='general plotting with non aut
 parser.add_argument('--nobox', dest='nobox', action='store_true', help='suppresses tstatbox from being added. Does not work with stack/nostack option')
 parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
 parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
-parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1200,900], help='aspect ratio of the output file')
+parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1600,1200], help='aspect ratio of the output file')
 parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
 parser.add_argument( '--upperaxis', dest='upperXaxis', action='store_true', help='needs to be adjusted manually all the time. adds a second x axis to the top of the plot')
 parser.add_argument( '--fit', dest='fit',  help='given if one wishes to add a fit to the histogram before plotting')
+parser.add_argument( '--nofit', dest='nofit', action='store_true',  help='uses a workaround to remove the plot from TGRAPH')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
@@ -880,6 +885,8 @@ else:
 #legend_location = [0.65,0.65,0.98,0.85] # x_left, y_bottom, x_right, y_top
 legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 
+if args.nofit:
+	print 'Please take note that NOFIT only works for TGRAPH right now and is just a dirty hack'
 ##-----------------	
 ##produce empty root file and filename lists.
 

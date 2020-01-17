@@ -258,9 +258,9 @@ add_executable(analysisExternal_tree ${PROJECT_SOURCE_DIR}/src/analysisExternal_
 target_link_libraries(analysisExternal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysisExternal_tree)
 
-#add_executable(pedestal ${PROJECT_SOURCE_DIR}/src/pedestal.cxx)
-#target_link_libraries(pedestal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS pedestal)
+#add_executable(pedestal_old ${PROJECT_SOURCE_DIR}/src/pedestal_old.cxx)
+#target_link_libraries(pedestal_old ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+#list(APPEND INSTALL_EXE_TARGETS pedestal_old)
 
 add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)

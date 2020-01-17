@@ -182,6 +182,7 @@ int main ( int argc, char **argv )
 	TTree*					pedestal;
 	
 	TH1F*					MAD0_v_channel;
+    TH1F*					pedestalADC;
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -310,6 +311,8 @@ int main ( int argc, char **argv )
 	
 	MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; #Entries", 1024, -0.5, 1023.5);
 
+    pedestalADC = new TH1F("pedestalADC", "pedestalADC; ADC; #Entries", 8191, -0.5, 8190.5);
+
 	range = 0;
 	
 
@@ -343,9 +346,8 @@ int main ( int argc, char **argv )
 	while ( dataRead.next(&event) )
 	{
 		cycle_num++;
-		//cout << "KPiX event Number: " << event.eventNumber() << endl;
+        cout << "KPiX event Number: " << event.eventNumber() << endl;
 		//cout << "DEBUG" << endl;
-		
 		
 		if ( cycle_num > skip_cycles_front)
 		{
@@ -379,7 +381,7 @@ int main ( int argc, char **argv )
 						//cout << "Charge " << charge << endl;
 						if (pedestal_results[kpix][channel][bucket] == nullptr)
 						{
-							pedestal_results[kpix][channel][bucket] = new std::vector<double>;
+                            pedestal_results[kpix][channel][bucket] = new std::vector<double>;
 							if (pedestal_results[kpix][channel][bucket] == nullptr)
 							{
 								std::cerr << "Memory allocation error for vector kpix " <<
@@ -388,7 +390,8 @@ int main ( int argc, char **argv )
 							}
 							
 						}
-						
+                        if (bucket == 0 && kpix == 0 && channel == 666)
+                            pedestalADC->Fill(value);
 						pedestal_results[kpix][channel][bucket]->push_back(charge);
 						//cout << pedestal_results[kpix][channel][bucket]->at(0) << endl;
 						
