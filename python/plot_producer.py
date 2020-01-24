@@ -17,11 +17,7 @@ graph_list = []
 
 
 
-class MyParser(argparse.ArgumentParser):
-    def error(self, message):
-        sys.stderr.write('error: %s\n' % message)
-        self.print_help()
-        sys.exit(2)
+
 
 
 def arrangeStats(hists, statBoxW, statBoxH, name):
@@ -771,7 +767,8 @@ mystyle.SetLabelOffset(0.003,"yz")
 mystyle.SetLabelOffset(0.00,"x")
 mystyle.SetTitleFont(62,"xyz")
 mystyle.SetTitleSize(0.056,"xyz")
-mystyle.SetTitleOffset(1.1,"yz")
+mystyle.SetTitleOffset(1.1,"y")
+mystyle.SetTitleOffset(0.8,"z")
 mystyle.SetTitleOffset(0.75,"x")
 mystyle.SetStatFont(62)
 mystyle.SetStatFontSize(0.05)
@@ -805,9 +802,9 @@ mystyle.SetHistLineWidth(2)
 #mystyle.SetPadTickY(1)
 #
 ##turn off stats
-#mystyle.SetOptStat(0) ##removes stat box
-mystyle.SetOptStat(1001111)
-mystyle.SetOptFit(111)
+mystyle.SetOptStat(0) ##removes stat box
+#mystyle.SetOptStat(1001111)
+#mystyle.SetOptFit(111)
 #mystyle.SetOptStat(0000001) #only name
 #
 ##marker settings
@@ -827,41 +824,220 @@ mystyle.SetLineWidth(2)
 
 
 #parser = argparse.ArgumentParser() #Command line argument parser.
-parser = MyParser()
-parser.add_argument('file_in', nargs='+', help='name of the input file')
-parser.add_argument('-n', '--name', dest='name', default=['everything'], nargs='*',  help='used to specify the name of the plot which should be used')
-parser.add_argument('-c', '--channel', dest='channel', default=['9999'], nargs='*', help='used to specify the channel of the plot which should be used')
-parser.add_argument('-s', '--strip', dest='strip', default=['9999'], nargs='*', help='used to specify the strip of the plot which should be used')
-parser.add_argument('-b', '--bucket', dest='bucket', default=[9999], nargs='*', type=int, help='used to specify the bucket of the plot which should be used | type=int')
-parser.add_argument('-k', '--kpix', dest='kpix', default=[9999], nargs='*', type=int, help='used to specify the bucket of the plot which should be used | type=int')
-parser.add_argument('-d', '--draw', dest='draw_option', default='', help='specify the drawing option as given by the root draw option, needs to be given as a single string (e.g. hist same or hist same multifile')
-parser.add_argument('-o', '--output', dest='output_name', help='specifies the name and type of the output file (e.g. test.png, comparison.root etc...')
-parser.add_argument('--refuse', dest='refuse', default= ['nothing'], nargs='*', help='add string that should be exluded from histogram search')
-parser.add_argument('-r', '--rebin', dest='rebin', default=1, type = int, help='add number to rebin the histograms | type=int')
-parser.add_argument('--name2', dest='name2', default=['everything'], nargs='*',  help='used to specify the name of the plot which should be used')
-parser.add_argument('--refuse2', dest='refuse2', default= ['nothing'], nargs='*', help='add string that should be exluded from histogram search')
-parser.add_argument('--exact', dest='exact', default=False, help='if set to True, only histograms with the exact name will be used')
-parser.add_argument('--xrange', dest='xaxisrange', default=[9999], nargs='*', type=float, help='set a xrange for the plot to used with xmin xmax as the two arguments | type=float')
-parser.add_argument('--yrange', dest='yaxisrange', default=[9999], nargs='*', type=float, help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float')
-parser.add_argument('--zrange', dest='zaxisrange', default=[9999], nargs='*', type=float, help='set a zrange for the plot to used with ymin ymax as the two arguments | type=float')
-parser.add_argument('--legend', dest='legend', nargs='*', help='list of names to be used as legend titles instead of the default filename+histogram name')
-parser.add_argument('--ylog', dest='ylog', help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!')
-parser.add_argument('--zlog', dest='zlog', help='if given as an option, set z axis to logarithmic.')
-parser.add_argument('--color', dest='color', default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614], nargs='*', help='list of colors to be used')
+parser = argparse.ArgumentParser()
+parser.add_argument(
+	'file_in',
+	nargs='+',
+	help='name of the input file'
+)
+parser.add_argument(
+	'-n', '--name',
+	dest='name',
+	default=['everything'],
+	nargs='*',
+	help='used to specify the name of the plot which should be used'
+)
+parser.add_argument(
+	'-c','--channel',
+	dest='channel',
+	default=['9999'],
+	nargs='*',
+	help='used to specify the channel of the plot which should be used'
+)
+
+parser.add_argument(
+	'-s','--strip',
+	dest='strip',
+	default=['9999'],
+	nargs='*',
+	help='used to specify the strip of the plot which should be used'
+)
+parser.add_argument(
+	'-b', '--bucket',
+	dest='bucket',
+	default=[9999],
+	nargs='*',
+	type=int,
+	help='used to specify the bucket of the plot which should be used | type=int'
+)
+parser.add_argument(
+	'-k', '--kpix',
+	dest='kpix',
+	default=[9999],
+	nargs='*',
+	type=int,
+	help='used to specify the bucket of the plot which should be used | type=int'
+)
+parser.add_argument(
+	'-d', '--draw',
+	dest='draw_option',
+	default='',
+	help='specify the drawing option as given by the root draw option, needs to be given as a single string (e.g. hist same or hist same multifile'
+)
+parser.add_argument(
+	'-o', '--output',
+	dest='output_name',
+	help='specifies the name and type of the output file (e.g. test.png, comparison.root etc...'
+)
+parser.add_argument(
+	'--refuse',
+	dest='refuse',
+	default= ['nothing'],
+	nargs='*',
+	help='add string that should be exluded from histogram search'
+)
+parser.add_argument(
+	'-r', '--rebin',
+	dest='rebin',
+	default=1,
+	type = int,
+	help='add number to rebin the histograms | type=int'
+)
+parser.add_argument(
+	'--name2',
+	dest='name2',
+	default=['everything'],
+	nargs='*',
+	help='used to specify the name of the plot which should be used'
+)
+parser.add_argument(
+	'--refuse2',
+	dest='refuse2',
+	default= ['nothing'],
+	nargs='*',
+	help='add string that should be exluded from histogram search'
+)
+parser.add_argument(
+	'--exact',
+	dest='exact',
+	default=False,
+	help='if set to True, only histograms with the exact name will be used'
+)
+parser.add_argument(
+	'--xrange',
+	dest='xaxisrange',
+	default=[9999],
+	nargs='*',
+	type=float,
+	help='set a xrange for the plot to used with xmin xmax as the two arguments | type=float'
+)
+parser.add_argument(
+	'--yrange',
+	dest='yaxisrange',
+	default=[9999],
+	nargs='*',
+	type=float,
+	help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float'
+)
+parser.add_argument(
+	'--zrange',
+	dest='zaxisrange',
+	default=[9999],
+	nargs='*',
+	type=float,
+	help='set a zrange for the plot to used with ymin ymax as the two arguments | type=float'
+)
+parser.add_argument(
+	'--legend',
+	dest='legend',
+	nargs='*',
+	help='list of names to be used as legend titles instead of the default filename+histogram name'
+)
+parser.add_argument(
+	'--ylog',
+	dest='ylog',
+	help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!'
+)
+parser.add_argument(
+	'--zlog',
+	dest='zlog',
+	help='if given as an option, set z axis to logarithmic.'
+)
+parser.add_argument(
+	'--color',
+	dest='color',
+	default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614],
+	nargs='*',
+	help='list of colors to be used'
+)
 #parser.add_argument('--color', dest='color', default=[590, 591, 593, 596, 600, 602, 604, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
-parser.add_argument('--xtitle', dest='xtitle', help='choose the name of the x axis title')
-parser.add_argument('--ytitle', dest='ytitle', help='choose the name of the y axis title')
-parser.add_argument('--order', dest='order', nargs='+', type=int,  help='choose the order of plotting with same (to ensure no histograms overlap)')
-parser.add_argument('-q', '--olddaq', dest='olddaq', help='give as a command when using files from the new daq to ensure filename check etc. are correct')
-parser.add_argument('--other', dest='other', help='general plotting with non automatic file name generation')
-parser.add_argument('--nobox', dest='nobox', action='store_true', help='suppresses tstatbox from being added. Does not work with stack/nostack option')
-parser.add_argument('-l', dest='legendloc', nargs='+', type=float, default = [0.98, 0.99], help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box')
-parser.add_argument('--folder', dest='folder', default='tb', help='tb is testbeam folder elab is elab folder. default is elab folder.')
-parser.add_argument('--aratio', dest='aratio', nargs='+', type=float,  default=[1600,1200], help='aspect ratio of the output file')
-parser.add_argument('-f', '--fill', dest='fill', action='store_true', help='set whether to fill the area beneath the histogram with color')
-parser.add_argument( '--upperaxis', dest='upperXaxis', action='store_true', help='needs to be adjusted manually all the time. adds a second x axis to the top of the plot')
-parser.add_argument( '--fit', dest='fit',  help='given if one wishes to add a fit to the histogram before plotting')
-parser.add_argument( '--nofit', dest='nofit', action='store_true',  help='uses a workaround to remove the plot from TGRAPH')
+parser.add_argument(
+	'--xtitle',
+	dest='xtitle',
+	help='choose the name of the x axis title'
+)
+parser.add_argument(
+	'--ytitle',
+	dest='ytitle',
+	help='choose the name of the y axis title'
+)
+parser.add_argument(
+	'--order',
+	dest='order',
+	nargs='+',
+	type=int,
+	help='choose the order of plotting with same (to ensure no histograms overlap)'
+)
+parser.add_argument(
+	'-q', '--olddaq',
+	dest='olddaq',
+	help='give as a command when using files from the new daq to ensure filename check etc. are correct'
+)
+parser.add_argument(
+	'--other',
+	dest='other',
+	help='general plotting with non automatic file name generation'
+)
+parser.add_argument(
+	'--nobox',
+	dest='nobox',
+	action='store_true',
+	help='suppresses tstatbox from being added. Does not work with stack/nostack option'
+)
+parser.add_argument(
+	'-l',
+	dest='legendloc',
+	nargs='+',
+	type=float,
+	default = [0.98, 0.99],
+	help='first argument is the left x position of the legend box and second argument is the upper y position of the legend box'
+)
+parser.add_argument(
+	'--folder',
+	dest='folder',
+	default='tb',
+	help='tb is testbeam folder elab is elab folder. default is elab folder.'
+)
+parser.add_argument(
+	'--aratio',
+	dest='aratio',
+	nargs='+',
+	type=float,
+	default=[1600,1200], help='aspect ratio of the output file'
+)
+parser.add_argument(
+	'-f', '--fill',
+	dest='fill',
+	action='store_true',
+	help='set whether to fill the area beneath the histogram with color'
+)
+parser.add_argument(
+	'--upperaxis',
+	dest='upperXaxis',
+	action='store_true',
+	help='needs to be adjusted manually all the time. adds a second x axis to the top of the plot'
+)
+parser.add_argument(
+	'--fit',
+	dest='fit',
+	help='given if one wishes to add a fit to the histogram before plotting'
+)
+parser.add_argument(
+	'--nofit',
+	dest='nofit',
+	action='store_true',
+	help='uses a workaround to remove the plot from TGRAPH'
+)
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
