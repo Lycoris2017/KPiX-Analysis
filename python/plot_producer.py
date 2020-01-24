@@ -719,110 +719,6 @@ def graph_plotter():
 			#'	print obj.GetBinContent(i)
 
 
-mystyle = ROOT.TStyle("mystyle", "My Style")
-
-
-mystyle.SetPaintTextFormat("5.3f");
-
-
-#set the background color to white
-mystyle.SetFillColor(0)
-mystyle.SetFrameFillColor(0)
-mystyle.SetCanvasColor(0)
-mystyle.SetPadColor(0)
-mystyle.SetTitleFillColor(0)
-mystyle.SetStatColor(0)
-
-#dont put a colored frame around the plots
-mystyle.SetFrameBorderMode(0)
-mystyle.SetCanvasBorderMode(0)
-mystyle.SetPadBorderMode(0)
-mystyle.SetLegendBorderSize(0)
-#
-##use the primary color palette
-##mystyle.SetPalette(1,0)
-#
-##set the default line color for a histogram to be black
-#mystyle.SetHistLineColor(1)
-#
-
-#
-##make the axis labels black
-#mystyle.SetLabelColor(1,"xyz")
-#
-##set the default title color to be black
-#mystyle.SetTitleColor(1)
-mystyle.SetOptTitle(0)
-#
-##set the margins
-mystyle.SetPadBottomMargin(0.16)
-mystyle.SetPadTopMargin(0.05)
-mystyle.SetPadRightMargin(0.15)
-mystyle.SetPadLeftMargin(0.16)
-#
-##set axis label and title text sizes
-mystyle.SetLabelFont(62,"xyz")
-mystyle.SetLabelSize(0.04,"xyz")
-mystyle.SetLabelOffset(0.003,"yz")
-mystyle.SetLabelOffset(0.00,"x")
-mystyle.SetTitleFont(62,"xyz")
-mystyle.SetTitleSize(0.056,"xyz")
-mystyle.SetTitleOffset(1.1,"y")
-mystyle.SetTitleOffset(0.8,"z")
-mystyle.SetTitleOffset(0.75,"x")
-mystyle.SetStatFont(62)
-mystyle.SetStatFontSize(0.05)
-
-
-ROOT.TGaxis.SetMaxDigits(4)
-
-#mystyle.SetTitleBorderSize(0)
-#mystyle.SetStatBorderSize(0)
-#mystyle.SetTextFont(42)
-
-##set legend text size etc.
-mystyle.SetLegendTextSize(0.04)
-#
-##set line widths
-mystyle.SetFrameLineWidth(2)
-mystyle.SetFuncWidth(2)
-##set the default line color for a fit function to be red
-mystyle.SetFuncColor(2)
-mystyle.SetHistLineWidth(2)
-#
-##set the number of divisions to show
-#mystyle.SetNdivisions(506, "xy")
-#
-##turn off xy grids
-#mystyle.SetPadGridX(0)
-#mystyle.SetPadGridY(0)
-#
-##set the tick mark style
-#mystyle.SetPadTickX(1)
-#mystyle.SetPadTickY(1)
-#
-##turn off stats
-mystyle.SetOptStat(0) ##removes stat box
-#mystyle.SetOptStat(1001111)
-#mystyle.SetOptFit(111)
-#mystyle.SetOptStat(0000001) #only name
-#
-##marker settings
-mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(0.7)
-mystyle.SetLineWidth(2)
-
-#done
-#mystyle.cd()
-#ROOT.gROOT.ForceStyle()
-#ROOT.gStyle.ls()
-
-
-
-
-
-
-
 #parser = argparse.ArgumentParser() #Command line argument parser.
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -1039,10 +935,113 @@ parser.add_argument(
 	help='uses a workaround to remove the plot from TGRAPH'
 )
 args = parser.parse_args()
-if len(sys.argv) < 2:
-	print parser.print_help()
-	sys.exit(1)
-print ''
+
+
+mystyle = ROOT.TStyle("mystyle", "My Style")
+
+
+mystyle.SetPaintTextFormat("5.3f");
+
+
+#set the background color to white
+mystyle.SetFillColor(0)
+mystyle.SetFrameFillColor(0)
+mystyle.SetCanvasColor(0)
+mystyle.SetPadColor(0)
+mystyle.SetTitleFillColor(0)
+mystyle.SetStatColor(0)
+
+#dont put a colored frame around the plots
+mystyle.SetFrameBorderMode(0)
+mystyle.SetCanvasBorderMode(0)
+mystyle.SetPadBorderMode(0)
+mystyle.SetLegendBorderSize(0)
+#
+##use the primary color palette
+##mystyle.SetPalette(1,0)
+#
+##set the default line color for a histogram to be black
+#mystyle.SetHistLineColor(1)
+#
+
+#
+##make the axis labels black
+#mystyle.SetLabelColor(1,"xyz")
+#
+##set the default title color to be black
+#mystyle.SetTitleColor(1)
+mystyle.SetOptTitle(0)
+#
+##set the margins
+mystyle.SetPadBottomMargin(0.16)
+mystyle.SetPadTopMargin(0.05)
+mystyle.SetPadRightMargin(0.15)
+mystyle.SetPadLeftMargin(0.16)
+#
+##set axis label and title text sizes
+mystyle.SetLabelFont(62,"xyz")
+mystyle.SetLabelSize(0.04,"xyz")
+mystyle.SetLabelOffset(0.003,"yz")
+mystyle.SetLabelOffset(0.00,"x")
+mystyle.SetTitleFont(62,"xyz")
+mystyle.SetTitleSize(0.056,"xyz")
+mystyle.SetTitleOffset(1.1,"y")
+mystyle.SetTitleOffset(0.8,"z")
+mystyle.SetTitleOffset(0.75,"x")
+mystyle.SetStatFont(62)
+mystyle.SetStatFontSize(0.05)
+
+
+ROOT.TGaxis.SetMaxDigits(4)
+
+#mystyle.SetTitleBorderSize(0)
+#mystyle.SetStatBorderSize(0)
+#mystyle.SetTextFont(42)
+
+##set legend text size etc.
+mystyle.SetLegendTextSize(0.04)
+#
+##set line widths
+mystyle.SetFrameLineWidth(2)
+mystyle.SetFuncWidth(2)
+##set the default line color for a fit function to be red
+mystyle.SetFuncColor(2)
+mystyle.SetHistLineWidth(2)
+#
+##set the number of divisions to show
+#mystyle.SetNdivisions(506, "xy")
+#
+##turn off xy grids
+#mystyle.SetPadGridX(0)
+#mystyle.SetPadGridY(0)
+#
+##set the tick mark style
+#mystyle.SetPadTickX(1)
+#mystyle.SetPadTickY(1)
+#
+##turn off stats
+#mystyle.SetOptStat(0) ##removes stat box
+mystyle.SetOptStat(1001111)
+#mystyle.SetOptFit(111)
+#mystyle.SetOptStat(0000001) #only name
+#
+##marker settings
+mystyle.SetMarkerStyle(8)
+mystyle.SetMarkerSize(0.7)
+mystyle.SetLineWidth(2)
+
+#done
+#mystyle.cd()
+#ROOT.gROOT.ForceStyle()
+#ROOT.gStyle.ls()
+
+
+
+
+
+
+
+
 
 
 
