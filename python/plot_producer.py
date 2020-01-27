@@ -257,12 +257,14 @@ def hist_plotter():
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		else:
 			outname = folder_loc+run_name+'_'+graph.GetName()
 			print 'Creating '+outname+'.svg/eps/png'
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		c1.Close()
 	elif ('same' in args.draw_option):
 		##------------------
@@ -407,12 +409,14 @@ def hist_plotter():
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		else:
 			outname = folder_loc+run_name+'_'+graph.GetName()
 			print 'Creating '+outname+'.png/svg/eps'
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		c1.Close()
 	else:
 		counter = 0
@@ -527,6 +531,8 @@ def hist_plotter():
 #				axis.Draw()
 #				c1.SetTopMargin(0.15)
 			c1.Update()
+			if args.nofit:
+				obj.GetFunction('gaus').SetRange(0.0, 0.0, 0.01, 0.01) #IMPORTANT: workaround to remove fit from the plot
 			run_name = filename_list[0][:-1]			
 			if (args.output_name):
 				outname = folder_loc+run_name+'_'+args.output_name
@@ -534,12 +540,14 @@ def hist_plotter():
 				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
+				c1.SaveAs(outname+'.C')
 			else:
 				outname = folder_loc+run_name+'_'+histogram.GetName()
 				print 'Creating '+outname+'.pvg'
 				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
+				c1.SaveAs(outname+'.C')
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):
@@ -655,6 +663,7 @@ def graph_plotter():
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		else:
 			search_name=''
 			for q in args.name:
@@ -665,6 +674,7 @@ def graph_plotter():
 			c1.SaveAs(outname+'.svg')
 			c1.SaveAs(outname+'.eps')
 			c1.SaveAs(outname+'.png')
+			c1.SaveAs(outname+'.C')
 		c1.Close()
 	else:
 		counter = 0
@@ -703,6 +713,7 @@ def graph_plotter():
 				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
+				c1.SaveAs(outname+'.C')
 			else:
 				search_name=''
 				for q in args.name:
@@ -713,6 +724,7 @@ def graph_plotter():
 				c1.SaveAs(outname+'.svg')
 				c1.SaveAs(outname+'.eps')
 				c1.SaveAs(outname+'.png')
+				c1.SaveAs(outname+'.C')
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):
@@ -902,7 +914,7 @@ parser.add_argument(
 	'--folder',
 	dest='folder',
 	default='tb',
-	help='tb is testbeam folder elab is elab folder. default is elab folder.'
+	help='tb is testbeam folder elab is elab folder. default is tb folder. there is also a thesis folder for uwes thesis plots'
 )
 parser.add_argument(
 	'--aratio',
@@ -1021,8 +1033,11 @@ mystyle.SetHistLineWidth(2)
 #
 ##turn off stats
 #mystyle.SetOptStat(0) ##removes stat box
-mystyle.SetOptStat(1001111)
-#mystyle.SetOptFit(111)
+
+#mystyle.SetOptStat(args.statBox)
+#mystyle.SetOptFit(args.fitBox)
+mystyle.SetOptStat(1111)
+mystyle.SetOptFit(111)
 #mystyle.SetOptStat(0000001) #only name
 #
 ##marker settings
@@ -1061,7 +1076,9 @@ else:
 legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 
 if args.nofit:
-	print 'Please take note that NOFIT only works for TGRAPH right now and is just a dirty hack'
+	print ''
+	print 'IMPORTANT: Please take note that NOFIT is just a very dirty hack'
+	print ''
 ##-----------------	
 ##produce empty root file and filename lists.
 
@@ -1070,7 +1087,9 @@ if (args.nobox):
 		print 'ERROR: nobox does not work with stack/nostack'
 		sys.exit(1)
 	else:
+		print 'Not printing stats box after all'
 		mystyle.SetOptStat(0)
+		mystyle.SetOptFit(0)
 
 # finish setting root style
 mystyle.cd()
@@ -1104,6 +1123,8 @@ elif ('tb' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
 elif ('summer' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/humidity/'
+elif ('thesis' in args.folder):
+	folder_loc = '/home/lycoris-dev/Documents/thesis/'
 ##-----------------	
 ##general output
 #print args.color

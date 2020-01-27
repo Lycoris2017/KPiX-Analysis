@@ -191,7 +191,9 @@ int main ( int argc, char **argv )
 	//TTree*					cluster_tree;
 	
 	TH1F					*fc_response_medCM_subtracted[n_kpix];
+	TH1F					*fc_response_med[n_kpix];
     TH1F					*fc_response_medCM_subtracted_sensor[n_kpix/2];
+    TH1F					*QTrue[n_kpix][n_channels];
 		
 	TH1F 					*Max_SoN[n_kpix/2];
 		
@@ -513,8 +515,7 @@ int main ( int argc, char **argv )
 								} 
 								
 								//cout << "DEBUG 2.1 " << kpix << endl;
-								double charge_value = double(value)/calib_slope[kpix][channel];
-								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+								double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calib_slope[kpix][channel];
 								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
 								//cout << "Pointer of vec_corr_charge " << vec_corr_charge[kpix] << endl;
 							}
@@ -886,6 +887,10 @@ int main ( int argc, char **argv )
                     tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
                     fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
 
+                    tmp.str("");
+                    tmp << "fc_response_median_made_k" << kpix << "_b0";
+                    fc_response_med[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+
 
                     tmp.str("");
                     tmp << "noise_distribution_k" << kpix << "_b0";
@@ -903,7 +908,20 @@ int main ( int argc, char **argv )
                     tmp.str("");
                     tmp << "common_mode_k" << kpix << "_b0";
                     common_mode_kpix[kpix] = new TH1F(tmp.str().c_str(), "common mode; Common Mode(fC);   #entries", 60,-3, 3);
-
+					
+					for (int channel = 0; channel < 1024; channel++){
+						if (channelFound) {
+							FolderName.str("");
+							FolderName << "Channel_" << channel;
+							sensor_folder->mkdir(FolderName.str().c_str());
+							TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
+							rFile->cd(kpix_folder->GetPath());
+							
+							tmp.str("");
+							tmp << "Q_true_k" << kpix << "_c" << channel << "_b0";
+							QTrue[kpix][channel] = new TH1F(tmp.str().c_str(), "True charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+						}
+					}
                 }
             }
         }
@@ -977,8 +995,7 @@ int main ( int argc, char **argv )
                         trig_diff[kpix]->Fill(time_diff_triggers);
 
 						//cout << "DEBUG 1" << endl;
-						double charge_value = double(value)/calib_slope[kpix][channel];
-						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+						double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calib_slope[kpix][channel];
 						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
                         common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()));
 						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
@@ -1166,12 +1183,15 @@ int main ( int argc, char **argv )
 					{
 						
 						//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
-						double charge_value = double(value)/calib_slope[kpix][channel];
-						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
+						double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calib_slope[kpix][channel];
+
+						fc_response_med[kpix]->Fill(corrected_charge_value_median);
+
 						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
 						//// ========= Event cut ============
                 
 						fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected);
+						QTrue[kpix][channel]->Fill(charge_CM_corrected);
                         fc_response_medCM_subtracted_sensor[sensor]->Fill(charge_CM_corrected);
 
                         charge_v_position[sensor]->Fill(yParameterSensor(strip, sensor), charge_CM_corrected);

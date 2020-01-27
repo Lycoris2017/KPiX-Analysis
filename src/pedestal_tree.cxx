@@ -201,10 +201,6 @@ int main ( int argc, char **argv )
 	stringstream           crossStringCsv;
 	XmlVariables           config;
 	ofstream               debug;
-	
-	// Calibration slope, is filled when 
-	double					calib_slope[n_kpix][n_channels] = {1}; //ADD buckets later.
-	int						calibration_check = 0;
 
 	
 	//////////////////////////////////////////
@@ -230,40 +226,6 @@ int main ( int argc, char **argv )
 			outtxt = tmp.str();
 			f_skipped_cycles = fopen(outtxt.c_str(), "w");
 		}
-		else 
-		{
-			cout << " -- Reading " << argv[2] << " as calibration input file." << endl;
-			skip_cycles_front = 0;
-			TFile *calibration_file = TFile::Open(argv[2]);
-			calibration_check = 1;
-			loopdir(calibration_file, "calib_");
-			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
-			{
-				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
-				
-				string calib_name         = calib_graphs[i]->GetName();
-				
-				size_t kpix_num_start     = calib_name.find("_k")+2;
-				size_t channel_num_start  = calib_name.find("_c")+2;
-				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
-				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
-				
-			    string channel_string = calib_name.substr(channel_num_start, channel_num_length);
-			    string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
-			    
-			    int kpix = stoi(kpix_string);
-			    int channel = stoi(channel_string);
-				
-				//cout << "KPiX Number = " << kpix << endl;
-				//cout << "Channel Number = " << channel << endl;
-				
-				calib_slope[kpix][channel] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				cout << "Slope of KPiX " << kpix << " and channel " << channel << " is " <<  calib_slope[kpix][channel] << endl;
-				
-			}
-		}
-		
-	
 	}
 	
 	
@@ -375,31 +337,23 @@ int main ( int argc, char **argv )
 					kpixFound[kpix] = true;
                                         //if (kpix == 0)
                                         //cout <<"Weird!" << " k" << kpix << " c" << channel << " b" << bucket << " charge " << value << endl;
-					if (calibration_check == 1)
+
+					double charge = value;
+					//cout << "Charge " << charge << endl;
+					if (pedestal_results[kpix][channel][bucket] == nullptr)
 					{
-						double charge = value/calib_slope[kpix][channel];
-						//cout << "Charge " << charge << endl;
+						pedestal_results[kpix][channel][bucket] = new std::vector<double>;
 						if (pedestal_results[kpix][channel][bucket] == nullptr)
 						{
-                            pedestal_results[kpix][channel][bucket] = new std::vector<double>;
-							if (pedestal_results[kpix][channel][bucket] == nullptr)
-							{
-								std::cerr << "Memory allocation error for vector kpix " <<
-								"KPIX " << kpix << " CHANNEL " << channel << " BUCKET " << bucket << endl;
-								exit(-1); // probably best to bail out
-							}
-							
+							std::cerr << "Memory allocation error for vector kpix " <<
+							"KPIX " << kpix << " CHANNEL " << channel << " BUCKET " << bucket << endl;
+							exit(-1); // probably best to bail out
 						}
-                        if (bucket == 0 && kpix == 0 && channel == 666)
-                            pedestalADC->Fill(value);
-						pedestal_results[kpix][channel][bucket]->push_back(charge);
-						//cout << pedestal_results[kpix][channel][bucket]->at(0) << endl;
-						
-						
 					}
-						
-						
-					
+					if (bucket == 0 && kpix == 0 && channel == 666)
+						pedestalADC->Fill(value);
+					pedestal_results[kpix][channel][bucket]->push_back(charge);
+					//cout << pedestal_results[kpix][channel][bucket]->at(0) << endl;
 				}
 				//if ( type == 1 )
 				//{
