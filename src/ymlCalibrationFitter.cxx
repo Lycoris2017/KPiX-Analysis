@@ -27,6 +27,7 @@
 #include <TGraphErrors.h>
 #include <TGraph.h>
 #include <TStyle.h>
+#include <TTree.h>
 #include <stdarg.h>
 #include <KpixEvent.h>
 #include <KpixSample.h>
@@ -37,6 +38,7 @@
 #include <XmlVariables.h>
 
 #include "kpixmap.h"
+#include "TBFunctions.h"
 #include "kpix_left_and_right.h"
 #include "YmlVariables.h"
 
@@ -211,6 +213,10 @@ int main ( int argc, char **argv ) {
   uint                   minChan;
   uint                   maxChan;
   uint                   x;
+  uint n_range = 2;
+  uint n_kpix = 24;
+  uint n_channel = 1024;
+  uint n_bucket = 4;
   uint                   range;
   uint                   value;
   uint                   kpix;
@@ -328,7 +334,9 @@ int main ( int argc, char **argv ) {
 	TH2F 				*pearson_mapped[24][4];
   
   
-  
+  TTree *               calibration;
+  TTree *               baseline;
+  double                pedestal_median, pedestal_MAD, calib_slope, calib_pearsson, calib_error;
 	uint 					noise_cut = 1.0;
 	
 	// bool                    printalot=false;
@@ -667,6 +675,24 @@ int main ( int argc, char **argv ) {
   // Kpix count;
   for (kpix=0; kpix<24; kpix++) if ( kpixFound[kpix] ) kpixMax=kpix;
   
+
+  calibration = new TTree("calibration_tree", "All calibration data");
+  calibration->Branch("kpix", &kpix);
+  calibration->Branch("channel", &channel);
+  calibration->Branch("bucket", &bucket);
+  calibration->Branch("range", &range);
+  calibration->Branch("calib_slope", &calib_slope);
+  calibration->Branch("calib_error", &calib_error);
+  calibration->Branch("calib_pearsson", &calib_pearsson);
+
+  baseline = new TTree("baseline_tree", "All baseline data");
+  baseline->Branch("kpix", &kpix);
+  baseline->Branch("channel", &channel);
+  baseline->Branch("bucket", &bucket);
+  baseline->Branch("range", &range);
+  baseline->Branch("pedestal_median", &pedestal_median);
+  baseline->Branch("pedestal_MAD", &pedestal_MAD);
+
   //////////////////////////////////////////
   // Process Baselines 
   //////////////////////////////////////////
@@ -835,6 +861,8 @@ int main ( int argc, char **argv ) {
   TDirectory *pedestal_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
   pedestal_folder->cd(); // move into subdirectory
   
+
+  vector<double>* baseline_pedestal[n_kpix][n_channel][n_bucket][n_range] = {new std::vector<double>};
 for (kpix=0; kpix<24; kpix++) 
 {
     if ( kpixFound[kpix] ) 
@@ -874,7 +902,17 @@ for (kpix=0; kpix<24; kpix++)
 							if ( chanData[kpix][channel][bucket][range] != NULL ) 
 							{
 								chanData[kpix][channel][bucket][range]->computeBase();
-						
+								if (baseline_pedestal[kpix][channel][bucket][range]  == nullptr)
+								{
+									baseline_pedestal[kpix][channel][bucket][range] = new std::vector<double>;
+									if (baseline_pedestal[kpix][channel][bucket][range]  == nullptr)
+									{
+										std::cerr << "Memory allocation error for vector kpix " <<
+										"KPIX " << kpix << " CHANNEL " << channel << " BUCKET " << bucket << endl;
+										exit(-1); // probably best to bail out
+									}
+								}
+
 								// Create histogram
 								tmp.str("");
 								tmp << "hist_" << serial << "_c" << dec << setw(4) << setfill('0') << channel;
@@ -894,9 +932,16 @@ for (kpix=0; kpix<24; kpix++)
 								//cout << num_of_entries << endl;
 								for (x=0; x < 8192; x++) 
 								{
+									int entries = chanData[kpix][channel][bucket][range]->baseData[x];
 									hist->SetBinContent(x+1, double(chanData[kpix][channel][bucket][range]->baseData[x]));
+									for (int q = 0; q < entries; ++q) {
+										baseline_pedestal[kpix][channel][bucket][range]->push_back(x+1);
+									}
 								}
+								pedestal_median = median(baseline_pedestal[kpix][channel][bucket][range]);
+								pedestal_MAD =  MAD(baseline_pedestal[kpix][channel][bucket][range]);
 
+								baseline->Fill();
 								//hist->Scale(1/double(eventCount)); // old version, scaled to all cycles;
 								hist->Scale(1/hist->Integral()); // normlized to 1;
 								
@@ -1227,7 +1272,8 @@ for (kpix=0; kpix<24; kpix++)
 										Double_t slope = grCalib->GetFunction("pol1")->GetParameter(1);
 										Double_t fit_offset = grCalib->GetFunction("pol1")->GetParameter(0);
 										Double_t slope_err = grCalib->GetFunction("pol1")->GetParError(1);
-										
+
+
 										//if (chisqNdf > 100) cout << "Extremely high ChiSquare for channel " << channel << " of value " << chisqNdf << endl;
 										
 										
@@ -1262,6 +1308,11 @@ for (kpix=0; kpix<24; kpix++)
 										}
 				
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
+										calib_slope = slope;
+										calib_error = slope_err;
+										calib_pearsson = PCC;
+
+                                        calibration->Fill();
                                         slope_err_hist[kpix][bucket]->Fill( slope_err  /* /pow(10,15) */ );
                                         slope_mapped[kpix][bucket]->Fill(kpix_x, kpix_y, slope );
 										if (fabs(ped_adc_err) < 400)

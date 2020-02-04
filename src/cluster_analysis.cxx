@@ -913,9 +913,9 @@ int main ( int argc, char **argv )
 						if (channelFound) {
 							FolderName.str("");
 							FolderName << "Channel_" << channel;
-							sensor_folder->mkdir(FolderName.str().c_str());
-							TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
-							rFile->cd(kpix_folder->GetPath());
+							kpix_folder->mkdir(FolderName.str().c_str());
+							TDirectory *channel_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+							rFile->cd(channel_folder->GetPath());
 							
 							tmp.str("");
 							tmp << "Q_true_k" << kpix << "_c" << channel << "_b0";
