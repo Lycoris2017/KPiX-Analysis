@@ -11,6 +11,7 @@
 #include "TList.h"
 #include "TH1.h"
 #include "TObject.h"
+#include "TTree.h"
 
 #include "rawData.h"
 #include "TBFunctions.h"
@@ -113,6 +114,50 @@ void rawData::loadCalib(const std::string& fname){
 	catch(std::exception &e){
 		cout << "Caught exception: " << e.what() << "\n";
 	}
+}
+
+void rawData::loadCalibTree(const std::string& fname){
+    string root = ".root";
+    printf(" loadCalibTree ");
+
+    try{
+        if (fname.find(root) !=std::string::npos)
+            loadRootTree(fname);
+        else
+            throw std::runtime_error("loadCalibTree: invalid input calib file!");
+    }
+    catch(std::exception &e){
+        cout << "Caught exception: " << e.what() << "\n";
+    }
+}
+
+void rawData::loadRootTree(const std::string & fname){
+    printf(" from ROOT... \n");
+    TFile *calib = TFile::Open(fname.c_str());
+    if (!calib) {
+        throw std::runtime_error("loadRootTree: invalid calib root file!");
+        return;
+    }
+    printf("Open Calib file : %s\n", fname.c_str());
+    m_m_slopes_b0.clear();
+
+    TTree *calib_tree = (TTree*)calib->Get("calibration_tree");
+    uint kpix_num, channel_num, bucket_num, range_num;
+    double calib_slope, calib_error, calib_pearsson;
+    calib_tree->SetBranchAddress("kpix", &kpix_num);
+    calib_tree->SetBranchAddress("channel", &channel_num);
+    calib_tree->SetBranchAddress("bucket", &bucket_num);
+    calib_tree->SetBranchAddress("range", &range_num);
+    calib_tree->SetBranchAddress("calib_slope", &calib_slope);
+    calib_tree->SetBranchAddress("calib_error", &calib_error);
+    calib_tree->SetBranchAddress("calib_pearsson", &calib_pearsson);
+    long int nEnTrees = calib_tree->GetEntries();
+    for (long int i = 0; i < nEnTrees; ++i){
+        calib_tree->GetEntry(i);
+        auto index = Cycle::hashCode(kpix_num, channel_num);
+
+        m_m_slopes_b0.emplace(index, calib_slope);
+    }
 }
 
 void rawData::loadRoot(const std::string& fname){

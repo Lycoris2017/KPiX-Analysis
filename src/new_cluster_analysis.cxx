@@ -29,7 +29,7 @@ int main ( int argc, char **argv ) {
 	
 	
 	if (argc == 1){
-		printf("[Usage] ./new_cluster_analysis [input.dat] [calib.root] \n");
+        printf("[Usage] ./new_cluster_analysis [input.dat] [calib.root] \n");
 		return 0;
 	}
 	
@@ -41,12 +41,12 @@ int main ( int argc, char **argv ) {
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-	if (argc != 3){
-		db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
-	}
-	else{
-		db.loadCalib(argv[2]);
-	}
+    if (argc != 3){
+        db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
+    }
+    else{
+        db.loadCalibTree(argv[2]);
+    }
 
 
 	db.doRmPedCM();
@@ -56,10 +56,10 @@ int main ( int argc, char **argv ) {
 
 	auto noisemap = Cycle::getNoise();
 
-	std::string OutRoot = argv[1];
-	OutRoot = OutRoot + ".new_cluster.root";
+    std::string OutRoot = argv[1];
+    OutRoot = OutRoot + ".new_cluster.root";
 
-	TFile *fout = new TFile(OutRoot.c_str(), "recreate");
+    TFile *fout = new TFile(OutRoot.c_str(), "recreate");
 	fout->cd();
 	// TH2F *cluster_correlation_s0_s1 = new TH2F("cluster_correlation_s0_s1",
 	//                                            "strip correlation; sensor0 [#mum]; sensor1[#mum]",
@@ -177,7 +177,7 @@ int main ( int argc, char **argv ) {
 				printf("[debug] ev 9988 sensor 0 has input:\n");
 				for (const auto &a : cluster_Events_after_cut[sensor])
 					printf("\tstrip %d has %.4f charge, %.4f noise\n",
-						   a.first,
+                           a.first,
 					       a.second,
 					       cluster_Noise_after_cut[sensor].at(a.first));
 				
@@ -191,7 +191,7 @@ int main ( int argc, char **argv ) {
 	fout->Close();
 	printf("[INFO] Clustering ended...\n");
 	/*-----------End of Cluster------------*/
-	printf("File saved to %s \n", OutRoot.c_str());
+    printf("File saved to %s \n", OutRoot.c_str());
 	return 1;
 	
 }

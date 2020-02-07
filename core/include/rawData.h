@@ -189,7 +189,9 @@ namespace Lycoris{
 	  uint getNCycles(){return m_v_cycles.size();}
 	  void loadCSV(const std::string&); // Done
 	  void loadRoot(const std::string&);// todo
+      void loadRootTree(const std::string&);// todo
 	  void loadCalib(const std::string&); // read from root
+      void loadCalibTree(const std::string&); // read from root tree
 	  void loadGeo(const std::string&); // read from csv
 	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
