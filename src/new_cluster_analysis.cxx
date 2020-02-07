@@ -78,9 +78,12 @@ int main ( int argc, char **argv ) {
 	
 	
 	double charge, noise;
-	double cluster_charge, cluster_pos, cluster_sigma, cluster_size;
-	int kpix, channel, eventnumber;
+    double cluster_charge, cluster_pos, cluster_sigma, cluster_size;
+    std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
+    int kpix, channel, eventnumber;
 	int sensor, strip;
+    std::vector<int> vector_sensor;
+    clustr temp_cluster;
 	const uint n_kpix = 24;
 
 	TTree* ctree = new TTree("cluster","cluster tree");
@@ -90,6 +93,16 @@ int main ( int argc, char **argv ) {
 	ctree->Branch("cluster_pos",    &cluster_pos,    "cluster_pos/D");
 	ctree->Branch("cluster_sigma",  &cluster_sigma,  "cluster_sigma/D");
 	ctree->Branch("cluster_size",   &cluster_size,   "cluster_size/D");
+
+    TTree* clTree = new TTree("vector_cluster", "vector cluster tree");
+    clTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
+    clTree->Branch("vector_sensor", &vector_sensor);
+    clTree->Branch("vector_charge", &vector_charge);
+    clTree->Branch("vector_sigma", &vector_sigma);
+    clTree->Branch("vector_size", &vector_size);
+    clTree->Branch("vector_pos", &vector_pos);
+    //clTree->Branch("sensor",      &sensor,      "sensor/I");
+   // clTree->Branch("cluster", &temp_cluster);
 
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -150,11 +163,17 @@ int main ( int argc, char **argv ) {
 				//MaximumSoN[sensor][Input.MaxSoN()]+=weight;
 				NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
 
-				cluster_charge = NomNom.getClusterCharge();
-				cluster_sigma  = NomNom.getClusterSignificance2();
-				cluster_size   = NomNom.getClusterElementssize();
-				cluster_pos    = yParameterSensor(NomNom.getClusterCoG(), sensor);
-				
+                cluster_charge  = NomNom.getClusterCharge();
+                cluster_sigma   = NomNom.getClusterSignificance2();
+                cluster_size    = NomNom.getClusterElementssize();
+                cluster_pos     = yParameterSensor(NomNom.getClusterCoG(), sensor);
+                temp_cluster    = NomNom.getCluster();
+
+                vector_charge.push_back(NomNom.getClusterCharge());
+                vector_sigma.push_back(NomNom.getClusterSignificance2());
+                vector_size.push_back(NomNom.getClusterElementssize());
+                vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
+                vector_sensor.push_back(sensor);
 				// debug to print as claus_file:
 				// cout << setw(5) << eventnumber  << ","
 				//      << setw(1) << sensor  << ","
@@ -184,6 +203,12 @@ int main ( int argc, char **argv ) {
 			}
 			
 		}
+        clTree->Fill();
+        vector_charge.clear();
+        vector_sigma.clear();
+        vector_size.clear();
+        vector_pos.clear();
+        vector_sensor.clear();
 	}
 
 

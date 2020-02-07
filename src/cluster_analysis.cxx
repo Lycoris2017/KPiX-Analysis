@@ -325,44 +325,58 @@ int main ( int argc, char **argv )
 			skip_cycles_front = 0;
 			TFile *calibration_file = TFile::Open(argv[2]);
 			calibration_check = 1;
-			loopdir(calibration_file, "calib");
+//			loopdir(calibration_file, "calib");
 			
-			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
-			
-			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
-			{
-				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
+//			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
+            TTree *calib_tree = (TTree*)calibration_file->Get("calibration_tree");
+            uint kpix_calib, channel_calib, bucket_calib, range_calib;
+            double slope_calib, slope_error_calib, pearsson_calib;
+            calib_tree->SetBranchAddress("kpix", &kpix_calib);
+            calib_tree->SetBranchAddress("channel", &channel_calib);
+            calib_tree->SetBranchAddress("bucket", &bucket_calib);
+            calib_tree->SetBranchAddress("range", &range_calib);
+            calib_tree->SetBranchAddress("calib_slope", &slope_calib);
+            calib_tree->SetBranchAddress("calib_error", &slope_error_calib);
+            calib_tree->SetBranchAddress("calib_pearsson", &pearsson_calib);
+            long int nEnTrees = calib_tree->GetEntries();
+            for (long int i = 0; i < nEnTrees; ++i){
+                calib_tree->GetEntry(i);
+                calib_slope[kpix_calib][channel_calib] = slope_calib;
+            }
+//			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
+//			{
+//				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
 				
-				string calib_name         = calib_graphs[i]->GetName();
-				//cout << calib_name << endl;
-				size_t kpix_num_start     = calib_name.find("_k")+2;
-				size_t channel_num_start  = calib_name.find("_c")+2;
-				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
-				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
+//				string calib_name         = calib_graphs[i]->GetName();
+//				//cout << calib_name << endl;
+//				size_t kpix_num_start     = calib_name.find("_k")+2;
+//				size_t channel_num_start  = calib_name.find("_c")+2;
+//				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
+//				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
 				
-				//cout << kpix_num_start << endl;
-				//cout << kpix_num_length << endl;
-				//
-				//cout << channel_num_start << endl;
-				//cout << channel_num_length << endl;
+//				//cout << kpix_num_start << endl;
+//				//cout << kpix_num_length << endl;
+//				//
+//				//cout << channel_num_start << endl;
+//				//cout << channel_num_length << endl;
 				
-			    string channel_string = calib_name.substr(channel_num_start, channel_num_length);
-			    string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
+//			    string channel_string = calib_name.substr(channel_num_start, channel_num_length);
+//			    string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
 			    
-			   //cout << "Channel Number = " <<  channel_string << endl;
-			   //cout << "KPiX Number = " << kpix_string << endl;
+//			   //cout << "Channel Number = " <<  channel_string << endl;
+//			   //cout << "KPiX Number = " << kpix_string << endl;
 			    
 			    
-			    int kpix_num = stoi(kpix_string);
-			    int channel_num = stoi(channel_string);
+//			    int kpix_num = stoi(kpix_string);
+//			    int channel_num = stoi(channel_string);
 				
-				//cout << "KPiX Number = " << kpix_num << endl;
-				//cout << "Channel Number = " << channel_num << endl;
+//				//cout << "KPiX Number = " << kpix_num << endl;
+//				//cout << "Channel Number = " << channel_num << endl;
 				
-				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix_num << " and channel " << channel_num << " is " <<  calib_slope[kpix_num][channel_num] << endl;
+//				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
+//				//cout << "Slope of KPiX " << kpix_num << " and channel " << channel_num << " is " <<  calib_slope[kpix_num][channel_num] << endl;
 				
-			}
+//			}
 			
 			cout << " -- Reading " << argv[3] << " as pedestal subtraction input file." << endl;
 			skip_cycles_front = 0;
@@ -370,22 +384,21 @@ int main ( int argc, char **argv )
 
 			TTree* pedestal_tree = (TTree*)pedestal_file->Get("pedestal_tree");
 			
-			
-			int kpix_num, channel_num, bucket_num;
+            int kpix_pedestal, channel_pedestal, bucket_pedestal;
 			double pedestal_median, pedestal_MAD;
 			
 			pedestal_tree->SetBranchAddress("pedestal_median", &pedestal_median);
-			pedestal_tree->SetBranchAddress("kpix_num", &kpix_num);
-			pedestal_tree->SetBranchAddress("channel_num", &channel_num);
-			pedestal_tree->SetBranchAddress("bucket_num", &bucket_num);
+            pedestal_tree->SetBranchAddress("kpix_num", &kpix_pedestal);
+            pedestal_tree->SetBranchAddress("channel_num", &channel_pedestal);
+            pedestal_tree->SetBranchAddress("bucket_num", &bucket_pedestal);
 			pedestal_tree->SetBranchAddress("pedestal_MAD", &pedestal_MAD);
 			
 			long int nentries = pedestal_tree->GetEntries();
 			for (long int i = 0; i < nentries; ++i)
 			{
 				pedestal_tree->GetEntry(i);
-				pedestal_MedMAD[kpix_num][channel_num][bucket_num][0] = pedestal_median;
-				pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] = pedestal_MAD;
+                pedestal_MedMAD[kpix_pedestal][channel_pedestal][bucket_pedestal][0] = pedestal_median;
+                pedestal_MedMAD[kpix_pedestal][channel_pedestal][bucket_pedestal][1] = pedestal_MAD;
 				//if (pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] != 0)
 				//{
 					//cout << "Pedestal MAD " << pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] << " kpix " << kpix_num << " channel " << channel_num << " bucket " << bucket_num << endl;
@@ -913,9 +926,9 @@ int main ( int argc, char **argv )
 						if (channelFound) {
 							FolderName.str("");
 							FolderName << "Channel_" << channel;
-							kpix_folder->mkdir(FolderName.str().c_str());
-							TDirectory *channel_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
-							rFile->cd(channel_folder->GetPath());
+                            kpix_folder->mkdir(FolderName.str().c_str());
+                            TDirectory *channel_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
+                            rFile->cd(channel_folder->GetPath());
 							
 							tmp.str("");
 							tmp << "Q_true_k" << kpix << "_c" << channel << "_b0";
