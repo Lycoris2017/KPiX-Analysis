@@ -23,16 +23,17 @@ ROOT.TH1.SetDefaultSumw2()
 
 parser = MyParser()
 parser.add_argument('file_in', help='name of the input file')
+parser.add_argument('file_out', help='name of the output file')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
 	sys.exit(1)
 print ''
 
-outHistFile = ROOT.TFile.Open("eff_results.root", "RECREATE")
+outHistFile = ROOT.TFile.Open(args.file_out, "RECREATE")
 outHistFile.cd()
 
-hits_on_track= ROOT.TH1F("hits_on_track", "track hits; #hits; #Entries ", 3, 0.5, 3.5)
+hits_on_track= ROOT.TH1F("hits_on_track", "track hits; #hits; #Entries ", 6, +0.5, 6.5)
 
 
 

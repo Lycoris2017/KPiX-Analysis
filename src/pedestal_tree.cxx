@@ -52,6 +52,9 @@
 #include "kpix_left_and_right.h"
 using namespace std;
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 //////////////////////////////////////////
 // Global Variables
@@ -228,7 +231,7 @@ int main ( int argc, char **argv )
 		}
 	}
 	
-	
+   int maxAcquisitions = 25000;
 	
 	//////////////////////////////////////////
 	// Open Data file
@@ -252,7 +255,7 @@ int main ( int argc, char **argv )
 	// Init
 	currPct          	= 0;
 	lastPct          	= 100;
-	
+    printf(ANSI_COLOR_YELLOW "(Warning) Maximum number of cycles that are being considered is set to %i" ANSI_COLOR_RESET "\n", maxAcquisitions);
 	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
 	//goodTimes       	= 0;
 	
@@ -276,7 +279,7 @@ int main ( int argc, char **argv )
     pedestalADC = new TH1F("pedestalADC", "pedestalADC; ADC; #Entries", 8191, -0.5, 8190.5);
 
 	range = 0;
-	
+
 
 	
 	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
@@ -304,11 +307,11 @@ int main ( int argc, char **argv )
 	cycle_num = 0;
 	ofstream myfile;
 	vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
-	
-	while ( dataRead.next(&event) )
+
+    while ( dataRead.next(&event) && event.eventNumber() <= maxAcquisitions)
 	{
 		cycle_num++;
-        cout << "KPiX event Number: " << event.eventNumber() << endl;
+//        cout << "KPiX event Number: " << event.eventNumber() << endl;
 		//cout << "DEBUG" << endl;
 		
 		if ( cycle_num > skip_cycles_front)

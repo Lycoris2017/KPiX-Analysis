@@ -37,7 +37,12 @@ int main ( int argc, char **argv ) {
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-	db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
+    if (argc != 3){
+        db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
+    }
+    else{
+        db.loadCalibTree(argv[2]);
+    }
 
 	//return(0);
 	db.doRmPedCM();

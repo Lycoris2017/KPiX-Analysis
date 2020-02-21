@@ -23,7 +23,9 @@ using namespace std;
 using namespace Lycoris;
 
 std::unordered_map< uint, std::vector<double>> Cycle::s_buf_fc;
+std::unordered_map< uint, std::vector<double>> Cycle::s_buf_time_fc;
 std::unordered_map<uint, double> Cycle::s_noise_fc;
+std::unordered_map<uint, double> Cycle::s_noise_time_fc;
 
 std::unordered_map< uint, std::vector<int>> Cycle::s_buf_adc;
 std::unordered_map< uint, double> Cycle::s_ped_med_adc;
@@ -58,8 +60,22 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
       if (sample->getSampleType() == KpixSample::Data){
 	      if ( bucket >= m_nbuckets ) continue;
 	      if ( channel < begin_ch || channel > end_ch)  continue;
-	      auto key = hashCode(kpix, channel, bucket);
-
+          uint key = hashCode(kpix, channel, bucket, tstamp);
+//          cout << "Tstamp " << tstamp << endl;
+//          cout << "channel " << channel << endl;
+//          cout << "kpix " << kpix << endl;
+//          cout << "bucket " << bucket << endl;
+          uint testkey = hashCode(kpix, channel, bucket);
+          if (rmTime(key) > 25000 && rmTime(key) < 100000){
+                        cout << "Tstamp " << tstamp << endl;
+                        cout << "channel " << channel << endl;
+                        cout << "kpix " << kpix << endl;
+                        cout << "bucket " << bucket << endl;
+              cout << "Key is " << key << endl;
+              cout << "Testkey is " << testkey << endl;
+              cout << "Timeless key is " << rmTime(key) << endl;
+          }
+//            cout << "ACTUALLY look at this key " << key << endl;
 	      m_v_hashkeys.push_back(key);
 	      m_v_adc.push_back(value);
 	      m_v_ts.push_back(tstamp);
@@ -139,7 +155,7 @@ void rawData::loadRootTree(const std::string & fname){
         return;
     }
     printf("Open Calib file : %s\n", fname.c_str());
-    m_m_slopes_b0.clear();
+    m_m_slopes.clear();
 
     TTree *calib_tree = (TTree*)calib->Get("calibration_tree");
     uint kpix_num, channel_num, bucket_num, range_num;
@@ -154,9 +170,9 @@ void rawData::loadRootTree(const std::string & fname){
     long int nEnTrees = calib_tree->GetEntries();
     for (long int i = 0; i < nEnTrees; ++i){
         calib_tree->GetEntry(i);
-        auto index = Cycle::hashCode(kpix_num, channel_num);
+        auto index = Cycle::hashCode(kpix_num, channel_num, bucket_num);
 
-        m_m_slopes_b0.emplace(index, calib_slope);
+        m_m_slopes.emplace(index, calib_slope);
     }
 }
 
@@ -170,7 +186,7 @@ void rawData::loadRoot(const std::string& fname){
 	}
 	printf(" Open Calib file : %s\n", fname.c_str());
 
-	m_m_slopes_b0.clear();
+    m_m_slopes.clear();
 	//	std::string basic = "slope_vs_channel_";
 	std::string kword = "_k", bword = "_b";
 	std::string kstr, bstr;
@@ -349,9 +365,9 @@ void Cycle::CalPed(uint nbuckets, bool save_mad){
   auto t_start = std::chrono::high_resolution_clock::now();
 
   for( auto &buf : s_buf_adc){
-	  
+      uint bucket = getBucket(buf.first);
 	  // skip not requested buckets
-	  if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ) { 
+      if (bucket < nbuckets ) {
 		  // buf.first, buf.second -> median
 		  double ped = median(&buf.second);
 		  double mad = MAD(&buf.second);
@@ -405,12 +421,11 @@ void rawData::doRmPedCM(bool rmAdc){
     }
 
     cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-                          m_m_slopes_b0,
+                          m_m_slopes,
                           Cycle::s_ped_mad_adc,
                           true);
     cy.RemoveCM();
     Cycle::AddFcBuf(cy);
-
     // debug:
     //---> Fancy Bar
     /*    currPos++;
@@ -419,10 +434,11 @@ void rawData::doRmPedCM(bool rmAdc){
 	 << currPct << "%  " << flush;
     */
     //---> Fancy Bar <---// 
+
   }
-    
   auto t_end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+  cout << "Finished common mode calculation and pedestal subtraction" << endl;
   cout << " Time[s]: " << duration
        << endl;
 
@@ -441,21 +457,17 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
 	//  uint bucket=0;
   // Fill in a buffer to calculate CM, indexed by kpix num:
   std::unordered_map<uint, vector<double>> cm_noise_buf; 
-
   auto target = &m_m_fc;
   auto vv = vadc();
   auto kk = hashkeys();  
-
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
     uint adc = vv.at(cc);
-
     uint ped = ped_adc.at(key);
-    double slope = slopes.at(key);
-
+    uint _key = rmTime(key);
+    double slope = slopes.at(_key); // Slopes do not have a time hence why the normal key is out of range.
     uint kpix = getKpix(key);
     uint channel = getChannel(key);
-    
     // ignore mad0 channels
     if (s_ped_mad_adc.at(key)==0) continue;
     // ignore channels with slope ==0
@@ -469,7 +481,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
     // }
 	    
     target->insert(std::make_pair(key, fc));
-
+//    cout << "DEBUG bla" << endl;
     // if (kpix==1 && getChannel(key) == 73){
 	//     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
 	//          << adc << " adc, "
@@ -486,14 +498,16 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
 	    vec.push_back(fc);
 	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
     }
-    if (m_cyclenumber == 21 && kpix ==1){
-	    cout << "cm input debug: ev 21 kpix 1 channel " << channel << ", "
-	         << adc << " adc, "
-	         << ped << " adc, "
-	         << slope << " slope, "
-	         << fc << " fC "
-	         << endl;
-    }
+//    cout << "DEBUG end bla" << endl;
+//    if (m_cyclenumber == 21 && kpix ==1){
+//	    cout << "cm input debug: ev 21 kpix 1 channel " << channel << ", "
+//	         << adc << " adc, "
+//	         << ped << " adc, "
+//	         << slope << " slope, "
+//	         << fc << " fC "
+//	         << endl;
+//    }
+
   }
   
   m_has_fc = !(target->empty());
@@ -502,7 +516,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
   /* Calculate CM */
   m_m_cm_noise.clear();
   //printf("debug: how many kpix in cm_noise calculation? %d \n", cm_noise_buf.size());
-	  
+//    cout << "DEBUG end bla bla" << endl;
   //std::map<uint, double> debug;
   for(auto &a:cm_noise_buf ){
 	  double cm_noise = median(&a.second);
@@ -515,7 +529,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
   // 	       << " kpix "  << d.first
   // 	       << " entry " << d.second << endl; // debug
   
-  
+//  cout << "DEBUG end bla bla blaaaaaa" << endl;
 }
 
 
@@ -534,31 +548,49 @@ void Cycle::RemoveCM(){
 /* Static */
 void Cycle::AddFcBuf(Cycle& cy){
   if (!cy.m_has_fc) return;
-
   for (auto &fc: cy.m_m_fc){
+      uint key = rmTime(fc.first);
 	  Cycle::AddBufferT( Cycle::s_buf_fc,
-	                     fc.first, fc.second);
+                         key, fc.second); // filling only timestampless key
+      Cycle::AddBufferT( Cycle::s_buf_time_fc,
+                         fc.first, fc.second);
   }
 }
 
 /* Static */
 void Cycle::CalNoise(uint& nbuckets){
   if (s_buf_fc.empty()) return;
-
   s_noise_fc.clear();
   auto t_start = std::chrono::high_resolution_clock::now();
 
   for (auto &buf: s_buf_fc){
-    if (buf.first < nbuckets * G_BUCKET_HASH_UNIT ){
+      uint bucket = getBucket(buf.first);
+    if (bucket < nbuckets){
       double noise = 1.4826*MAD(&buf.second);
       s_noise_fc.insert(std::make_pair(buf.first, noise));
       
-      if (getKpix(buf.first)==1 && getChannel(buf.first)==73){
-	      cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
-	      for (const auto &input: buf.second)
-		      cout << " " << input << endl;
-      }
+//      if (getKpix(buf.first)==1 && getChannel(buf.first)==73){
+//	      cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
+//          cout << "Key: " << buf.first << endl;
+//	      for (const auto &input: buf.second)
+//		      cout << " " << input << endl;
+//      }
       
+    }
+  }
+  for (auto &buf: s_buf_time_fc){
+      uint bucket = getBucket(buf.first);
+    if (bucket < nbuckets){
+      double noise = 1.4826*MAD(&buf.second);
+      s_noise_time_fc.insert(std::make_pair(buf.first, noise));
+
+//      if (getKpix(buf.first)==1 && getChannel(buf.first)==73 && getTime(buf.first) < 1500){
+//          cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
+//          cout << "Key: " << buf.first << endl;
+//          for (const auto &input: buf.second)
+//              cout << " " << input << endl;
+//      }
+
     }
   }
   printf("Noise calculation finished.\t");

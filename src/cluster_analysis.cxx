@@ -55,6 +55,9 @@
 #include "TBFunctions.h"
 using namespace std;
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 //////////////////////////////////////////
 // Global Variables
@@ -224,6 +227,7 @@ int main ( int argc, char **argv )
 	TH1F					*noise_distribution[n_kpix];
 	TH1F					*noise_distribution_sensor[n_kpix/2];
 	TH1F					*noise_v_position[n_kpix/2];
+    TH1F					*noise_v_strip[n_kpix/2];
 	TH1F					*noise_v_channel[n_kpix];
 	
 	TH1F					*noise_v_time[n_kpix/2];
@@ -266,8 +270,9 @@ int main ( int argc, char **argv )
 	double 					noise[n_kpix][n_channels] = {0};
 	double 					MaximumSoN[n_kpix/2][1840] = {0};
 	//int						pedestal_check = 0;
+    TTree*					noise_tree;
 	
-    int maxAcquisitions = 20000000;
+    int maxAcquisitions = 25000;
 
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;
@@ -436,6 +441,11 @@ int main ( int argc, char **argv )
 	
 	
 	size_t name_start  = pedestalname.find("/Run") + 1;
+
+    if (name_start == 0){
+        printf(ANSI_COLOR_RED "DEBUG: Name start not found, seeing whether input is /Calibration" ANSI_COLOR_RESET "\n");
+        name_start = pedestalname.find("/Calibration")+1;
+    }
 	size_t name_length = pedestalname.find(".dat") - name_start;
 	
 	pedestalname = pedestalname.substr(name_start, name_length);
@@ -461,7 +471,7 @@ int main ( int argc, char **argv )
 	// Init
 	currPct          	= 0;
 	lastPct          	= 100;
-	
+    printf(ANSI_COLOR_YELLOW "(Warning) Maximum number of cycles that are being considered is set to %i" ANSI_COLOR_RESET "\n", maxAcquisitions);
 	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
 	//goodTimes       	= 0;
 	
@@ -585,6 +595,7 @@ int main ( int argc, char **argv )
     int response_bins = 220;
     double response_xmin = -20.5;
     double response_xmax = 19.5;
+
     for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
     {
         if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
@@ -872,6 +883,10 @@ int main ( int argc, char **argv )
             noise_v_position[sensor]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-46000, 46000);
 
             tmp.str("");
+            tmp << "noise_v_strip_s" << sensor << "_b0";
+            noise_v_strip[sensor]  = new TH1F(tmp.str().c_str(), "Noise; strip number; Noise (fC)", 1840,-0.5, 1839.5);
+
+            tmp.str("");
             tmp << "noise_distribution_s" << sensor << "_b0";
             noise_distribution_sensor[sensor] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 0.995);
 
@@ -968,11 +983,24 @@ int main ( int argc, char **argv )
 	noise_mask[4] = noise_sensor_4();
 	noise_mask[5] = noise_sensor_5();
 	
+    rFile->cd();
+    std::vector<double> vec_sensor, vec_kpix, vec_channel, vec_bucket, vec_tstamp, vec_fcCharge;
+    int eNumber;
+    noise_tree = new TTree("noise_tree", "Tree of all things noisy");
+    noise_tree->Branch("sensor", &vec_sensor);
+    noise_tree->Branch("kpix", &vec_kpix);
+    noise_tree->Branch("channel", &vec_channel);
+    noise_tree->Branch("bucket", &vec_bucket);
+    noise_tree->Branch("tstamp", &vec_tstamp);
+    noise_tree->Branch("eventNumber", &eNumber);
+    noise_tree->Branch("charge", &vec_fcCharge);
+
 
     while ( dataRead.next(&event)  &&  event.eventNumber() <= maxAcquisitions) //preread to determine noise value of each channel in each KPiX.
 	{
 		int not_empty= 0;
         std::vector<double> time_ext;
+        eNumber = event.eventNumber();
 
 		for (x=0; x < event.count(); x++)
 		{
@@ -989,7 +1017,12 @@ int main ( int argc, char **argv )
 			unsigned int block = channel/32;
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
-
+//            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+            vec_kpix.push_back(kpix);
+            vec_channel.push_back(channel);
+            vec_sensor.push_back(sensor);
+            vec_bucket.push_back(bucket);
+            vec_tstamp.push_back(tstamp);
             if (type == 2)// If event is of type external timestamp
             {
                 double time = bunchClk + double(subCount * 0.125);
@@ -1003,7 +1036,7 @@ int main ( int argc, char **argv )
 				{
 					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0) //ensuring we ignore 0 MAD channels
 					{
-
+//                         cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
                         double time_diff_triggers = smallest_time_diff(time_ext, tstamp);
                         trig_diff[kpix]->Fill(time_diff_triggers);
 
@@ -1031,9 +1064,11 @@ int main ( int argc, char **argv )
 								exit(-1); // probably best to bail out
 							}
 						} 
+//                        cout << "CM corrected charge is " << charge_CM_corrected << " for KPiX " << kpix << " and channel " << channel << endl;
 						corrected_charge_vec[kpix][channel]->push_back(charge_CM_corrected);
 						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
-						
+                        vec_fcCharge.push_back(charge_CM_corrected);
+
 					}
 					//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 				}
@@ -1046,6 +1081,15 @@ int main ( int argc, char **argv )
 			cout << "\rReading File for noise determination: " << currPct << " %      " << flush;
 			lastPct = currPct;
 		}
+        noise_tree->Fill();
+        vec_fcCharge.clear();
+        vec_bucket.clear();
+        vec_kpix.clear();
+        vec_channel.clear();
+        vec_tstamp.clear();
+        vec_sensor.clear();
+
+
 	}
 	dataRead.close();
 	
@@ -1069,12 +1113,13 @@ int main ( int argc, char **argv )
 					{
 						y = yParameterSensor(strip, sensor);
 						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-						//cout << "Noise of kpix " << k << " and channel " << c << " is " << noise[k][c] << endl;
+//                        cout << "Noise of kpix " << k << " and channel " << c << " is " << noise[k][c] << endl;
 						if (strip != 9999)
 						{
 							noise_distribution[k]->Fill(noise[k][c]);
 							noise_distribution_sensor[sensor]->Fill(noise[k][c]);
 							noise_v_position[sensor]->Fill(y, noise[k][c]);
+                            noise_v_strip[sensor]->Fill(strip, noise[k][c]);
 						}
 						noise_v_channel[k]->SetBinContent(c+1, noise[k][c]);
 						

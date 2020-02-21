@@ -21,7 +21,8 @@
 
 namespace Lycoris{
 
-  constexpr uint G_BUCKET_HASH_UNIT { 100000 };
+  constexpr uint G_BUCKET_HASH_UNIT { 30000 };
+  constexpr uint G_TIME_HASH_UNIT { 150000 };
   
 	class Cycle{
 	public:
@@ -112,38 +113,53 @@ namespace Lycoris{
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf(){
 		  s_buf_fc.clear();
-		  printf("Fc buffer cleared.\n");
+          s_buf_time_fc.clear();
+          printf("fC buffer and time resolved fC buffer cleared.\n");
 		}
 		static void ResetNoise(){
 		  s_noise_fc.clear();
-		  printf("Noise [fC] cleared.\n");
+          s_noise_time_fc.clear();
+          printf("Noise [fC] and time resolved Noise [fC] cleared.\n");
 		}
 		static void CalNoise(uint& );
 	private:
 		/* over all cycles, indexed by channel/bucket */
 		static unordered_map<uint, double> s_noise_fc;
+        static unordered_map<uint, double> s_noise_time_fc;
 		static unordered_map<uint, vector<double>> s_buf_fc;
+        static unordered_map<uint, vector<double>> s_buf_time_fc;
 	public:
 		static unordered_map<uint, double>& getNoise() {
 		  return Cycle::s_noise_fc;
 		}
+        static unordered_map<uint, double>& getTimeNoise() {
+          return Cycle::s_noise_time_fc;
+        }
 
 	public:
 		
 		// Hash table
 		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
 		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
+        static uint hashCode(uint kpix, uint channel, uint bucket, uint time){return time*G_TIME_HASH_UNIT+bucket*G_BUCKET_HASH_UNIT+kpix*1024+channel;} // experimental by uwe
 		static uint getKpix(uint hashcode){
-			auto _hashcode = rmBucket(hashcode);
-			return _hashcode/1024;
+            auto _hashcode = rmTime(hashcode);
+            auto m_hashcode = rmBucket(_hashcode);
+            return m_hashcode/1024;
 		}
 		static uint getChannel(uint hashcode){
-			auto _hashcode = rmBucket(hashcode);
-			return _hashcode%1024;
+            auto _hashcode = rmTime(hashcode);
+            auto m_hashcode = rmBucket(_hashcode);
+            return m_hashcode%1024;
 		}
 		static uint rmBucket(uint hashcode) { return hashcode%G_BUCKET_HASH_UNIT;}
-		static uint getBucket(uint hashcode){return hashcode/G_BUCKET_HASH_UNIT;}
+        static uint getBucket(uint hashcode){
+            auto _hashcode = rmTime(hashcode);
+            return _hashcode/G_BUCKET_HASH_UNIT;
+        }
 		  
+        static uint rmTime(uint hashcode) { return hashcode%G_TIME_HASH_UNIT;}
+        static uint getTime(uint hashcode){return hashcode/G_TIME_HASH_UNIT;}
 
 		template <typename T>
     	static void AddBufferT(std::unordered_map<uint, vector<T>> &target,
@@ -158,14 +174,17 @@ namespace Lycoris{
 			/* 			 getChannel(kk.at(cc)), */
 			/* 			 bb); */
 			/* auto val = vv.at(cc); */
-			if (target.count(key))
+//            cout << "MAYBE THE FINAL KEY " << key << endl;
+            if (target.count(key)){
 				target.at(key).push_back(std::move(val));
+            }
 			else{
 				std::vector<T> vec;
 				vec.push_back(val);
 				target.insert(std::make_pair(key, std::move(vec)));
 			}
-			return;}	
+            return;
+        }
 	};
 	
 	class rawData{
@@ -193,7 +212,8 @@ namespace Lycoris{
 	  void loadCalib(const std::string&); // read from root
       void loadCalibTree(const std::string&); // read from root tree
 	  void loadGeo(const std::string&); // read from csv
-	  const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes_b0; }
+      const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes; }
+      const std::unordered_map<uint, double>& getSlopesb0() const{  return m_m_slopes_b0; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
 
 	  void makeClusters(){}; // in processing 20191206
@@ -215,7 +235,8 @@ namespace Lycoris{
 		std::vector<Cycle> m_v_cycles;
 		uint m_nbuckets;
 		uint m_nmax;
-		std::unordered_map<uint, double> m_m_slopes_b0; //Done
+        std::unordered_map<uint, double> m_m_slopes; //Done
+        std::unordered_map<uint, double> m_m_slopes_b0; //Done
 		std::unordered_map<uint, uint> m_kpix2plane; 
 			  
 	};

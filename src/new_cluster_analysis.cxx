@@ -18,6 +18,7 @@
 
 #include "TTree.h"
 #include "TFile.h"
+#include "TROOT.h"
 
 using namespace std;
 using namespace Lycoris;
@@ -27,7 +28,7 @@ int main ( int argc, char **argv ) {
 	auto kpix2strip_left = kpix_left();
 	auto kpix2strip_right = kpix_right();
 	
-	
+    gROOT->ProcessLine(".L /home/lycoris-dev/KPiX-Analysis/core/include/cluster.h");
 	if (argc == 1){
         printf("[Usage] ./new_cluster_analysis [input.dat] [calib.root] \n");
 		return 0;
@@ -59,6 +60,9 @@ int main ( int argc, char **argv ) {
     std::string OutRoot = argv[1];
     OutRoot = OutRoot + ".new_cluster.root";
 
+//    std::string OutGBL = argv[1];
+//    OutGBL = OutGBL + ".new_GBL_input.txt";
+
     TFile *fout = new TFile(OutRoot.c_str(), "recreate");
 	fout->cd();
 	// TH2F *cluster_correlation_s0_s1 = new TH2F("cluster_correlation_s0_s1",
@@ -78,31 +82,19 @@ int main ( int argc, char **argv ) {
 	
 	
 	double charge, noise;
-    double cluster_charge, cluster_pos, cluster_sigma, cluster_size;
     std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
     int kpix, channel, eventnumber;
 	int sensor, strip;
     std::vector<int> vector_sensor;
-    clustr temp_cluster;
 	const uint n_kpix = 24;
 
-	TTree* ctree = new TTree("cluster","cluster tree");
-	ctree->Branch("eventnumber", &eventnumber, "eventnumber/I");
-	ctree->Branch("sensor",      &sensor,      "sensor/I");
-	ctree->Branch("cluster_charge", &cluster_charge, "cluster_charge/D");
-	ctree->Branch("cluster_pos",    &cluster_pos,    "cluster_pos/D");
-	ctree->Branch("cluster_sigma",  &cluster_sigma,  "cluster_sigma/D");
-	ctree->Branch("cluster_size",   &cluster_size,   "cluster_size/D");
-
-    TTree* clTree = new TTree("vector_cluster", "vector cluster tree");
-    clTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
-    clTree->Branch("vector_sensor", &vector_sensor);
-    clTree->Branch("vector_charge", &vector_charge);
-    clTree->Branch("vector_sigma", &vector_sigma);
-    clTree->Branch("vector_size", &vector_size);
-    clTree->Branch("vector_pos", &vector_pos);
-    //clTree->Branch("sensor",      &sensor,      "sensor/I");
-   // clTree->Branch("cluster", &temp_cluster);
+    TTree* vectorTree = new TTree("vector_cluster", "vector cluster tree");
+    vectorTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
+    vectorTree->Branch("sensor", &vector_sensor);
+    vectorTree->Branch("charge", &vector_charge);
+    vectorTree->Branch("sigma", &vector_sigma);
+    vectorTree->Branch("size", &vector_size);
+    vectorTree->Branch("pos", &vector_pos);
 
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -110,25 +102,23 @@ int main ( int argc, char **argv ) {
 		// fc indexed by bucket+kpix+channel
 		std::map<int, double> cluster_Events_after_cut[n_kpix/2];
 		std::map<int, double> cluster_Noise_after_cut[n_kpix/2];
-		clustr Cluster[n_kpix/2];
-		std::vector<clustr> multi_cluster[8][n_kpix/2];
 		
 		//!- 1) fill the input maps
 		for (auto &fc: ev.m_m_fc){
-			auto key = fc.first;
+            auto key = Cycle::rmTime(fc.first); // noisemap is not time resolved therefore with time key it is out of range
 			if (Cycle::getBucket(key)!=0) continue;
 			
 			kpix = Cycle::getKpix(key);
 			channel = Cycle::getChannel(key);
-
 			if (kpix%2 ==0 ) strip = kpix2strip_left.at(channel);
 			else strip= kpix2strip_right.at(channel);
 
 			sensor = db.getPlane(kpix);
 
-			charge = fc.second;
+            charge = fc.second;
 			noise = noisemap.at(key);
-
+//            cout << "Noise debug: " << noise << endl;
+//            cout << "Key debug: " << key << endl;
 			// if (eventnumber == 9988 && sensor == 0 && strip ==940){
 			// 	printf("debug: ev 9988 sensor 0 strip 940 charge %.4f, noise %.4f\n",
 			// 	       charge, noise);
@@ -158,17 +148,12 @@ int main ( int argc, char **argv ) {
 			//- Start clustering
 			while(Input.Elements.size()!=0){
 				PacMan NomNom;
-				//double SoN_order = 0;
+                //double SoN_order = 0;
 
 				//MaximumSoN[sensor][Input.MaxSoN()]+=weight;
 				NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
 
-                cluster_charge  = NomNom.getClusterCharge();
-                cluster_sigma   = NomNom.getClusterSignificance2();
-                cluster_size    = NomNom.getClusterElementssize();
-                cluster_pos     = yParameterSensor(NomNom.getClusterCoG(), sensor);
-                temp_cluster    = NomNom.getCluster();
-
+//                cout << "Test" << endl;
                 vector_charge.push_back(NomNom.getClusterCharge());
                 vector_sigma.push_back(NomNom.getClusterSignificance2());
                 vector_size.push_back(NomNom.getClusterElementssize());
@@ -182,8 +167,8 @@ int main ( int argc, char **argv ) {
 				//      << setw(2) << cluster_size << ","
 				//      << setw(7) << cluster_charge << ","
 				//      << endl;
+
 				num_of_clusters++;
-				ctree->Fill();
 			}
 			// printf("debug: ev %d sensor %d has %d elements, %d noise, %d clusters.\n",
 			//        eventnumber,
@@ -203,7 +188,7 @@ int main ( int argc, char **argv ) {
 			}
 			
 		}
-        clTree->Fill();
+        vectorTree->Fill();
         vector_charge.clear();
         vector_sigma.clear();
         vector_size.clear();
@@ -217,6 +202,7 @@ int main ( int argc, char **argv ) {
 	printf("[INFO] Clustering ended...\n");
 	/*-----------End of Cluster------------*/
     printf("File saved to %s \n", OutRoot.c_str());
+//    printf("GBL input file saved to %s \n", OutGBL.c_str());
 	return 1;
 	
 }
