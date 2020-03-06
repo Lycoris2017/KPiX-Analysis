@@ -9,6 +9,7 @@ import argcomplete
 from operator import add
 import sys
 from decimal import Decimal
+#from pyroot_functions import loopdir_new
 
 ROOT.gROOT.SetBatch(True)
 
@@ -196,8 +197,10 @@ def hist_plotter():
 			if (not args.legend):
 				if len(filename_list) > 1:
 					legend.AddEntry(obj, filename_list[counter-1]+'_'+histogram.GetName())
+					legendname.append(filename_list[counter-1]+'_'+histogram.GetName())
 				else:
-					legend.AddEntry(obj, '_'+histogram.GetName())
+					legend.AddEntry(obj, histogram.GetName())
+					legendname.append(histogram.GetName())
 			else:
 				legend.AddEntry(obj, args.legend[counter-1])
 				legendname.append(args.legend[counter-1])
@@ -1114,9 +1117,11 @@ for root_file in args.file_in:
 		elif '/Calibration_' in root_file:
 			filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
 print filename_list
+#object_list = []
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	loopdir(key_root)
+	#object_list= object_list + (loopdir_new(key_root, args.name))
 if ('elab' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
 elif ('tb' in args.folder):
@@ -1129,6 +1134,7 @@ elif ('thesis' in args.folder):
 ##general output
 #print args.color
 
+#print 'DEEEEEEBUUUUUUUG: ', object_list 
 
 print 'Looking for histograms/graphs'
 print '----------------------'

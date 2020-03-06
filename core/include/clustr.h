@@ -39,7 +39,6 @@ class clustr
 		int MaxSoN();
 		
 		void Erase(int);
-        void GenerateGBL(const char *name);
 		//void setEventList(vector<pair<double, double>>);
 } ;
 

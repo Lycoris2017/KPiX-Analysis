@@ -83,9 +83,9 @@ int main ( int argc, char **argv ) {
 	
 	double charge, noise;
     std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
-    int kpix, channel, eventnumber;
-	int sensor, strip;
     std::vector<int> vector_sensor;
+    int kpix, channel, eventnumber;
+    int sensor, strip, time;
 	const uint n_kpix = 24;
 
     TTree* vectorTree = new TTree("vector_cluster", "vector cluster tree");
@@ -94,6 +94,7 @@ int main ( int argc, char **argv ) {
     vectorTree->Branch("charge", &vector_charge);
     vectorTree->Branch("sigma", &vector_sigma);
     vectorTree->Branch("size", &vector_size);
+    vectorTree->Branch("time", &time);
     vectorTree->Branch("pos", &vector_pos);
 
 	for (const auto &ev: db.getCycles()){
@@ -112,7 +113,7 @@ int main ( int argc, char **argv ) {
 			channel = Cycle::getChannel(key);
 			if (kpix%2 ==0 ) strip = kpix2strip_left.at(channel);
 			else strip= kpix2strip_right.at(channel);
-
+            time = Cycle::getTime(fc.first);
 			sensor = db.getPlane(kpix);
 
             charge = fc.second;
@@ -158,7 +159,6 @@ int main ( int argc, char **argv ) {
                 vector_sigma.push_back(NomNom.getClusterSignificance2());
                 vector_size.push_back(NomNom.getClusterElementssize());
                 vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
-                vector_sensor.push_back(sensor);
 				// debug to print as claus_file:
 				// cout << setw(5) << eventnumber  << ","
 				//      << setw(1) << sensor  << ","
@@ -186,6 +186,7 @@ int main ( int argc, char **argv ) {
 					       cluster_Noise_after_cut[sensor].at(a.first));
 				
 			}
+            vector_sensor.push_back(sensor);
 			
 		}
         vectorTree->Fill();

@@ -1,11 +1,11 @@
 
 
-  // ,##.                   ,==.
- //,#    #.                 \ o ',
-//#        #     _     _     \    \
-//#        #    (_)   (_)    /    ; 
- //`#    #'                 /   .'  
-   //`##'                   "=="
+  //                    ,==.
+ //                      \ o ',
+//      _     _     _     \    \
+//     (_)   (_)   (_)    /    ;
+ //                      /   .'
+   //                   "=="
 
 
 #include "PacMan.h"
@@ -133,8 +133,10 @@ void PacMan::Eater(clustr& PACMAN, int element, int oldelement, double old_signi
 		{
 			if (oldelement == 9999 )
 			{
-//				cout << "charge: " << PACMAN.Elements.at(element) << " | noise: " << PACMAN.Noise.at(element) << " | element: " << element << endl;
-//				cout << "Error: Starting element has significance higher than 99999" << endl;
+                cout << "charge: " << PACMAN.Elements.at(element) << " | noise: " << PACMAN.Noise.at(element) << " | element: " << element << endl;
+                cout << "Error: Starting element has significance higher than 99999" << endl;
+                cout << "Element will be erased!" << endl;
+                PACMAN.Erase(element);
 			}
 			//cout << "Just checking how often it happens that a new strip has higher significance than the previous" << endl;
 		}

@@ -1308,7 +1308,7 @@ for (kpix=0; kpix<24; kpix++)
 										}
 				
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
-										calib_slope = slope;
+                                        calib_slope = slope;
 										calib_error = slope_err;
 										calib_pearsson = PCC;
 

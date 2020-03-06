@@ -71,7 +71,7 @@ int main ( int argc, char **argv ) {
     printf("[INFO] Noise writedown started...\n");
 	
 	
-    std::vector<double> noise, noise2;
+    std::vector<double> noise, noise2, charge;
     int eventnumber;
     std::vector<int> kpix, channel, strip, bucket, time;
 	const uint n_kpix = 24;
@@ -84,6 +84,7 @@ int main ( int argc, char **argv ) {
     noiseTimeTree->Branch("bucket", &bucket);
     noiseTimeTree->Branch("time", &time);
     noiseTimeTree->Branch("noise", &noise);
+    noiseTimeTree->Branch("charge", &charge);
 
     TTree* noiseTree = new TTree("noise_tree", "noise_tree");
     noiseTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
@@ -92,6 +93,7 @@ int main ( int argc, char **argv ) {
     noiseTree->Branch("strip", &strip);
     noiseTree->Branch("bucket", &bucket);
     noiseTree->Branch("noise", &noise2);
+    noiseTree->Branch("charge", &charge);
 
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -109,6 +111,7 @@ int main ( int argc, char **argv ) {
             channel.push_back(Cycle::getChannel(key));
             bucket.push_back(Cycle::getBucket(key));
             time.push_back(Cycle::getTime(key));
+            charge.push_back(fc.second);
             noise.push_back(noiseTimemap.at(key));
             noise2.push_back(noisemap.at(rTkey));
 
@@ -121,6 +124,7 @@ int main ( int argc, char **argv ) {
         channel.clear();
         bucket.clear();
         time.clear();
+        charge.clear();
         noise.clear();
         noise2.clear();
         strip.clear();

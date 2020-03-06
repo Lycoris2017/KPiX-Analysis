@@ -171,7 +171,6 @@ void rawData::loadRootTree(const std::string & fname){
     for (long int i = 0; i < nEnTrees; ++i){
         calib_tree->GetEntry(i);
         auto index = Cycle::hashCode(kpix_num, channel_num, bucket_num);
-
         m_m_slopes.emplace(index, calib_slope);
     }
 }
@@ -306,6 +305,7 @@ void rawData::loadFile(const std::string& fname){
   uint                   currPct;
   KpixEvent              event;    //
   uint                   ncys=0;
+  string                calState;
   
   m_v_cycles.clear();
 
@@ -329,10 +329,17 @@ void rawData::loadFile(const std::string& fname){
     if (m_nmax!=0 && ncys > m_nmax) break;
 
     Cycle cy(event, m_nbuckets );
-    // For pedestal calculation:
-    Cycle::AddAdcBuf(cy); 
-    // !!Once after std::move, you should never use this object
-    m_v_cycles.push_back(std::move(cy));
+    calState   = dataRead.getYmlStatus("CalState");
+    if (calState == "Baseline" || calState == "Idle"){ //Only adding baseline cycles
+        Cycle::AddAdcBuf(cy);
+        // For pedestal calculation:
+
+        // !!Once after std::move, you should never use this object
+        m_v_cycles.push_back(std::move(cy));
+    }
+    //else cout << "Found " << calState << " cycle." << endl;
+
+
     
     //---- fancy bar - Start 
     filePos  = dataRead.pos();
@@ -352,7 +359,7 @@ void rawData::loadFile(const std::string& fname){
 
   dataRead.close();
 }
-
+//calState   = dataRead.getYmlStatus("CalState");
 /* Static */
 void Cycle::CalPed(uint nbuckets, bool save_mad){
 
