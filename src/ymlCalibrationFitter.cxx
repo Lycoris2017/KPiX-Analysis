@@ -1138,13 +1138,6 @@ for (kpix=0; kpix<24; kpix++)
 										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));
 										grDAC[grCount]  = x;
-										meanx = meanx + grX[grCount];
-										meany = meany + grY[grCount];
-										EXY = EXY+grX[grCount]*grY[grCount];
-										EX2 = EX2+pow(grX[grCount],2);
-										EY2 = EY2+pow(grY[grCount],2);
-										EX = EX+grX[grCount];
-										EY = EY+grY[grCount];
 										grY[grCount]    = chanData[kpix][channel][bucket][range]->calibMean[x];
 										grYErr[grCount] = chanData[kpix][channel][bucket][range]->calibError[x];
 										grXErr[grCount] = 0;
@@ -1153,7 +1146,13 @@ for (kpix=0; kpix<24; kpix++)
 											<< " Adding point x=" << grX[grCount] 
 											<< " Rms=" << chanData[kpix][channel][bucket][range]->calibRms[x]
 											<< " Error=" << chanData[kpix][channel][bucket][range]->calibError[x] << endl;
-										
+                                        meanx = meanx + grX[grCount];
+                                        meany = meany + grY[grCount];
+                                        EXY = EXY+grX[grCount]*grY[grCount];
+                                        EX2 = EX2+pow(grX[grCount],2);
+                                        EY2 = EY2+pow(grY[grCount],2);
+                                        EX = EX+grX[grCount];
+                                        EY = EY+grY[grCount];
 										//cout << "Charge in fC : DAC = " << grX[grCount] << " : " << grDAC[grCount] << endl;
 										grCount++;
 										
@@ -1171,28 +1170,28 @@ for (kpix=0; kpix<24; kpix++)
 											}
 										}
 									}
-									else if (chanData[kpix][channel][bucket][range]->calibCount[x] == 0 && (x-200)%3 == 0 && x > 230)
-									{
-										MissingCalDac[kpix][bucket]->Fill(x);
-										MissingCalDacChannel[kpix][bucket]->Fill(channel);
-										cout << "We have no calibration points for DAC value " << x << " channel " << channel << " kpix " << kpix << endl;
-									}
+//									else if (chanData[kpix][channel][bucket][range]->calibCount[x] == 0 && (x-200)%3 == 0 && x > 230)
+//									{
+//										MissingCalDac[kpix][bucket]->Fill(x);
+//										MissingCalDacChannel[kpix][bucket]->Fill(channel);
+//                                        //cout << "We have no calibration points for DAC value " << x << " channel " << channel << " kpix " << kpix << endl;
+//									}
 								}
-								meanx = meanx/grCount;
-								meany = meany/grCount;
-								EXY = EXY/grCount;
-								EX2 = EX2/grCount;
-								EY2 = EY2/grCount;
-								EX = EX/grCount;
-								EY = EY/grCount;								
-								
-								double PCC = (EXY-EX*EY)/(sqrt(EX2-pow(EX,2))*sqrt(EY2-pow(EY,2)));
-								//if (fabs(PCC) > 1) cout << "Undefined/horrible pearson coefficient = " << PCC << endl;
-								pearson_hist[kpix][bucket]->Fill(PCC);
-								if (fabs(PCC) < 1) pearson_vs_channel[kpix][bucket]->Fill(channel, PCC);
-								else zero_channels << kpix << " " << channel << endl;
-								if (PCC < 0.8 && PCC >= -1) special_channels << kpix << " " << channel << endl;
-								
+
+                                meanx = meanx/grCount;
+                                meany = meany/grCount;
+                                EXY = EXY/grCount;
+                                EX2 = EX2/grCount;
+                                EY2 = EY2/grCount;
+                                EX = EX/grCount;
+                                EY = EY/grCount;
+
+                                double PCC = (EXY-EX*EY)/(sqrt(EX2-pow(EX,2))*sqrt(EY2-pow(EY,2)));
+                                //if (fabs(PCC) > 1) cout << "Undefined/horrible pearson coefficient = " << PCC << endl;
+                                pearson_hist[kpix][bucket]->Fill(PCC);
+                                if (fabs(PCC) < 1) pearson_vs_channel[kpix][bucket]->Fill(channel, PCC);
+                                else zero_channels << kpix << " " << channel << endl;
+
 		  
 								// Create graph
 								if ( grCount > 0 ) 
@@ -1264,6 +1263,8 @@ for (kpix=0; kpix<24; kpix++)
 									//grResid->SetTitle(tmp.str().c_str());
 									grResid->Write(tmp.str().c_str());
 									
+
+
 									
 									// Add to xml
 									if ( grCalib->GetFunction("pol1") ) 
@@ -1308,6 +1309,7 @@ for (kpix=0; kpix<24; kpix++)
 										}
 				
 										slope_hist[kpix][bucket]->Fill( slope  /* /pow(10,15) */ );
+                                        if (PCC < 0.8 && PCC >= -1) cout  << "Special channel PCC " << PCC << " slope " << slope << endl;
                                         calib_slope = slope;
 										calib_error = slope_err;
 										calib_pearsson = PCC;

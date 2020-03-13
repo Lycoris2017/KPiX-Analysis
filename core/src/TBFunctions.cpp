@@ -6,6 +6,11 @@
 
 using namespace std;
 
+std::bitset<18> keybit(uint kpix, uint channel, uint bucket){//}, uint time){
+    uint test = bucket+std::pow(2,2)*kpix+std::pow(2,7)*channel;//+std::pow(2,17)*time;
+    std::bitset<18> bittest(test);
+    return bittest;
+}
 
 double yParameter(double strip, int kpix)
 {

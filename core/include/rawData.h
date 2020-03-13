@@ -94,12 +94,12 @@ namespace Lycoris{
 
 		/* == Operation per cycle == */
 		/* Remove ped in adc -> adc2Fc -> calculate common mode buffer*/
-		void RemovePed_CalCM_fC(std::unordered_map<uint, double > &ped_adc,
-		                        std::unordered_map<uint, double>  &slopes,
-		                        std::unordered_map<uint, double>  &ped_mad,
-		                        bool remove_adc,
-		                        bool cut_mad0 = true,
-		                        bool cut_slope0 = true);
+        void RemovePed_CalCM_fC(std::unordered_map<uint, double > &ped_adc,
+                                std::unordered_map<uint, std::pair<double,double>>  &calib,
+                                std::unordered_map<uint, double>  &ped_mad,
+                                bool remove_adc,
+                                bool cut_mad0 = true,
+                                bool cut_calibs = true);
 		void RemoveCM();
 
 
@@ -207,12 +207,10 @@ namespace Lycoris{
 	  }
 	  uint getNCycles(){return m_v_cycles.size();}
 	  void loadCSV(const std::string&); // Done
-	  void loadRoot(const std::string&);// todo
-      void loadRootTree(const std::string&);// todo
-	  void loadCalib(const std::string&); // read from root
+      void loadRootTree(const std::string&);// Done
       void loadCalibTree(const std::string&); // read from root tree
 	  void loadGeo(const std::string&); // read from csv
-      const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes; }
+      const std::unordered_map<uint, std::pair<double, double>>& getCalibs() const{  return m_m_calibs; }
       const std::unordered_map<uint, double>& getSlopesb0() const{  return m_m_slopes_b0; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
 
@@ -235,7 +233,7 @@ namespace Lycoris{
 		std::vector<Cycle> m_v_cycles;
 		uint m_nbuckets;
 		uint m_nmax;
-        std::unordered_map<uint, double> m_m_slopes; //Done
+        std::unordered_map<uint, std::pair<double, double>> m_m_calibs; //Done
         std::unordered_map<uint, double> m_m_slopes_b0; //Done
 		std::unordered_map<uint, uint> m_kpix2plane; 
 			  

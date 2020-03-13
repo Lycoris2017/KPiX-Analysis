@@ -24,8 +24,8 @@ int main ( int argc, char **argv ) {
 	auto kpix2strip_right = kpix_right();
 	
 	
-	if (argc == 1){
-		printf("[Usage] ./new_analysis [input.dat]\n");
+    if (argc != 3){
+        printf("[Usage] ./new_analysis [input.dat] [calibration.ymlCalib.root]\n");
 		return 0;
 	}
 	
@@ -37,12 +37,9 @@ int main ( int argc, char **argv ) {
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-    if (argc != 3){
-        db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
-    }
-    else{
-        db.loadCalibTree(argv[2]);
-    }
+
+    db.loadCalibTree(argv[2]);
+
 
 	//return(0);
 	db.doRmPedCM();
@@ -52,7 +49,7 @@ int main ( int argc, char **argv ) {
 	auto noisemap = Cycle::getNoise();
 	auto pedestal = Cycle::s_ped_med_adc;
 	auto mads     = Cycle::s_ped_mad_adc;
-	auto slopes   = db.getSlopes();
+    auto calibs = db.getCalibs();
 	if (noisemap.empty()) return 0;
 	
 	
@@ -83,14 +80,14 @@ int main ( int argc, char **argv ) {
 		channel = Cycle::getChannel(key);
 		if (kpix%2) strip = kpix2strip_left.at(channel);
 		else strip = kpix2strip_right.at(channel);
-		if (slopes.at(key)==0) {
+        if (calibs.at(key).first==0) {
 			std::cout <<"k " << kpix << " c "<< channel
-			          <<" s " << slopes.at(key) << std::endl;
+                      <<" s " << calibs.at(key).first << std::endl;
 			//continue;
 		}
 		
 		//ped = ped/slopes.at(key);
-		mad = mad/slopes.at(key);
+        mad = mad/calibs.at(key).first;
 		
 		test->Fill();
 	}

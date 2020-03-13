@@ -29,8 +29,8 @@ int main ( int argc, char **argv ) {
 	auto kpix2strip_right = kpix_right();
 	
     gROOT->ProcessLine(".L /home/lycoris-dev/KPiX-Analysis/core/include/cluster.h");
-	if (argc == 1){
-        printf("[Usage] ./new_cluster_analysis [input.dat] [calib.root] \n");
+    if (argc != 3){
+        printf("[Usage] ./new_analysis [input.dat] [calibration.ymlCalib.root]\n");
 		return 0;
 	}
 	
@@ -42,12 +42,7 @@ int main ( int argc, char **argv ) {
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
-    if (argc != 3){
-        db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/HG_slopes_D.root");
-    }
-    else{
-        db.loadCalibTree(argv[2]);
-    }
+    db.loadCalibTree(argv[2]);
 
 
 	db.doRmPedCM();

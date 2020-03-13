@@ -221,6 +221,10 @@ add_executable(analysis ${PROJECT_SOURCE_DIR}/src/analysis.cxx)
 target_link_libraries(analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysis)
 
+add_executable(analysis_rework ${PROJECT_SOURCE_DIR}/src/analysis_rework.cxx)
+target_link_libraries(analysis_rework ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
+list(APPEND INSTALL_EXE_TARGETS analysis_rework)
+
 # add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
 # target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 # list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
@@ -261,6 +265,8 @@ list(APPEND INSTALL_EXE_TARGETS external_trig_debug)
 add_executable(analysisExternal_tree ${PROJECT_SOURCE_DIR}/src/analysisExternal_tree.cxx)
 target_link_libraries(analysisExternal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysisExternal_tree)
+
+
 
 #add_executable(pedestal_old ${PROJECT_SOURCE_DIR}/src/pedestal_old.cxx)
 #target_link_libraries(pedestal_old ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)

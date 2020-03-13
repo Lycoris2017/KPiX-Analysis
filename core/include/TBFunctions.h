@@ -5,9 +5,11 @@
 #include <algorithm>
 #include <math.h> /* fabs */
 #include <iostream>
+#include <bitset>
 
 //using namespace std;
 
+std::bitset<18> keybit(uint kpix, uint channel, uint bucket);//, uint time);
 double yParameter(double, int);
 double yParameterSensor(double, int);
 double xParameterSensor(double, int);
@@ -59,4 +61,5 @@ double MAD(std::vector<T>* v){
 		}
 	}
 }
+
 #endif

@@ -180,12 +180,15 @@ int main ( int argc, char **argv )
 	uint                   channel;
 	uint                   bucket;
 	double                  tstamp;
+    uint 					subCount;
+    double 					bunchClk;
 	string                 serial;
 	KpixSample::SampleType type;
 	TTree*					pedestal;
 	
 	TH1F*					MAD0_v_channel;
     TH1F*					pedestalADC;
+    TH1F*					ext_trigs;
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -278,6 +281,7 @@ int main ( int argc, char **argv )
 
     pedestalADC = new TH1F("pedestalADC", "pedestalADC; ADC; #Entries", 8191, -0.5, 8190.5);
 
+    ext_trigs = new TH1F("ext_trigger_time", "ext trigger time; #T (BCC); Nr. of Entries", 8192, 0, 8192);
 	range = 0;
 
 
@@ -332,7 +336,14 @@ int main ( int argc, char **argv )
 				tstamp  = sample->getSampleTime();
 				range   = sample->getSampleRange();
 				
-				
+                bunchClk = sample->getBunchCount();
+                subCount = sample->getSubCount();
+    //            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+                if (type == 2)// If event is of type external timestamp
+                {
+                    double time = bunchClk + double(subCount * 0.125);
+                    ext_trigs->Fill(time);
+                }
 				if ( type == KpixSample::Data ) // If event is of type KPiX data
 				{
 					bucketFound[kpix][channel][bucket] = true;

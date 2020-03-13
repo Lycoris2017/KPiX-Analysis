@@ -114,23 +114,6 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
     // **Exception Handler - End
 }
 
-void rawData::loadCalib(const std::string& fname){
-	string csv =".csv";
-	string root = ".root";
-	printf(" loadCalib ");
-
-	try{
-		if (fname.find(csv) != std::string::npos)
-			loadCSV(fname);
-		else if (fname.find(root) !=std::string::npos)
-			loadRoot(fname);
-		else
-			throw std::runtime_error("loadCalib: invalid input calib file!");
-	}
-	catch(std::exception &e){
-		cout << "Caught exception: " << e.what() << "\n";
-	}
-}
 
 void rawData::loadCalibTree(const std::string& fname){
     string root = ".root";
@@ -155,7 +138,7 @@ void rawData::loadRootTree(const std::string & fname){
         return;
     }
     printf("Open Calib file : %s\n", fname.c_str());
-    m_m_slopes.clear();
+    m_m_calibs.clear();
 
     TTree *calib_tree = (TTree*)calib->Get("calibration_tree");
     uint kpix_num, channel_num, bucket_num, range_num;
@@ -171,49 +154,9 @@ void rawData::loadRootTree(const std::string & fname){
     for (long int i = 0; i < nEnTrees; ++i){
         calib_tree->GetEntry(i);
         auto index = Cycle::hashCode(kpix_num, channel_num, bucket_num);
-        m_m_slopes.emplace(index, calib_slope);
+        std::pair<double, double> calib_all = std::make_pair(calib_slope, calib_pearsson);
+        m_m_calibs.emplace(index, calib_all);
     }
-}
-
-void rawData::loadRoot(const std::string& fname){
-	printf(" from ROOT...\n");
-
-	TFile *calib = TFile::Open(fname.c_str());
-	if(!calib) {
-		throw std::runtime_error("loadRoot: invalid calib root file!");
-		return;
-	}
-	printf(" Open Calib file : %s\n", fname.c_str());
-
-    m_m_slopes.clear();
-	//	std::string basic = "slope_vs_channel_";
-	std::string kword = "_k", bword = "_b";
-	std::string kstr, bstr;
-
-	auto keys = calib->GetListOfKeys();
-	for (auto keyasobj: *keys){
-		auto key = (TKey*) keyasobj;
-		auto hist = (TH1D*)key -> ReadObj();
-		//		std::cout << key->GetName() << " " << key->GetClassName() << std::endl;
-		std::string hname = hist->GetName();
-		auto kpos = hname.find(kword)+kword.length();
-		kstr = hname.substr(kpos, 1);
-		
-		auto bpos = hname.find(bword)+bword.length();
-		bstr = hname.substr(bpos, 1);
-		
-		//Note": bin from 1 to GetNbinsX(), while channel is bin-1
-		for (int i=1; i< hist->GetNbinsX()+1; i++){
-			auto slope = hist->GetBinContent(i);
-			// printf(" kpix %s channel %d bucket %s, slope = %.4f\n",
-			//        kstr.c_str(), i-1, bstr.c_str(),
-			//        slope );
-			auto index = Cycle::hashCode(std::atoi(kstr.c_str()), i-1);
-			m_m_slopes_b0.emplace(index, slope);
-		}
-	}
-	
-
 }
 
 void rawData::loadCSV(const std::string& fname){
@@ -427,8 +370,12 @@ void rawData::doRmPedCM(bool rmAdc){
       continue; // skip empty cycles
     }
 
+//    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
+//                          m_m_slopes,
+//                          Cycle::s_ped_mad_adc,
+//                          true);
     cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-                          m_m_slopes,
+                          m_m_calibs,
                           Cycle::s_ped_mad_adc,
                           true);
     cy.RemoveCM();
@@ -454,56 +401,56 @@ void rawData::doRmPedCM(bool rmAdc){
 }
 
 void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
-                               std::unordered_map<uint, double> &slopes,
+                               std::unordered_map<uint, std::pair<double, double>> &calibs,
                                std::unordered_map<uint, double> &ped_mad,
                                bool remove_adc,
                                bool cut_mad0,
-                               bool cut_slope0)
+                               bool cut_calibs)
 {
   /* Only work at bucket 0 */
-	//  uint bucket=0;
+    //  uint bucket=0;
   // Fill in a buffer to calculate CM, indexed by kpix num:
-  std::unordered_map<uint, vector<double>> cm_noise_buf; 
+  std::unordered_map<uint, vector<double>> cm_noise_buf;
   auto target = &m_m_fc;
   auto vv = vadc();
-  auto kk = hashkeys();  
+  auto kk = hashkeys();
   for (size_t cc =0; cc<vv.size(); ++cc){
     uint key  = kk.at(cc);
     uint adc = vv.at(cc);
     uint ped = ped_adc.at(key);
     uint _key = rmTime(key);
-    double slope = slopes.at(_key); // Slopes do not have a time hence why the normal key is out of range.
+    std::pair<double, double> calib = calibs.at(_key); // Calib values do not have a time hence why the normal key is out of range.
     uint kpix = getKpix(key);
     uint channel = getChannel(key);
     // ignore mad0 channels
     if (s_ped_mad_adc.at(key)==0) continue;
-    // ignore channels with slope ==0
-    if (slope ==0) continue;
-    
-    double fc = (double)(1.0*adc - ped) / slope;
+    // ignore channels with slope ==0 and with a pearson correlation coefficient < 0.8
+    if (calib.first == 0 || calib.second < 0.9) continue;
+
+    double fc = (double)(1.0*adc - ped) / calib.first;
     // // debug:
     // if (m_cyclenumber ==99 && kpix==0){
     //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
-	//            kpix, channel, fc, adc, ped, slope);
+    //            kpix, channel, fc, adc, ped, slope);
     // }
-	    
+
     target->insert(std::make_pair(key, fc));
 //    cout << "DEBUG bla" << endl;
     // if (kpix==1 && getChannel(key) == 73){
-	//     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
-	//          << adc << " adc, "
-	//          << ped << " adc, "
-	//          << slope << " slope, "
-	//          << fc << " fC "
-	//          << endl;
+    //     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
+    //          << adc << " adc, "
+    //          << ped << " adc, "
+    //          << slope << " slope, "
+    //          << fc << " fC "
+    //          << endl;
     // }
-	    
+
     if (cm_noise_buf.count(kpix))
-	    cm_noise_buf.at(kpix).push_back(fc);
+        cm_noise_buf.at(kpix).push_back(fc);
     else{
-	    std::vector<double > vec;
-	    vec.push_back(fc);
-	    cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
+        std::vector<double > vec;
+        vec.push_back(fc);
+        cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
     }
 //    cout << "DEBUG end bla" << endl;
 //    if (m_cyclenumber == 21 && kpix ==1){
@@ -516,7 +463,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
 //    }
 
   }
-  
+
   m_has_fc = !(target->empty());
   if (remove_adc) ResetAdc();
 
@@ -526,16 +473,16 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
 //    cout << "DEBUG end bla bla" << endl;
   //std::map<uint, double> debug;
   for(auto &a:cm_noise_buf ){
-	  double cm_noise = median(&a.second);
-	  
-	  m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
-	  //  debug.insert(std::make_pair(a.first, cm_noise));
+      double cm_noise = median(&a.second);
+
+      m_m_cm_noise.insert(std::make_pair(a.first, cm_noise));
+      //  debug.insert(std::make_pair(a.first, cm_noise));
  }
   // for (auto &d: debug)
   // 	  cout << "Common modes median of EventNumber " << m_cyclenumber
   // 	       << " kpix "  << d.first
   // 	       << " entry " << d.second << endl; // debug
-  
+
 //  cout << "DEBUG end bla bla blaaaaaa" << endl;
 }
 

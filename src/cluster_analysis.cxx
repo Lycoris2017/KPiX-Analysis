@@ -62,8 +62,6 @@ using namespace std;
 //////////////////////////////////////////
 // Global Variables
 //////////////////////////////////////////
-vector<TGraphErrors*> calib_graphs; //needed for current loopdir	
-vector<TH1F*> pedestal_hists;
 //////////////////////////////////////////
 // Functions
 //////////////////////////////////////////
@@ -77,62 +75,63 @@ struct tree_cluster_input
     int Size;
 };
 
-void loopdir(TDirectory* dir, string histname)
-{
+//void loopdir(TDirectory* dir, string histname)
+//{
 	
-	TDirectory *dirsav = gDirectory;
-	TIter keys_iter(dir->GetListOfKeys());
-	TKey* key;
+//	TDirectory *dirsav = gDirectory;
+//	TIter keys_iter(dir->GetListOfKeys());
+//	TKey* key;
 	
-	while ((key = (TKey*)keys_iter()))
-	{
-		if (key->IsFolder())
-		{
-			dir->cd(key->GetName());
-			TDirectory *subdir = gDirectory;
-			//subfolder->cd();
-			loopdir(subdir, histname);
-			dirsav->cd();
-			continue;
-		}
-		else
-		{
-			string keyname = key->GetName();
-			string keytype = key->GetClassName();
+//	while ((key = (TKey*)keys_iter()))
+//	{
+//		if (key->IsFolder())
+//		{
+//			dir->cd(key->GetName());
+//			TDirectory *subdir = gDirectory;
+//			//subfolder->cd();
+//			loopdir(subdir, histname);
+//			dirsav->cd();
+//			continue;
+//		}
+//		else
+//		{
+//			string keyname = key->GetName();
+//			string keytype = key->GetClassName();
 			
 			
-			if (int(histname.find("pedestal") != -1))
-			{
-				int found2 = keyname.find("_b0");
-				if (int(keytype.find("TH1") != -1))
-				{
-					if (int( keyname.find("hist_fc_") != -1) && found2 != -1)
-					{
-						//cout << "Pedestal name " << keyname << endl;
-						TH1F *pedestal_hist = (TH1F*)key->ReadObj();
-						pedestal_hist->SetName(key->GetName());
-						pedestal_hists.push_back(pedestal_hist);
-					}
-				}
-			}
-			else if ( int(histname.find("calib") != -1))
-			{
-				if (int(keytype.find("TH1") == -1) && int(keyname.find("b0") != -1))
-				{
+//			if (int(histname.find("pedestal") != -1))
+//			{
+//				int found2 = keyname.find("_b0");
+//				if (int(keytype.find("TH1") != -1))
+//				{
+//					if (int( keyname.find("hist_fc_") != -1) && found2 != -1)
+//					{
+//						//cout << "Pedestal name " << keyname << endl;
+//						TH1F *pedestal_hist = (TH1F*)key->ReadObj();
+//						pedestal_hist->SetName(key->GetName());
+//						pedestal_hists.push_back(pedestal_hist);
+//					}
+//				}
+//			}
+//			else if ( int(histname.find("calib") != -1))
+//			{
+//				if (int(keytype.find("TH1") == -1) && int(keyname.find("b0") != -1))
+//				{
 					
-					if (int(keyname.find("calib") != -1) && int(keyname.find("DAC") == -1)) 
-					{
-						//cout << "Calibration name " << keyname << endl;
-						TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
-						calib_graph->SetName(key->GetName());
-						calib_graphs.push_back(calib_graph);
-					}
-				}
+//					if (int(keyname.find("calib") != -1) && int(keyname.find("DAC") == -1))
+//					{
+//						//cout << "Calibration name " << keyname << endl;
+//						TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
+//						calib_graph->SetName(key->GetName());
+//						calib_graphs.push_back(calib_graph);
+//					}
+//				}
 			
-			}
-		}
-	}
-}
+//			}
+//		}
+//	}
+//}
+
 
 
 
@@ -214,7 +213,7 @@ int main ( int argc, char **argv )
     TH2F                    *charge_v_strip[n_kpix/2];
 
     TH1F 					*trig_diff[n_kpix];
-	
+    TH1F                    *ext_trigs;
 		
 		
 	TH2F					*cluster_correlation[4][n_kpix][n_kpix-1];
@@ -261,6 +260,9 @@ int main ( int argc, char **argv )
 	
 	// Calibration slope, is filled when 
     double					calib_slope[n_kpix][n_channels][n_buckets] = {1}; //ADD buckets later.
+    std::bitset<18> index;
+    std::unordered_map<std::bitset<18>, std::pair<double, double>> calibs;
+    double                  pearsson_cut = 0.8;
 	
 	double					pedestal_MedMAD[n_kpix][n_channels][n_buckets][2] = {0};
 	int						calibration_check = 0;
@@ -326,7 +328,6 @@ int main ( int argc, char **argv )
 			skip_cycles_front = 0;
 			TFile *calibration_file = TFile::Open(argv[2]);
 			calibration_check = 1;
-//			loopdir(calibration_file, "calib");
 			
 //			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
             TTree *calib_tree = (TTree*)calibration_file->Get("calibration_tree");
@@ -342,43 +343,12 @@ int main ( int argc, char **argv )
             long int nEnTrees = calib_tree->GetEntries();
             for (long int i = 0; i < nEnTrees; ++i){
                 calib_tree->GetEntry(i);
+                index = keybit(kpix_calib, channel_calib, bucket_calib);
+                std::pair<double,double> calib_entry = std::make_pair(slope_calib, pearsson_calib);
+                calibs.emplace(index,calib_entry);
                 calib_slope[kpix_calib][channel_calib][bucket_calib] = slope_calib;
+//                calib_pearsson[kpix_calib][channel_calib][bucket_calib] = pearsson_calib;
             }
-//			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
-//			{
-//				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
-				
-//				string calib_name         = calib_graphs[i]->GetName();
-//				//cout << calib_name << endl;
-//				size_t kpix_num_start     = calib_name.find("_k")+2;
-//				size_t channel_num_start  = calib_name.find("_c")+2;
-//				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
-//				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
-				
-//				//cout << kpix_num_start << endl;
-//				//cout << kpix_num_length << endl;
-//				//
-//				//cout << channel_num_start << endl;
-//				//cout << channel_num_length << endl;
-				
-//			    string channel_string = calib_name.substr(channel_num_start, channel_num_length);
-//			    string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
-			    
-//			   //cout << "Channel Number = " <<  channel_string << endl;
-//			   //cout << "KPiX Number = " << kpix_string << endl;
-			    
-			    
-//			    int kpix_num = stoi(kpix_string);
-//			    int channel_num = stoi(channel_string);
-				
-//				//cout << "KPiX Number = " << kpix_num << endl;
-//				//cout << "Channel Number = " << channel_num << endl;
-				
-//				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-//				//cout << "Slope of KPiX " << kpix_num << " and channel " << channel_num << " is " <<  calib_slope[kpix_num][channel_num] << endl;
-				
-//			}
-			
 			cout << " -- Reading " << argv[3] << " as pedestal subtraction input file." << endl;
 			skip_cycles_front = 0;
 			TFile *pedestal_file = TFile::Open(argv[3]);
@@ -502,6 +472,9 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
                 bunchClk = sample->getBunchCount();
                 subCount = sample->getSubCount();
+                index = keybit(kpix, channel, bucket);
+
+
 
 				//cout << type <<endl;
 				//cout << "DEBUG 2" << endl;
@@ -512,12 +485,17 @@ int main ( int argc, char **argv )
 					channelFound[kpix][channel] = true;
 //					bucketFound[kpix][channel][bucket] = true;
 					//cout << "Found KPIX " << kpix << endl;
+
 					if (bucket == 0)
 					{
+//                        cout << "Just testing something: Index " << index << " KPiX " << kpix << " Channel " << channel << " Bucket " << bucket << endl;
+//                        cout << "Previous calib slope " << calib_slope[kpix][channel][bucket] << endl;
+//                        cout << "New calib slope " << calibs.at(index).first << endl;
+                        if (calibs.at(index).first != calib_slope[kpix][channel][bucket]) printf(ANSI_COLOR_YELLOW "(Warning) There is a difference between the two methods" ANSI_COLOR_RESET "\n");
 						if (calibration_check == 1)
 						{
 							//cout << "2nd Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
-                            if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel][bucket] != 0)
+                            if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85)
 							{
 
 
@@ -534,7 +512,7 @@ int main ( int argc, char **argv )
 								} 
 								
 								//cout << "DEBUG 2.1 " << kpix << endl;
-                                double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calib_slope[kpix][channel][bucket];
+                                double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calibs.at(index).first;
 								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
 								//cout << "Pointer of vec_corr_charge " << vec_corr_charge[kpix] << endl;
 							}
@@ -591,6 +569,11 @@ int main ( int argc, char **argv )
     int response_bins = 220;
     double response_xmin = -20.5;
     double response_xmax = 19.5;
+
+
+    tmp.str("");
+    tmp << "external_trigger_time";
+    ext_trigs = new TH1F(tmp.str().c_str(), "ext trigger time; #T (BCC); Nr. of Entries", 8192, 0, 8192);
 
     for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
     {
@@ -1018,11 +1001,13 @@ int main ( int argc, char **argv )
 			unsigned int block = channel/32;
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
+            index = keybit(kpix, channel, bucket);
 //            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
             if (type == 2)// If event is of type external timestamp
             {
                 double time = bunchClk + double(subCount * 0.125);
                 time_ext.push_back(time);
+                ext_trigs->Fill(time);
                 //cout << "DEBUG: channel in timestmap = " << channel << endl;
                 //cout << "DEBUG: bucket in timestmap = " << bucket << endl;
             }
@@ -1030,16 +1015,17 @@ int main ( int argc, char **argv )
 			{
 				if (bucket == 0)
 				{
-                    if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel][bucket] != 0) //ensuring we ignore 0 MAD channels
+                    if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD channels
 					{
 //                         cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+                        //if (kpix == 0 && channel == 188) cout << "Just testing things: " << calibs.at(index).first << " " << calibs.at(index).second;
                         double time_diff_triggers = smallest_time_diff(time_ext, tstamp);
                         double charge_ped_corrected = value - pedestal_MedMAD[kpix][channel][bucket][0];
                         trig_diff[kpix]->Fill(time_diff_triggers);
                         QTrue[kpix][channel][1]->Fill(value, weight);
                         QTrue[kpix][channel][2]->Fill(charge_ped_corrected, weight);
 						//cout << "DEBUG 1" << endl;
-                        double corrected_charge_value_median = charge_ped_corrected/calib_slope[kpix][channel][bucket];
+                        double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
                         QTrue[kpix][channel][3]->Fill(corrected_charge_value_median, weight);
                         double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
                         QTrue[kpix][channel][0]->Fill(charge_CM_corrected, weight);
@@ -1162,6 +1148,7 @@ int main ( int argc, char **argv )
 			sensor = kpix/2;
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
+            index = keybit(kpix, channel, bucket);
             //cout <<"DEBUG3.1 " << kpix << " " <<  channel << endl;
 			//channel to strip assignment.
 			int strip = 9999;
@@ -1198,11 +1185,11 @@ int main ( int argc, char **argv )
 				//cout << tstamp << endl;
 				if (bucket == 0)
 				{
-                    if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel][bucket] != 0) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
+                    if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calibs.at(index).first != 0 && calibs.at(index).second > 0.85) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
 					{
                         //cout <<"DEBUG3.2 " << kpix << " " <<  channel << endl;
 						//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
-                        double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calib_slope[kpix][channel][bucket];
+                        double corrected_charge_value_median = double(value - pedestal_MedMAD[kpix][channel][bucket][0])/calibs.at(index).first;
 
                         fc_response_med[kpix]->Fill(corrected_charge_value_median, weight);
 
