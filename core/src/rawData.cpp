@@ -553,19 +553,30 @@ void Cycle::CalNoise(uint& nbuckets){
       uint bucket = getBucket(buf.first);
       if (bucket >= nbuckets) continue;
 
-      std::vector<double> buf_timeless_fc ;
+      std::vector<double> buf_timeless_fc;
       std::unordered_map<uint, double> noise_time_fc;
       for (auto &buf_time: buf.second){
 	      uint ts = buf_time.first;
-	      double noise = 1.4826*MAD(&buf_time.second);
-	      noise_time_fc.insert(std::make_pair(ts, noise));
+	      double noise_time = 1.4826*MAD(&buf_time.second);
+	      noise_time_fc.insert(std::make_pair(ts, noise_time));
+
+	      //!concatenate all timed fC to one vector
+	      buf_timeless_fc.insert(buf_timeless_fc.end(),
+	                             buf_time.second.begin(),
+	                             buf_time.second.end());
       }
       s_noise_time_fc.insert(std::make_pair(buf.first, std::move(noise_time_fc)));
 
-      
-      //double noise = 1.4826*MAD(&buf.second);
-      //s_noise_time_fc.insert(std::make_pair(buf.first, noise));
-
+      //! debug:
+      if (buf_timeless_fc.size()==0){
+	      std::cout << "[debug] 0 sized timeless fC buffer - kpix: "
+	                << getKpix(buf.first)
+	                << ", channel " << getChannel(buf.first)
+	                << std::endl;
+	      continue;
+      }
+      double noise = 1.4826*MAD(&buf_timeless_fc);
+      s_noise_fc.insert(std::make_pair(buf.first, noise));
   }
   
   printf("Noise calculation finished.\t");

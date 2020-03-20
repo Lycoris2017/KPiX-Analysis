@@ -34,11 +34,24 @@ namespace Lycoris{
 		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
-
-		const uint eventNumber() const{return m_cyclenumber;}
-		
 		uint16_t m_ts;
 		uint m_nbuckets;
+	
+		const uint eventNumber() const{return m_cyclenumber;}
+		const uint runtime() const{return m_ts;}
+
+		//! get timestamp based on channel and bucket
+		uint getDataTime(uint hwid) {
+			if (m_v_hashkeys.empty() || m_v_ts.empty()) {
+				printf("getDataTime: error! empty m_v_hashkeys or m_v_ts .\n");
+				return 0;
+			}
+			std::vector<uint>::iterator it =
+				std::find(m_v_hashkeys.begin(), m_v_hashkeys.end(), hwid);
+			int index = std::distance(m_v_hashkeys.begin(), it);
+			return m_v_ts.at(index);	
+		}
+	   
 		// cm noise is per kpix, per bucket:
 		std::unordered_map<uint, double> m_m_cm_noise;
 		//double m_cm_noise[4];
