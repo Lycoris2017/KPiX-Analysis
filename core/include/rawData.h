@@ -23,8 +23,8 @@ namespace Lycoris{
 
   constexpr uint G_BUCKET_HASH_UNIT { 30000 };
   constexpr uint G_TIME_HASH_UNIT { 150000 };
-  
-	class Cycle{
+
+  class Cycle{
 	public:
 		// Global channel num = kpix_index*2014+channel;
 		Cycle(KpixEvent &event,
@@ -57,15 +57,22 @@ namespace Lycoris{
 		bool m_has_adc;
 		// Please make sure both ADC and TS are 16bit (see KpixSample)
 		//		std::vector<uint16_t> m_v_adc_b[4];
-		std::vector<uint16_t> m_v_adc; // index by bucekt+kpix+channel
+		std::vector<uint16_t> m_v_adc; // index by bucket+kpix+channel
 		const vector<uint16_t>& vadc() const{
 			if (m_v_adc.empty()){
 				printf("vadc error\n");
 				exit(EXIT_FAILURE);
 			}else return m_v_adc;
 		}
-		//		vector<uint16_t> m_v_ts_b[4];
-		vector<uint16_t> m_v_ts; // index by bucket+kpix+channel
+
+		std::vector<uint16_t> m_v_ts; // index by bucket+kpix+channel
+		const vector<uint16_t>& vtstamp() const{
+			if (m_v_ts.empty()){
+				printf("vtstamp error\n");
+				exit(EXIT_FAILURE);
+			}else return m_v_ts;
+		}
+				
 		void ResetAdc(){
 			m_v_adc.clear();
 			m_has_adc = false;
@@ -112,9 +119,9 @@ namespace Lycoris{
 	public:
 		static void AddFcBuf(Cycle&);
 		static void ResetFcBuf(){
-		  s_buf_fc.clear();
-          s_buf_time_fc.clear();
-          printf("fC buffer and time resolved fC buffer cleared.\n");
+			//s_buf_fc.clear();
+			s_buf_time_fc.clear();
+			printf("fC buffer and time resolved fC buffer cleared.\n");
 		}
 		static void ResetNoise(){
 		  s_noise_fc.clear();
@@ -125,46 +132,47 @@ namespace Lycoris{
 	private:
 		/* over all cycles, indexed by channel/bucket */
 		static unordered_map<uint, double> s_noise_fc;
-        static unordered_map<uint, double> s_noise_time_fc;
-		static unordered_map<uint, vector<double>> s_buf_fc;
-        static unordered_map<uint, vector<double>> s_buf_time_fc;
+		//static unordered_map<uint, double> s_noise_time_fc;
+		static unordered_map<uint, unordered_map<uint, double>>	s_noise_time_fc;
+		//static unordered_map<uint, vector<double>> s_buf_fc;
+        //static unordered_map<uint, vector<double>> s_buf_time_fc;
+        static unordered_map<uint, unordered_map<uint, vector<double>>> s_buf_time_fc;
+		
 	public:
 		static unordered_map<uint, double>& getNoise() {
 		  return Cycle::s_noise_fc;
 		}
-        static unordered_map<uint, double>& getTimeNoise() {
+		static unordered_map<uint, unordered_map<uint, double>>& getTimeNoise() {
           return Cycle::s_noise_time_fc;
         }
 
 	public:
 		
-		// Hash table
-		static uint hashCode(uint kpix, uint channel){ return kpix*1024+channel;}
-		static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
-        static uint hashCode(uint kpix, uint channel, uint bucket, uint time){return time*G_TIME_HASH_UNIT+bucket*G_BUCKET_HASH_UNIT+kpix*1024+channel;} // experimental by uwe
+        /*! Hash table */
+        static uint hashCode(uint kpix, uint channel, uint bucket){return bucket*G_BUCKET_HASH_UNIT + kpix*1024+channel;}
+        //static uint hashCode(uint kpix, uint channel, uint bucket, uint time){return time*G_TIME_HASH_UNIT+bucket*G_BUCKET_HASH_UNIT+kpix*1024+channel;} // experimental by uwe
 		static uint getKpix(uint hashcode){
-            auto _hashcode = rmTime(hashcode);
-            auto m_hashcode = rmBucket(_hashcode);
+			//auto _hashcode = rmTime(hashcode);
+            auto m_hashcode = rmBucket(hashcode);
             return m_hashcode/1024;
 		}
 		static uint getChannel(uint hashcode){
-            auto _hashcode = rmTime(hashcode);
-            auto m_hashcode = rmBucket(_hashcode);
+			//auto _hashcode = rmTime(hashcode);
+            auto m_hashcode = rmBucket(hashcode);
             return m_hashcode%1024;
 		}
 		static uint rmBucket(uint hashcode) { return hashcode%G_BUCKET_HASH_UNIT;}
         static uint getBucket(uint hashcode){
-            auto _hashcode = rmTime(hashcode);
-            return _hashcode/G_BUCKET_HASH_UNIT;
+	        //auto _hashcode = rmTime(hashcode);
+            return hashcode/G_BUCKET_HASH_UNIT;
         }
 		  
-        static uint rmTime(uint hashcode) { return hashcode%G_TIME_HASH_UNIT;}
-        static uint getTime(uint hashcode){return hashcode/G_TIME_HASH_UNIT;}
+        //static uint rmTime(uint hashcode) { return hashcode%G_TIME_HASH_UNIT;}
+        //static uint getTime(uint hashcode){return hashcode/G_TIME_HASH_UNIT;}
+        static uint getTime(uint hashcode) {return 1;} //fake template - MW
 
 		template <typename T>
     	static void AddBufferT(std::unordered_map<uint, vector<T>> &target,
-	                       //const std::vector<uint> &kk,
-	                       //const std::vector<T> &vv,
 	                       uint key,
 	                       T val
 	                       ){
@@ -211,7 +219,7 @@ namespace Lycoris{
       void loadCalibTree(const std::string&); // read from root tree
 	  void loadGeo(const std::string&); // read from csv
       const std::unordered_map<uint, std::pair<double, double>>& getCalibs() const{  return m_m_calibs; }
-      const std::unordered_map<uint, double>& getSlopesb0() const{  return m_m_slopes_b0; }
+      const std::unordered_map<uint, double>& getSlopes() const{  return m_m_slopes; }
 	  const std::vector<Cycle>& getCycles() const{ return m_v_cycles;}
 
 	  void makeClusters(){}; // in processing 20191206
@@ -234,7 +242,7 @@ namespace Lycoris{
 		uint m_nbuckets;
 		uint m_nmax;
         std::unordered_map<uint, std::pair<double, double>> m_m_calibs; //Done
-        std::unordered_map<uint, double> m_m_slopes_b0; //Done
+        std::unordered_map<uint, double> m_m_slopes; //Done
 		std::unordered_map<uint, uint> m_kpix2plane; 
 			  
 	};

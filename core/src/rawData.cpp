@@ -22,14 +22,17 @@
 using namespace std;
 using namespace Lycoris;
 
-std::unordered_map< uint, std::vector<double>> Cycle::s_buf_fc;
-std::unordered_map< uint, std::vector<double>> Cycle::s_buf_time_fc;
-std::unordered_map<uint, double> Cycle::s_noise_fc;
-std::unordered_map<uint, double> Cycle::s_noise_time_fc;
+/* !ALL static variables need declaration before using! */
+//std::unordered_map< uint, std::vector<double> > Cycle::s_buf_fc;
+//std::unordered_map< uint, std::vector<double>> Cycle::s_buf_time_fc;
+std::unordered_map< uint, std::unordered_map<uint, std::vector<double>> > Cycle::s_buf_time_fc;
+std::unordered_map< uint, double > Cycle::s_noise_fc;
+//std::unordered_map< uint, double > Cycle::s_noise_time_fc;
+std::unordered_map< uint, std::unordered_map<uint, double> > Cycle::s_noise_time_fc;
 
-std::unordered_map< uint, std::vector<int>> Cycle::s_buf_adc;
-std::unordered_map< uint, double> Cycle::s_ped_med_adc;
-std::unordered_map< uint, double> Cycle::s_ped_mad_adc;
+std::unordered_map< uint, std::vector<int> > Cycle::s_buf_adc;
+std::unordered_map< uint, double > Cycle::s_ped_med_adc;
+std::unordered_map< uint, double > Cycle::s_ped_mad_adc;
 
 Cycle::Cycle(KpixEvent &event, uint nbuckets,
              uint begin_ch, uint end_ch,
@@ -37,49 +40,36 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 
 	// Declare member variables first
 	m_nbuckets = nbuckets;
-  m_has_adc = false;
-  m_has_fc  = false;
-  m_cyclenumber = event.eventNumber();
-  if (isold) m_ts = event.timestamp();
-  else       m_ts = event.runtime();
-  
-
-    KpixSample *sample;   //
+	m_has_adc = false;
+	m_has_fc  = false;
+	m_cyclenumber = event.eventNumber();
+	if (isold) m_ts = event.timestamp();
+	else       m_ts = event.runtime();
+	
+	
+	KpixSample *sample;   //
     for (uint ev=0; ev< event.count(); ev++){
+	    
+	    sample = event.sample(ev);
+	    
+	    uint kpix, channel, bucket, value;
+	    uint bunchClk, subCount, tstamp;
+	    kpix    = sample->getKpixAddress();
+	    channel = sample->getKpixChannel();
+	    bucket  = sample->getKpixBucket();
+	    value   = sample->getSampleValue();
+	    tstamp  = sample->getSampleTime(); // local time in BCC
 
-      sample = event.sample(ev);
+	    if (sample->getSampleType() == KpixSample::Data){
+		    if ( bucket >= m_nbuckets ) continue;
+		    if ( channel < begin_ch || channel > end_ch)  continue;
 
-      uint kpix, channel, bucket, value;
-      uint bunchClk, subCount, tstamp;
-      kpix    = sample->getKpixAddress();
-      channel = sample->getKpixChannel();
-      bucket  = sample->getKpixBucket();
-      value   = sample->getSampleValue();
-      tstamp  = sample->getSampleTime();
+		    uint key = hashCode(kpix, channel, bucket);
 
-      if (sample->getSampleType() == KpixSample::Data){
-	      if ( bucket >= m_nbuckets ) continue;
-	      if ( channel < begin_ch || channel > end_ch)  continue;
-          uint key = hashCode(kpix, channel, bucket, tstamp);
-//          cout << "Tstamp " << tstamp << endl;
-//          cout << "channel " << channel << endl;
-//          cout << "kpix " << kpix << endl;
-//          cout << "bucket " << bucket << endl;
-          uint testkey = hashCode(kpix, channel, bucket);
-          if (rmTime(key) > 25000 && rmTime(key) < 100000){
-                        cout << "Tstamp " << tstamp << endl;
-                        cout << "channel " << channel << endl;
-                        cout << "kpix " << kpix << endl;
-                        cout << "bucket " << bucket << endl;
-              cout << "Key is " << key << endl;
-              cout << "Testkey is " << testkey << endl;
-              cout << "Timeless key is " << rmTime(key) << endl;
-          }
-//            cout << "ACTUALLY look at this key " << key << endl;
-	      m_v_hashkeys.push_back(key);
-	      m_v_adc.push_back(value);
-	      m_v_ts.push_back(tstamp);
-      }
+		    m_v_hashkeys.push_back(key);
+		    m_v_adc.push_back(value);
+		    m_v_ts.push_back(tstamp);
+	    }
       
       if (sample->getSampleType() == KpixSample::Timestamp){
 	      double time;
@@ -164,49 +154,49 @@ void rawData::loadCSV(const std::string& fname){
      Read Calib from a csv file
      cols needs to be:
      kpix >> channel >> bucket >> slope
-   */
+  */
 	printf(" from CSV...\n");
-  m_m_slopes_b0.clear();
-  std::ifstream file (fname);
-  if ( !file ) return;
-  printf(" Open Calib file : %s\n", fname.c_str());
-  
-  std::string line;
-  char delim=',';
-  
-  //m_calib_map.clear();
-  while( std::getline(file, line) ){
-    
-    if (line.empty() ) continue;
-    
-    while (line[0]==' ')
-      line.erase(0,1);
-    
-    if (!isdigit(line[0])) continue;
-    
-    std::stringstream is(line);
-    std::string value;
-    std::vector<std::string> vec;
-    while (std::getline(is, value, delim))
+	m_m_slopes.clear();
+	std::ifstream file (fname);
+	if ( !file ) return;
+	printf(" Open Calib file : %s\n", fname.c_str());
+	
+	std::string line;
+	char delim=',';
+	
+	//m_calib_map.clear();
+	while( std::getline(file, line) ){
+		
+		if (line.empty() ) continue;
+		
+		while (line[0]==' ')
+			line.erase(0,1);
+		
+		if (!isdigit(line[0])) continue;
+		
+		std::stringstream is(line);
+		std::string value;
+		std::vector<std::string> vec;
+		while (std::getline(is, value, delim))
       vec.push_back(value);
-    if (vec.size()<4){
-      printf("[ERROR] Missing value at");
-      for (const auto &a : vec)
-	cout << a << ' ';
-      printf("\n");
-    }
-    else{
-      auto kpix    = std::atoi(vec[0].c_str());
-      auto channel = std::atoi(vec[1].c_str());
-      auto bucket  = std::atoi(vec[2].c_str());
-      float slope  = std::atof(vec[3].c_str());
-      if (bucket==0)
-        m_m_slopes_b0.emplace(Cycle::hashCode(kpix,channel), slope);
-    }
-  }
+		if (vec.size()<4){
+			printf("[ERROR] Missing value at");
+			for (const auto &a : vec)
+				cout << a << ' ';
+			printf("\n");
+		}
+		else{
+			auto kpix    = std::atoi(vec[0].c_str());
+			auto channel = std::atoi(vec[1].c_str());
+			auto bucket  = std::atoi(vec[2].c_str());
+			float slope  = std::atof(vec[3].c_str());
+			//if (bucket==0)
+			m_m_slopes.emplace(Cycle::hashCode(kpix,channel,bucket), slope);
+		}
+	}
   
-  cout << " test: "<< m_m_slopes_b0.at(Cycle::hashCode(1, 1000)) << endl;
-  file.close();
+	cout << " test: "<< m_m_slopes.at(Cycle::hashCode(1, 1000, 0)) << endl;
+	file.close();
 	
 }
 
@@ -418,10 +408,11 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
     uint key  = kk.at(cc);
     uint adc = vv.at(cc);
     uint ped = ped_adc.at(key);
-    uint _key = rmTime(key);
-    std::pair<double, double> calib = calibs.at(_key); // Calib values do not have a time hence why the normal key is out of range.
+
+    std::pair<double, double> calib = calibs.at(key); 
     uint kpix = getKpix(key);
     uint channel = getChannel(key);
+    
     // ignore mad0 channels
     if (s_ped_mad_adc.at(key)==0) continue;
     // ignore channels with slope ==0 and with a pearson correlation coefficient < 0.8
@@ -435,7 +426,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
     // }
 
     target->insert(std::make_pair(key, fc));
-//    cout << "DEBUG bla" << endl;
+    //    cout << "DEBUG bla" << endl;
     // if (kpix==1 && getChannel(key) == 73){
     //     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
     //          << adc << " adc, "
@@ -501,52 +492,82 @@ void Cycle::RemoveCM(){
 
 /* Static */
 void Cycle::AddFcBuf(Cycle& cy){
+	/* Note: every cycle, for each k/ch/b, 
+	   charge and BCC tstamp is one-to-one correspondence*/
   if (!cy.m_has_fc) return;
-  for (auto &fc: cy.m_m_fc){
-      uint key = rmTime(fc.first);
-	  Cycle::AddBufferT( Cycle::s_buf_fc,
-                         key, fc.second); // filling only timestampless key
-      Cycle::AddBufferT( Cycle::s_buf_time_fc,
-                         fc.first, fc.second);
+  // for (auto &fc: cy.m_m_fc){
+  // 	  //uint key = rmTime(fc.first);
+  // 	  // Cycle::AddBufferT( Cycle::s_buf_fc,
+  //     //                    key, fc.second); // filling only timestampless key
+  //     Cycle::AddBufferT( Cycle::s_buf_time_fc,
+  //                        fc.first, fc.second);
+  // }
+
+  //! MW: <uint, <uint, vector<T>>>
+  std::unordered_map<uint, std::unordered_map<uint, vector<double> > > target;
+  auto hwindex = cy.hashkeys();
+  auto tstamps = cy.vtstamp();
+  for (size_t cc=0; cc<hwindex.size(); ++cc){
+	  uint outer = hwindex.at(cc);
+	  uint inner = tstamps.at(cc);
+	  double val = cy.m_m_fc.at(outer);
+	  if (!target.count(outer)){
+		  std::unordered_map<uint, vector<double>> innermap;
+		  target.insert(std::make_pair(outer, std::move(innermap)));
+	  }
+	  Cycle::AddBufferT( target.at(outer),
+	                     inner, val);
   }
+ 
 }
 
 /* Static */
 void Cycle::CalNoise(uint& nbuckets){
-  if (s_buf_fc.empty()) return;
+	
+  if (s_buf_time_fc.empty()) return;
+  
   s_noise_fc.clear();
   auto t_start = std::chrono::high_resolution_clock::now();
 
-  for (auto &buf: s_buf_fc){
-      uint bucket = getBucket(buf.first);
-    if (bucket < nbuckets){
-      double noise = 1.4826*MAD(&buf.second);
-      s_noise_fc.insert(std::make_pair(buf.first, noise));
+  //! Calculate timeless noise:
+//   for (auto &buf: s_buf_fc){
+//       uint bucket = getBucket(buf.first);
+//       if (bucket >= nbuckets) continue;
       
-//      if (getKpix(buf.first)==1 && getChannel(buf.first)==73){
-//	      cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
-//          cout << "Key: " << buf.first << endl;
-//	      for (const auto &input: buf.second)
-//		      cout << " " << input << endl;
-//      }
+//       double noise = 1.4826*MAD(&buf.second);
+//       s_noise_fc.insert(std::make_pair(buf.first, noise));
       
-    }
-  }
+// //      if (getKpix(buf.first)==1 && getChannel(buf.first)==73){
+// //	      cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
+// //          cout << "Key: " << buf.first << endl;
+// //	      for (const auto &input: buf.second)
+// //		      cout << " " << input << endl;
+// //      }
+      
+    
+//   }
+  
+  //! Calculate timed noise:
   for (auto &buf: s_buf_time_fc){
+	  
       uint bucket = getBucket(buf.first);
-    if (bucket < nbuckets){
-      double noise = 1.4826*MAD(&buf.second);
-      s_noise_time_fc.insert(std::make_pair(buf.first, noise));
+      if (bucket >= nbuckets) continue;
 
-//      if (getKpix(buf.first)==1 && getChannel(buf.first)==73 && getTime(buf.first) < 1500){
-//          cout << "debug: noise cal kpix 1, channel 73 noise " <<  noise << endl;
-//          cout << "Key: " << buf.first << endl;
-//          for (const auto &input: buf.second)
-//              cout << " " << input << endl;
-//      }
+      std::vector<double> buf_timeless_fc ;
+      std::unordered_map<uint, double> noise_time_fc;
+      for (auto &buf_time: buf.second){
+	      uint ts = buf_time.first;
+	      double noise = 1.4826*MAD(&buf_time.second);
+	      noise_time_fc.insert(std::make_pair(ts, noise));
+      }
+      s_noise_time_fc.insert(std::make_pair(buf.first, std::move(noise_time_fc)));
 
-    }
+      
+      //double noise = 1.4826*MAD(&buf.second);
+      //s_noise_time_fc.insert(std::make_pair(buf.first, noise));
+
   }
+  
   printf("Noise calculation finished.\t");
   auto t_end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
