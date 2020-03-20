@@ -536,7 +536,7 @@ def hist_plotter():
 			c1.Update()
 			if args.nofit:
 				obj.GetFunction('gaus').SetRange(0.0, 0.0, 0.01, 0.01) #IMPORTANT: workaround to remove fit from the plot
-			run_name = filename_list[0][:-1]			
+			run_name = filename_list[counter][:-1]
 			if (args.output_name):
 				outname = folder_loc+run_name+'_'+args.output_name
 				print 'Creating '+outname
@@ -1125,7 +1125,7 @@ for x in root_file_list:
 if ('elab' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
 elif ('tb' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
+	folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
 elif ('summer' in args.folder):
 	folder_loc = '/home/lycoris-dev/Documents/humidity/'
 elif ('thesis' in args.folder):

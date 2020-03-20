@@ -10,6 +10,7 @@
 //using namespace std;
 
 std::bitset<18> keybit(uint kpix, uint channel, uint bucket);//, uint time);
+uint keyhash(uint kpix, uint channel, uint bucket);//, uint time);
 double yParameter(double, int);
 double yParameterSensor(double, int);
 double xParameterSensor(double, int);

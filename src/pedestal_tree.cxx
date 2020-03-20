@@ -234,7 +234,7 @@ int main ( int argc, char **argv )
 		}
 	}
 	
-   int maxAcquisitions = 25000;
+   int maxAcquisitions = 50000;
 	
 	//////////////////////////////////////////
 	// Open Data file

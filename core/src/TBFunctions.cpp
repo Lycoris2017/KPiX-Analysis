@@ -12,6 +12,10 @@ std::bitset<18> keybit(uint kpix, uint channel, uint bucket){//}, uint time){
     return bittest;
 }
 
+uint keyhash(uint kpix, uint channel, uint bucket){//}, uint time){
+    return bucket+std::pow(2,2)*kpix+std::pow(2,7)*channel;//+std::pow(2,17)*time;
+}
+
 double yParameter(double strip, int kpix)
 {
 

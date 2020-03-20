@@ -403,22 +403,11 @@ int main ( int argc, char **argv )
     {
         if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
         {
-            rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
-            FolderName.str("");
-            FolderName << "Sensor_" << sensor;
-            rFile->mkdir(FolderName.str().c_str());
-            TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
-            sensor_folder->cd();
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
                 kpix = (sensor*2)+k;
                 if (kpixFound[kpix])
                 {
-                    FolderName.str("");
-                    FolderName << "KPiX_" << kpix;
-                    sensor_folder->mkdir(FolderName.str().c_str());
-                    TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
-                    rFile->cd(kpix_folder->GetPath());
 
                     for (bucket = 0; bucket < n_buckets; bucket++){
                         tmp.str("");

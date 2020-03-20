@@ -11,7 +11,7 @@
 '''
 
 import numpy as np
-import os 
+import os
 import ROOT
 import argparse
 import argcomplete
@@ -36,7 +36,7 @@ class ChannelDisabler:
 		self.ecal = ecal  # Default = False
 		self.slope_name =  'slope_vs_channel_k'
 		self.RMS_name = 'RMSfc_vs_channel_k'
-		self.acquire_name = 'Channel_entries_k'
+		self.acquire_name = 'entries_v_channel_k'
 	
 		self.kpix = kpix
 		if not kpix:
@@ -44,7 +44,7 @@ class ChannelDisabler:
 		else:
 			self.slope_name += ''+str(kpix)+'_b0'
 			self.RMS_name += ''+str(kpix)+'_b0'
-			self.acquire_name += str(kpix)
+			self.acquire_name += str(kpix)+'_b0'
 
 		print self.slope_name
 		print self.RMS_name 
@@ -86,7 +86,7 @@ class ChannelDisabler:
 			self.slope_hist = hist_obj
 		elif self.RMS_name == hist_obj.GetName():
 			self.RMS_hist = hist_obj
-		elif self.acquire_name in hist_obj.GetName() and '_total' in hist_obj.GetName() and 'timed' not in hist_obj.GetName() and 'no' not in hist_obj.GetName():# 
+		elif self.acquire_name in hist_obj.GetName():#
 			self.acquire_hist = hist_obj
 		return
 	
@@ -135,7 +135,7 @@ class ChannelDisabler:
 				if (RMS_obj.GetBinContent(chan+1) >= 4):
 					noisy_channels.append(chan)
 			if self.acquire_hist: #level2
-				if (acquire_obj.GetBinContent(chan+1) >= 0.4):
+				if (acquire_obj.GetBinContent(chan+1) >= 121):
 					noisy_channels_acquire.append(chan)
 
 		if (not self.ecal):
@@ -160,7 +160,7 @@ class ChannelDisabler:
 
 		for chan in xrange(1024):		#create the character mapping of the channels
 			
-			if (chan in dc_channels) or (chan in dead_channels_slope) or (chan in dead_channels_RMS) or (chan in noisy_channels) or (chan in noisy_channels_acquire):		#A for active and D for deactivated channels
+			if (chan in dc_channels) or (chan in dead_channels_slope) or (chan in dead_channels_RMS) or (chan in noisy_channels) or (chan in noisy_channels_acquire) or ('D' in prev[chan]) :		#A for active and D for deactivated channels
 				kpix[chan] = 'D'
 			else :
 				kpix[chan] = 'A'
@@ -207,6 +207,7 @@ parser.add_argument('--calib', dest='calib', nargs='?', help='input calibration 
 parser.add_argument('--acquire', dest='acquire', nargs='?', help='input pedestal file')
 parser.add_argument('-k', dest='kpix', nargs='+', default=[], type=str, help='which kpix to check, eg: 1 or 1 2')
 parser.add_argument('--ecal', dest='ecal', type=bool, nargs='?', default=False, help='ecal sensor used here')
+parser.add_argument('--previous', dest='previous', nargs='?', help='previous disable map txt input for a gradual increase in disabled channels')
 
 if len(sys.argv) < 2:
 	print parser.print_help()
@@ -216,6 +217,21 @@ args = parser.parse_args()
 ######### Parser #########
 
 ######### Main: #########
+
+prev = np.chararray(1024)
+counter = 0
+with open(args.previous) as prevFile:
+	while True:
+		c = prevFile.read(1)
+		if not c:
+			print "End of file"
+			break
+		if (not c.isspace()):
+			prev[counter] = c
+			counter += 1;
+
+
+
 
 file_in=[]
 if args.calib:
