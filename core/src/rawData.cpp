@@ -48,45 +48,50 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 	
 	
 	KpixSample *sample;   //
-    for (uint ev=0; ev< event.count(); ev++){
-	    
-	    sample = event.sample(ev);
-	    
-	    uint kpix, channel, bucket, value;
-	    uint bunchClk, subCount, tstamp;
-	    kpix    = sample->getKpixAddress();
-	    channel = sample->getKpixChannel();
-	    bucket  = sample->getKpixBucket();
-	    value   = sample->getSampleValue();
-	    tstamp  = sample->getSampleTime(); // local time in BCC
+	for (uint ev=0; ev< event.count(); ev++){
+		
+		sample = event.sample(ev);
+		
+		uint kpix, channel, bucket, value;
+		uint bunchClk, subCount, tstamp;
+		kpix    = sample->getKpixAddress();
+		channel = sample->getKpixChannel();
+		bucket  = sample->getKpixBucket();
+		value   = sample->getSampleValue();
+		tstamp  = sample->getSampleTime(); // local time in BCC
+		
+		if (sample->getSampleType() == KpixSample::Data){
+			if ( bucket >= m_nbuckets ) continue;
+			if ( channel < begin_ch || channel > end_ch)  continue;
+			
+			uint key = hashCode(kpix, channel, bucket);
+			
+			m_v_hashkeys.push_back(key);
+			m_v_adc.push_back(value);
+			m_v_ts.push_back(tstamp);
+		}
+		
+		//! External Trigger Data
+		if (sample->getSampleType() == KpixSample::Timestamp){
+			double time;
+			trigger_t trigger;
+			if (isold)
+				time = tstamp + double(value * 0.125);
+			else{
+				//tstamp   = sample->getSampleRuntime64(m_ts64);
+				subCount = sample->getSubCount();
+				bunchClk = sample->getBunchCount();
+				time = bunchClk + double(0.125 * subCount);
+				trigger.runtime = sample->getSampleRuntime64(m_ts64);
+			}
+			// TBD: Do nothing now, add it to data structure later.
+			trigger.tstamp  = time;
+			m_v_exttrigs.push_back(trigger);
 
-	    if (sample->getSampleType() == KpixSample::Data){
-		    if ( bucket >= m_nbuckets ) continue;
-		    if ( channel < begin_ch || channel > end_ch)  continue;
-
-		    uint key = hashCode(kpix, channel, bucket);
-
-		    m_v_hashkeys.push_back(key);
-		    m_v_adc.push_back(value);
-		    m_v_ts.push_back(tstamp);
-	    }
-      
-      if (sample->getSampleType() == KpixSample::Timestamp){
-	      double time;
-	      if (isold)
-		      time = tstamp + double(value * 0.125);
-	      else{
-		      tstamp   = sample->getSampleRuntime64(m_ts64);
-		      subCount = sample->getSubCount();
-		      bunchClk = sample->getBunchCount();
-		      time = bunchClk + double(0.125 * subCount);
-	      }
-	      // TBD: Do nothing now, add it to data structure later.
-	      
-	      //std::cout<<"[dev] Trigger ts = " << time 
-	      //	 <<", runtime[ns] = " <<  tstamp*5 << std::endl;
-      }
-      
+			//std::cout<<"[dev] Trigger ts = " << time 
+			//	 <<", runtime[ns] = " <<  tstamp*5 << std::endl;
+		}
+		
 
     }// finish loop over all data of one cycle
 
