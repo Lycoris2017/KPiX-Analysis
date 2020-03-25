@@ -34,11 +34,11 @@ namespace Lycoris{
 		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
-		uint16_t m_ts;
+		uint m_ts64;
 		uint m_nbuckets;
 	
 		const uint eventNumber() const{return m_cyclenumber;}
-		const uint runtime() const{return m_ts;}
+		const uint runtime() const{return m_ts64;}
 
 		//! get timestamp based on channel and bucket
 		uint getDataTime(uint hwid) {

@@ -43,8 +43,8 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 	m_has_adc = false;
 	m_has_fc  = false;
 	m_cyclenumber = event.eventNumber();
-	if (isold) m_ts = event.timestamp();
-	else       m_ts = event.runtime();
+	if (isold) m_ts64 = event.timestamp();
+	else       m_ts64 = event.runtime();
 	
 	
 	KpixSample *sample;   //
@@ -76,7 +76,7 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 	      if (isold)
 		      time = tstamp + double(value * 0.125);
 	      else{
-		      tstamp   = sample->getSampleRuntime64(m_ts);
+		      tstamp   = sample->getSampleRuntime64(m_ts64);
 		      subCount = sample->getSubCount();
 		      bunchClk = sample->getBunchCount();
 		      time = bunchClk + double(0.125 * subCount);
