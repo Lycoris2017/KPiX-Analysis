@@ -36,7 +36,7 @@ int main ( int argc, char **argv ) {
 	
 	printf("[Info] You choose file %s\n", argv[1]);
 	rawData db;
-	//db.setMaxCycles(1000);
+	db.setMaxCycles(1000);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
@@ -45,10 +45,9 @@ int main ( int argc, char **argv ) {
 
     db.loadCalibTree(argv[2]);
 
-
-
 	db.doRmPedCM();
-	db.loadGeo("/home/lycoris-dev/workspace/kpix-analysis/data/plane_Geo_default.txt");
+	//	db.loadGeo("/home/lycoris-dev/workspace/kpix-analysis/data/plane_Geo_default.txt");
+	db.loadGeo("/home/mengqing/Documents/workspace/KPiX-Analysis/data/plane_Geo_default.txt");
 	uint b = 1;
 	Cycle::CalNoise(b);
 
@@ -103,7 +102,7 @@ int main ( int argc, char **argv ) {
 		
 		//!- 1) fill the input maps
 		for (auto &fc: ev.m_m_fc){
-            auto key = Cycle::rmTime(fc.first); // noisemap is not time resolved therefore with time key it is out of range
+			auto key = fc.first; 
 			if (Cycle::getBucket(key)!=0) continue;
 			
 			kpix = Cycle::getKpix(key);

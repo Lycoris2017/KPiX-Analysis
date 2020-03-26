@@ -34,8 +34,11 @@ std::unordered_map< uint, std::vector<int> > Cycle::s_buf_adc;
 std::unordered_map< uint, double > Cycle::s_ped_med_adc;
 std::unordered_map< uint, double > Cycle::s_ped_mad_adc;
 
-Cycle::Cycle(KpixEvent &event, uint nbuckets,
-             uint begin_ch, uint end_ch,
+Cycle::Cycle(KpixEvent &event,
+             uint &ntrig_ext,
+             uint nbuckets,
+             uint begin_ch,
+             uint end_ch,
              bool isold ){
 
 	// Declare member variables first
@@ -75,6 +78,11 @@ Cycle::Cycle(KpixEvent &event, uint nbuckets,
 		if (sample->getSampleType() == KpixSample::Timestamp){
 			double time;
 			trigger_t trigger;
+			
+			//! global trigger counter increment
+			ntrig_ext++; 
+			trigger.triggerid = ntrig_ext;
+			
 			if (isold)
 				time = tstamp + double(value * 0.125);
 			else{
@@ -118,7 +126,7 @@ void rawData::loadCalibTree(const std::string& fname){
         if (fname.find(root) !=std::string::npos)
             loadRootTree(fname);
         else
-            throw std::runtime_error("loadCalibTree: invalid input calib file!");
+            throw std::runtime_error("loadCalibTree: invalid input calib file!\n");
     }
     catch(std::exception &e){
         cout << "Caught exception: " << e.what() << "\n";
@@ -129,7 +137,7 @@ void rawData::loadRootTree(const std::string & fname){
     printf(" from ROOT... \n");
     TFile *calib = TFile::Open(fname.c_str());
     if (!calib) {
-        throw std::runtime_error("loadRootTree: invalid calib root file!");
+        throw std::runtime_error("loadRootTree: invalid calib root file!\n");
         return;
     }
     printf("Open Calib file : %s\n", fname.c_str());
@@ -243,7 +251,8 @@ void rawData::loadFile(const std::string& fname){
   uint                   currPct;
   KpixEvent              event;    //
   uint                   ncys=0;
-  string                calState;
+  string                 calState;
+  uint                   ntrig_ext=0;
   
   m_v_cycles.clear();
 
@@ -266,7 +275,7 @@ void rawData::loadFile(const std::string& fname){
     ncys++;
     if (m_nmax!=0 && ncys > m_nmax) break;
 
-    Cycle cy(event, m_nbuckets );
+    Cycle cy(event, ntrig_ext, m_nbuckets );
     calState   = dataRead.getYmlStatus("CalState");
     if (calState == "Baseline" || calState == "Idle"){ //Only adding baseline cycles
         Cycle::AddAdcBuf(cy);
@@ -352,38 +361,40 @@ void Cycle::AddAdcBuf(Cycle& cy){
 
 void rawData::doRmPedCM(bool rmAdc){
 
-  Cycle::CalPed(m_nbuckets, true);
-  size_t     cySize = m_v_cycles.size();  //
-  uint       currPos=0.0;   //
-  uint       currPct;
-
-  auto t_start = std::chrono::high_resolution_clock::now();
-
-  // remove ped:
+	Cycle::CalPed(m_nbuckets, true);
+	size_t     cySize = m_v_cycles.size();  //
+	uint       currPos=0.0;   //
+	uint       currPct;
+	
+	auto t_start = std::chrono::high_resolution_clock::now();
+	
+	// remove ped:
   for (auto &cy : m_v_cycles){
-    if (!cy.m_has_adc){
-      continue; // skip empty cycles
-    }
+	  if (!cy.m_has_adc){
+		  continue; // skip empty cycles
+	  }
 
-//    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-//                          m_m_slopes,
-//                          Cycle::s_ped_mad_adc,
-//                          true);
-    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-                          m_m_calibs,
-                          Cycle::s_ped_mad_adc,
-                          true);
-    cy.RemoveCM();
-    Cycle::AddFcBuf(cy);
-    // debug:
-    //---> Fancy Bar
-    /*    currPos++;
-    currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
-    cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
-	 << currPct << "%  " << flush;
-    */
-    //---> Fancy Bar <---// 
-
+	  //    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
+	  //                          m_m_slopes,
+	  //                          Cycle::s_ped_mad_adc,
+	  //                          true);
+	  cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
+	                        m_m_calibs,
+	                        Cycle::s_ped_mad_adc,
+	                        true);
+	  cy.RemoveCM();
+	    
+	  Cycle::AddFcBuf(cy);
+	    
+	  // debug:
+	  //---> Fancy Bar
+	  /*    currPos++;
+	        currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
+	        cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
+	        << currPct << "%  " << flush;
+	  */
+	  //---> Fancy Bar <---// 
+	  
   }
   auto t_end = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
@@ -410,44 +421,45 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
   auto vv = vadc();
   auto kk = hashkeys();
   for (size_t cc =0; cc<vv.size(); ++cc){
-    uint key  = kk.at(cc);
-    uint adc = vv.at(cc);
-    uint ped = ped_adc.at(key);
+	  
+	  uint key  = kk.at(cc);
+	  uint adc = vv.at(cc);
+	  uint ped = ped_adc.at(key);
+	  std::pair<double, double> calib = calibs.at(key);
 
-    std::pair<double, double> calib = calibs.at(key); 
-    uint kpix = getKpix(key);
-    uint channel = getChannel(key);
-    
-    // ignore mad0 channels
-    if (s_ped_mad_adc.at(key)==0) continue;
-    // ignore channels with slope ==0 and with a pearson correlation coefficient < 0.8
-    if (calib.first == 0 || calib.second < 0.9) continue;
-
-    double fc = (double)(1.0*adc - ped) / calib.first;
-    // // debug:
-    // if (m_cyclenumber ==99 && kpix==0){
-    //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
-    //            kpix, channel, fc, adc, ped, slope);
-    // }
-
-    target->insert(std::make_pair(key, fc));
-    //    cout << "DEBUG bla" << endl;
-    // if (kpix==1 && getChannel(key) == 73){
-    //     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
-    //          << adc << " adc, "
-    //          << ped << " adc, "
-    //          << slope << " slope, "
-    //          << fc << " fC "
-    //          << endl;
-    // }
-
-    if (cm_noise_buf.count(kpix))
-        cm_noise_buf.at(kpix).push_back(fc);
-    else{
-        std::vector<double > vec;
-        vec.push_back(fc);
-        cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
-    }
+	  uint kpix = getKpix(key);
+	  uint channel = getChannel(key);
+	  
+	  // ignore mad0 channels
+	  if (ped_mad.at(key)==0) continue;
+	  // ignore channels with slope ==0 and with a pearson correlation coefficient < 0.8
+	  if (calib.first == 0 || calib.second < 0.9) continue;
+	  
+	  double fc = (double)(1.0*adc - ped) / calib.first;
+	  // // debug:
+	  // if (m_cyclenumber ==99 && kpix==0){
+	  //     printf("cycle 99, kpix %d channel %d with fc %.2f (adc %d, ped %d, slope %.2f)\n",
+	  //            kpix, channel, fc, adc, ped, slope);
+	  // }
+	  
+	  target->insert(std::make_pair(key, fc));
+	  //    cout << "DEBUG bla" << endl;
+	  // if (kpix==1 && getChannel(key) == 73){
+	  //     cout << "debug: ev " << m_cyclenumber << " k1 c73: "
+	  //          << adc << " adc, "
+	  //          << ped << " adc, "
+	  //          << slope << " slope, "
+	  //          << fc << " fC "
+	  //          << endl;
+	  // }
+	  
+	  if (cm_noise_buf.count(kpix))
+		  cm_noise_buf.at(kpix).push_back(fc);
+	  else{
+		  std::vector<double > vec;
+		  vec.push_back(fc);
+		  cm_noise_buf.insert(std::make_pair(kpix, std::move(vec)));
+	  }
 //    cout << "DEBUG end bla" << endl;
 //    if (m_cyclenumber == 21 && kpix ==1){
 //	    cout << "cm input debug: ev 21 kpix 1 channel " << channel << ", "
@@ -460,6 +472,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
 
   }
 
+  
   m_has_fc = !(target->empty());
   if (remove_adc) ResetAdc();
 
@@ -480,6 +493,7 @@ void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
   // 	       << " entry " << d.second << endl; // debug
 
 //  cout << "DEBUG end bla bla blaaaaaa" << endl;
+    
 }
 
 
@@ -515,13 +529,17 @@ void Cycle::AddFcBuf(Cycle& cy){
   for (size_t cc=0; cc<hwindex.size(); ++cc){
 	  uint outer = hwindex.at(cc);
 	  uint inner = tstamps.at(cc);
+	  if (!cy.m_m_fc.count(outer)) continue;
 	  double val = cy.m_m_fc.at(outer);
+	    
 	  if (!target.count(outer)){
 		  std::unordered_map<uint, vector<double>> innermap;
 		  target.insert(std::make_pair(outer, std::move(innermap)));
 	  }
+	    
 	  Cycle::AddBufferT( target.at(outer),
 	                     inner, val);
+
   }
  
 }
