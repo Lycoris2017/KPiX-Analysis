@@ -16,6 +16,7 @@
  Mengqing <mengqing.wu@desy.de>
  @ 2019-10-17
  @ finalized 2019-10-24
+ @ updated   2020-03-26 - Add external trig info
  Currently for external trigger only
  */
 

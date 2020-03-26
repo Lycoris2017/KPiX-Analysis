@@ -12,6 +12,7 @@
 
 #include "kpix_left_and_right.h"
 #include "clustr.h"
+#include "cluster.h"
 #include "PacMan.h"
 #include "TBFunctions.h"
 #include "testbeam201907_noise_mask.h"
@@ -28,7 +29,7 @@ int main ( int argc, char **argv ) {
 	auto kpix2strip_left = kpix_left();
 	auto kpix2strip_right = kpix_right();
 	
-    gROOT->ProcessLine(".L /home/lycoris-dev/KPiX-Analysis/core/include/cluster.h");
+	// gROOT->ProcessLine(".L /home/lycoris-dev/KPiX-Analysis/core/include/cluster.h");
     if (argc != 3){
         printf("[Usage] ./new_analysis [input.dat] [calibration.ymlCalib.root]\n");
 		return 0;
@@ -52,15 +53,17 @@ int main ( int argc, char **argv ) {
 	Cycle::CalNoise(b);
 
 	auto noisemap = Cycle::getNoise();
-
+	auto timenoisemap = Cycle::getTimeNoise();
     std::string OutRoot = argv[1];
     OutRoot = OutRoot + ".new_cluster.root";
 
-//    std::string OutGBL = argv[1];
-//    OutGBL = OutGBL + ".new_GBL_input.txt";
+    std::string OutGBL = argv[1];
+    OutGBL = OutGBL + ".new_GBL_input.txt";
 
     TFile *fout = new TFile(OutRoot.c_str(), "recreate");
 	fout->cd();
+	ofstream claus_file(OutGBL);
+	uint header = 1;
 	// TH2F *cluster_correlation_s0_s1 = new TH2F("cluster_correlation_s0_s1",
 	//                                            "strip correlation; sensor0 [#mum]; sensor1[#mum]",
 	//                                            230, -46000.5, 45999.5, 230,-46000, 46000);
@@ -75,7 +78,6 @@ int main ( int argc, char **argv ) {
 	noise_mask[3] = noise_sensor_3();
 	noise_mask[4] = noise_sensor_4();
 	noise_mask[5] = noise_sensor_5();
-	
 	
 	double charge, noise;
     std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
@@ -155,15 +157,26 @@ int main ( int argc, char **argv ) {
                 vector_sigma.push_back(NomNom.getClusterSignificance2());
                 vector_size.push_back(NomNom.getClusterElementssize());
                 vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
-				// debug to print as claus_file:
-				// cout << setw(5) << eventnumber  << ","
-				//      << setw(1) << sensor  << ","
-				//      << setw(7) << cluster_pos << ","
-				//      << setw(7) << cluster_sigma << ","
-				//      << setw(2) << cluster_size << ","
-				//      << setw(7) << cluster_charge << ","
-				//      << endl;
 
+                // claus_file:
+                if (header == 1){
+	                header = 0;
+	                claus_file <<"Event Number,Layer,position,Significance,,Size,Charge,runtime,runtime_ns,trigN" << endl;
+                }
+                //! if you are looking at bucket 0:
+                auto trigger0 = ev.m_v_exttrigs.at(0);
+                
+                claus_file << setw(5) << eventnumber  << ","
+                           << setw(1) << sensor  << ","
+                           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor) << ","
+                           << setw(7) << NomNom.getClusterSignificance2() << ","
+                           << setw(2) << NomNom.getClusterElementssize() << ","
+                           << setw(7) << NomNom.getClusterCharge() << ","
+                           << trigger0.runtime << ","
+                           << trigger0.runtime*5 << ","
+                           << trigger0.triggerid
+                           << endl;
+                
 				num_of_clusters++;
 			}
 			// printf("debug: ev %d sensor %d has %d elements, %d noise, %d clusters.\n",

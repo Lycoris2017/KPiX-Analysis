@@ -369,41 +369,41 @@ void rawData::doRmPedCM(bool rmAdc){
 	auto t_start = std::chrono::high_resolution_clock::now();
 	
 	// remove ped:
-  for (auto &cy : m_v_cycles){
-	  if (!cy.m_has_adc){
-		  continue; // skip empty cycles
-	  }
-
-	  //    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-	  //                          m_m_slopes,
-	  //                          Cycle::s_ped_mad_adc,
-	  //                          true);
-	  cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
-	                        m_m_calibs,
-	                        Cycle::s_ped_mad_adc,
-	                        true);
-	  cy.RemoveCM();
-	    
-	  Cycle::AddFcBuf(cy);
-	    
-	  // debug:
-	  //---> Fancy Bar
-	  /*    currPos++;
-	        currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
-	        cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
-	        << currPct << "%  " << flush;
-	  */
-	  //---> Fancy Bar <---// 
-	  
+	for (auto &cy : m_v_cycles){
+		if (!cy.m_has_adc){
+			continue; // skip empty cycles
+		}
+		
+		//    cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
+		//                          m_m_slopes,
+		//                          Cycle::s_ped_mad_adc,
+		//                          true);
+		cy.RemovePed_CalCM_fC(Cycle::s_ped_med_adc,
+		                      m_m_calibs,
+		                      Cycle::s_ped_mad_adc,
+		                      true);
+		cy.RemoveCM();
+		
+		Cycle::AddFcBuf(cy);
+		
+		// debug:
+		//---> Fancy Bar
+		currPos++;
+		currPct = (uint) (( (double)currPos/(double)cySize )*100.0);
+		cout << "\rProcessing cycles to remove pedestal, adc->fC, ignore MAD==0 : "
+		     << currPct << "%  " << flush;
+		
+		//---> Fancy Bar <---// 
+		
   }
-  auto t_end = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
-  cout << "Finished common mode calculation and pedestal subtraction" << endl;
-  cout << " Time[s]: " << duration
-       << endl;
-
-  cout << "\n";
-    
+	auto t_end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::seconds> (t_end - t_start).count();
+	cout << "Finished common mode calculation and pedestal subtraction" << endl;
+	cout << " Time[s]: " << duration
+	     << endl;
+	
+	cout << "\n";
+	
 }
 
 void Cycle::RemovePed_CalCM_fC(std::unordered_map<uint, double> &ped_adc,
@@ -523,7 +523,6 @@ void Cycle::AddFcBuf(Cycle& cy){
   // }
 
   //! MW: <uint, <uint, vector<T>>>
-  std::unordered_map<uint, std::unordered_map<uint, vector<double> > > target;
   auto hwindex = cy.hashkeys();
   auto tstamps = cy.vtstamp();
   for (size_t cc=0; cc<hwindex.size(); ++cc){
@@ -532,12 +531,12 @@ void Cycle::AddFcBuf(Cycle& cy){
 	  if (!cy.m_m_fc.count(outer)) continue;
 	  double val = cy.m_m_fc.at(outer);
 	    
-	  if (!target.count(outer)){
+	  if (!s_buf_time_fc.count(outer)){
 		  std::unordered_map<uint, vector<double>> innermap;
-		  target.insert(std::make_pair(outer, std::move(innermap)));
+		  s_buf_time_fc.insert(std::make_pair(outer, std::move(innermap)));
 	  }
 	    
-	  Cycle::AddBufferT( target.at(outer),
+	  Cycle::AddBufferT( s_buf_time_fc.at(outer),
 	                     inner, val);
 
   }
@@ -549,7 +548,8 @@ void Cycle::CalNoise(uint& nbuckets){
 	
   if (s_buf_time_fc.empty()) return;
   
-  s_noise_fc.clear();
+  //  s_noise_fc.clear();
+  Cycle::ResetNoise();
   auto t_start = std::chrono::high_resolution_clock::now();
 
   //! Calculate timeless noise:
