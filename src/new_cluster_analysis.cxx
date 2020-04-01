@@ -37,7 +37,7 @@ int main ( int argc, char **argv ) {
 	
 	printf("[Info] You choose file %s\n", argv[1]);
 	rawData db;
-	db.setMaxCycles(1000);
+    db.setMaxCycles(25000);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
@@ -48,7 +48,7 @@ int main ( int argc, char **argv ) {
 
 	db.doRmPedCM();
 	//	db.loadGeo("/home/lycoris-dev/workspace/kpix-analysis/data/plane_Geo_default.txt");
-	db.loadGeo("/home/mengqing/Documents/workspace/KPiX-Analysis/data/plane_Geo_default.txt");
+    db.loadGeo("/home/lycoris-dev/KPiX-Analysis/data/plane_Geo_default.txt");
 	uint b = 1;
 	Cycle::CalNoise(b);
 
@@ -81,7 +81,7 @@ int main ( int argc, char **argv ) {
 	
 	double charge, noise;
     std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
-    std::vector<int> vector_sensor;
+    std::vector<int> vector_sensor, vector_ID;
     int kpix, channel, eventnumber;
     int sensor, strip, time;
 	const uint n_kpix = 24;
@@ -94,6 +94,7 @@ int main ( int argc, char **argv ) {
     vectorTree->Branch("size", &vector_size);
     vectorTree->Branch("time", &time);
     vectorTree->Branch("pos", &vector_pos);
+    vectorTree->Branch("ID", &vector_ID);
     uint ClusterID = 0;
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -124,7 +125,7 @@ int main ( int argc, char **argv ) {
 			// }
 				
 			//!- If no pre-selection on the inputs for cluster, the PacMan algorithm will not erase the input element, thus jump into an infinitive while loop!
-			if (charge > 3*noise && strip != 9999 && noise_mask[sensor].at(strip) == 1 ){
+            if (charge > 2*noise && strip != 9999 && noise_mask[sensor].at(strip) == 1 ){
 				cluster_Events_after_cut[sensor].emplace(strip, charge);
 				cluster_Noise_after_cut[sensor].emplace(strip, noise);
 			}
@@ -157,11 +158,12 @@ int main ( int argc, char **argv ) {
                 vector_sigma.push_back(NomNom.getClusterSignificance2());
                 vector_size.push_back(NomNom.getClusterElementssize());
                 vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
+                vector_ID.push_back(NomNom.getClusterID());
 
                 // claus_file:
                 if (header == 1){
 	                header = 0;
-	                claus_file <<"Event Number,Layer,position,Significance,,Size,Charge,runtime,runtime_ns,trigN" << endl;
+                    claus_file <<"Event Number,Layer,position,Significance,,Size,Charge,runtime,runtime_ns,trigN,ID" << endl;
                 }
                 //! if you are looking at bucket 0:
                 auto trigger0 = ev.m_v_exttrigs.at(0);
@@ -174,7 +176,8 @@ int main ( int argc, char **argv ) {
                            << setw(7) << NomNom.getClusterCharge() << ","
                            << trigger0.runtime << ","
                            << trigger0.runtime*5 << ","
-                           << trigger0.triggerid
+                           << trigger0.triggerid <<","
+                           << setw(7) << NomNom.getClusterID()
                            << endl;
                 
 				num_of_clusters++;
@@ -204,6 +207,7 @@ int main ( int argc, char **argv ) {
         vector_size.clear();
         vector_pos.clear();
         vector_sensor.clear();
+        vector_ID.clear();
 	}
 
 
@@ -212,7 +216,7 @@ int main ( int argc, char **argv ) {
 	printf("[INFO] Clustering ended...\n");
 	/*-----------End of Cluster------------*/
     printf("File saved to %s \n", OutRoot.c_str());
-//    printf("GBL input file saved to %s \n", OutGBL.c_str());
+    printf("GBL input file saved to %s \n", OutGBL.c_str());
 	return 1;
 	
 }

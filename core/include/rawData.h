@@ -218,7 +218,7 @@ namespace Lycoris{
 	
 	class rawData{
 	public:
-	rawData(): m_nbuckets(1), m_nmax(0){};
+      rawData(): m_nbuckets(1), m_nmax(0){};
 	  ~rawData(){};
 
 	  void loadFile(const std::string&);

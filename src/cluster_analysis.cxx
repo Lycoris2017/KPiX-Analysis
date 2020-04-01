@@ -1185,47 +1185,47 @@ int main ( int argc, char **argv )
 						//					}
 					}
 				}
-				for (int sensor1 = 0; sensor1 < n_kpix/2; sensor1++)
-				{
-					for (int sensor2 = sensor1+1; sensor2 < n_kpix/2; sensor2++)
-					{
-						for (auto const& s1 : multi_cluster[0][sensor1])
-						{
-							for (auto const& s2 : multi_cluster[0][sensor2])
-							{
-								double y1 = yParameterSensor(s1.CoG, sensor1);
-								double y2 = yParameterSensor(s2.CoG, sensor2);
-								double clstroffset_y  = y1 - y2;
-								cluster_offset_y[0][sensor1][sensor2]->Fill(clstroffset_y, weight);
-								cluster_correlation[0][sensor1][sensor2]->Fill(y1,y2);
-							}
-						}
-						for (auto const& s1 : multi_cluster[1][sensor1])
-						{
-							for (auto const& s2 : multi_cluster[1][sensor2])
-							{
-								double y1 = yParameterSensor(s1.CoG, sensor1);
-								double y2 = yParameterSensor(s2.CoG, sensor2);
-								double clstroffset_y  = y1 - y2;
-								cluster_offset_y[1][sensor1][sensor2]->Fill(clstroffset_y, weight);
-								cluster_correlation[1][sensor1][sensor2]->Fill(y1,y2);
-							}
-						}
-						for (auto const& s1 : multi_cluster[2][sensor1])
-						{
-							for (auto const& s2 : multi_cluster[2][sensor2])
-							{
-								double y1 = yParameterSensor(s1.CoG, sensor1);
-								double y2 = yParameterSensor(s2.CoG, sensor2);
-								double clstroffset_y  = y1 - y2;
-								cluster_offset_y[2][sensor1][sensor2]->Fill(clstroffset_y, weight);
-								cluster_correlation[2][sensor1][sensor2]->Fill(y1,y2);
-							}
-						}
-                        //cout <<"DEBUG5" << endl;
-					}
+//				for (int sensor1 = 0; sensor1 < n_kpix/2; sensor1++)
+//				{
+//					for (int sensor2 = sensor1+1; sensor2 < n_kpix/2; sensor2++)
+//					{
+//						for (auto const& s1 : multi_cluster[0][sensor1])
+//						{
+//							for (auto const& s2 : multi_cluster[0][sensor2])
+//							{
+//								double y1 = yParameterSensor(s1.CoG, sensor1);
+//								double y2 = yParameterSensor(s2.CoG, sensor2);
+//								double clstroffset_y  = y1 - y2;
+//								cluster_offset_y[0][sensor1][sensor2]->Fill(clstroffset_y, weight);
+//								cluster_correlation[0][sensor1][sensor2]->Fill(y1,y2);
+//							}
+//						}
+//						for (auto const& s1 : multi_cluster[1][sensor1])
+//						{
+//							for (auto const& s2 : multi_cluster[1][sensor2])
+//							{
+//								double y1 = yParameterSensor(s1.CoG, sensor1);
+//								double y2 = yParameterSensor(s2.CoG, sensor2);
+//								double clstroffset_y  = y1 - y2;
+//								cluster_offset_y[1][sensor1][sensor2]->Fill(clstroffset_y, weight);
+//								cluster_correlation[1][sensor1][sensor2]->Fill(y1,y2);
+//							}
+//						}
+//						for (auto const& s1 : multi_cluster[2][sensor1])
+//						{
+//							for (auto const& s2 : multi_cluster[2][sensor2])
+//							{
+//								double y1 = yParameterSensor(s1.CoG, sensor1);
+//								double y2 = yParameterSensor(s2.CoG, sensor2);
+//								double clstroffset_y  = y1 - y2;
+//								cluster_offset_y[2][sensor1][sensor2]->Fill(clstroffset_y, weight);
+//								cluster_correlation[2][sensor1][sensor2]->Fill(y1,y2);
+//							}
+//						}
+//                        //cout <<"DEBUG5" << endl;
+//					}
 
-				}
+//				}
 			}
 		}
 	////   Show progress
