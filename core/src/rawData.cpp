@@ -160,6 +160,7 @@ void rawData::loadRootTree(const std::string & fname){
         std::pair<double, double> calib_all = std::make_pair(calib_slope, calib_pearsson);
         m_m_calibs.emplace(index, calib_all);
     }
+    calib->Close();
 }
 
 void rawData::loadCSV(const std::string& fname){
