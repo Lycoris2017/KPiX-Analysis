@@ -9,6 +9,7 @@ import argcomplete
 from operator import add
 import sys
 from decimal import Decimal
+from array import array
 
 ROOT.gROOT.SetBatch(True)
 
@@ -33,43 +34,72 @@ print ''
 outHistFile = ROOT.TFile.Open(args.file_out, "RECREATE")
 outHistFile.cd()
 charge_hist = ROOT.TH1F("Charge", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+charge_size1 = ROOT.TH1F("Charge_on_Track_csize1", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+charge_size2 = ROOT.TH1F("Charge_on_Track_csize2", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+charge_size3 = ROOT.TH1F("Charge_on_Track_csize3", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+track_charge_hist = ROOT.TH1F("Charge_on_track", "Cluster Charge on track; Charge (fC); Number of Entries ", 200, 0, 20)
 charge_hist2 = ROOT.TH1F("Charge_w_pos_cut", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
 significance_hist = ROOT.TH1F("Significance", "Cluster Significance; S/N; Number of Entries ", 500, 0, 50)
 significance_hist2 = ROOT.TH1F("Significance_w_pos_cut", "Cluster Significance; S/N; Number of Entries ", 500, 0, 50)
 y_hist = ROOT.TH1F("y", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46)
 x_hist = ROOT.TH1F("x", "Cluster x; position (mm); Number of Entries ", 1840, -46, 46)
 corr_hist = ROOT.TH1F("Correlations", "Correlations; num of correlated planes; Number of Hits ", 10, 0, 9)
-correlation_s0_s2 = ROOT.TH2F("correlation", "correlation y; Sensor 0 (mm); Sensor 2 (mm); Number of Hits", 1840, -46, 46, 1840, -46, 46)
+correlation_l10_l12 = ROOT.TH2F("correlation", "correlation y; Sensor 0 (mm); Sensor 2 (mm); Number of Hits", 1840, -46, 46, 1840, -46, 46)
 
 trackhits_hist = ROOT.TH1F("Track hits", "Track hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
 
 significance_hists =  []
-significance_hists.append(ROOT.TH1F("Significance_s0", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
-significance_hists.append(ROOT.TH1F("Significance_s1", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
-significance_hists.append(ROOT.TH1F("Significance_s2", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l10", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l11", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l12", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l13", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l14", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
+significance_hists.append(ROOT.TH1F("Significance_l15", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
 
 charge_hists = []
-charge_hists.append(ROOT.TH1F("Charge_s0", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
-charge_hists.append(ROOT.TH1F("Charge_s1", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
-charge_hists.append(ROOT.TH1F("Charge_s2", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l10", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l11", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l12", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l13", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l14", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+charge_hists.append(ROOT.TH1F("Charge_l15", "Cluster Charge; Charge (fC); Entries ", 200, 0, 20))
+
 
 y_hists = []
-y_hists.append(ROOT.TH1F("y_s0", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
-y_hists.append(ROOT.TH1F("y_s1", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
-y_hists.append(ROOT.TH1F("y_s2", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l10", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l11", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l12", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l13", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l14", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
+y_hists.append(ROOT.TH1F("y_l15", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46))
 
 x_hists = []
-x_hists.append(ROOT.TH1F("x_s0", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
-x_hists.append(ROOT.TH1F("x_s1", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
-x_hists.append(ROOT.TH1F("x_s2", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l10", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l11", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l12", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l13", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l14", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
+x_hists.append(ROOT.TH1F("x_l15", "Cluster x; position (mm); Number of Entries ", 1840, -1, 1))
 
 size_hists = []
-size_hists.append(ROOT.TH1F("size_s0", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
-size_hists.append(ROOT.TH1F("size_s1", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
-size_hists.append(ROOT.TH1F("size_s2", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l10", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l11", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l12", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l13", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l14", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
+size_hists.append(ROOT.TH1F("size_l15", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
 
 all_hists = [charge_hist, charge_hist2, significance_hist, significance_hist2, y_hist, x_hist, corr_hist, trackhits_hist, charge_hists, y_hists[0:3], x_hists[0:3], size_hists[0:3], significance_hists ]
 
+
+
+#noiseTimeTree->Branch("layer", &kpix);
+#noiseTimeTree->Branch("channel", &channel);
+#noiseTimeTree->Branch("strip", &strip);
+#noiseTimeTree->Branch("bucket", &bucket);
+#noiseTimeTree->Branch("time", &time);
+#noiseTimeTree->Branch("noise", &noise);
+#noiseTimeTree->Branch("charge", &charge);
 
 print all_hists
 plane = []
@@ -80,9 +110,25 @@ corr = []
 sig = []
 size = []
 charge = []
+HitOnTrack = []
+y_l10 = []
+y_l12 = []
+counter = 0
 
-y_s0 = []
-y_s2 = []
+layer=array('i', [0])
+ccharge=array('f', [0])
+significance=array('f', [0])
+csize=array('i', [0])
+yPos=array('f', [0])
+onTrack=array('i', [0])
+
+corrClusterTree = ROOT.TTree("corr_clusters", "corr_clusters");
+corrClusterTree.Branch("layer", layer, 'layer/I');
+corrClusterTree.Branch("charge", ccharge, 'charge/F');
+corrClusterTree.Branch("significance", significance, 'significance/F');
+corrClusterTree.Branch("csize", csize, 'csize/I');
+corrClusterTree.Branch("yPos", yPos, 'yPos/F');
+corrClusterTree.Branch("onTrack", onTrack, 'onTrack/I');
 
 with open(args.file_in) as inFile:
 	line = inFile.readline()
@@ -90,12 +136,13 @@ with open(args.file_in) as inFile:
 
 	while line:
 		if "run" in line:
-			if (len(y_s0) is not 0  and len(y_s2) is not 0):
-				for q in y_s0:
-					for h in y_s2:
-						correlation_s0_s2.Fill(float(q),float(h))
-				y_s0 = []
-				y_s2 = []
+			counter+=1
+			if (len(y_l10) is not 0  and len(y_l12) is not 0):
+				for q in y_l10:
+					for h in y_l12:
+						correlation_l10_l12.Fill(float(q),float(h))
+				y_l10 = []
+				y_l12 = []
 			trackhits_hist.Fill(hits_on_track)
 			hits_on_track=0
 			line = inFile.readline()
@@ -111,10 +158,13 @@ with open(args.file_in) as inFile:
 			charge.append(a[7])
 			if "True" in a[8]:
 				hits_on_track += 1
+				HitOnTrack.append(1)
+			else:
+				HitOnTrack.append(0)
 			if "10" in a[0]:
-				y_s0.append(a[2])
+				y_l10.append(a[2])
 			elif "12" in a[0]:
-				y_s2.append(a[2])
+				y_l12.append(a[2])
 			line = inFile.readline()
 
 #c1 = ROOT.TCanvas( 'test', 'Test', 1600, 900 )
@@ -141,14 +191,47 @@ for q in xrange(1,len(charge)):
 			y_hists[2].Fill(float(y[q]))
 			x_hists[2].Fill(float(x[q]))
 			size_hists[2].Fill(int(size[q]))
+		elif ("13" in plane[q]):
+			charge_hists[3].Fill(float(charge[q]))
+			significance_hists[3].Fill(float(sig[q]))
+			y_hists[3].Fill(float(y[q]))
+			x_hists[3].Fill(float(x[q]))
+			size_hists[3].Fill(int(size[q]))
+		elif ("14" in plane[q]):
+			charge_hists[4].Fill(float(charge[q]))
+			significance_hists[4].Fill(float(sig[q]))
+			y_hists[4].Fill(float(y[q]))
+			x_hists[4].Fill(float(x[q]))
+			size_hists[4].Fill(int(size[q]))
+		elif ("15" in plane[q]):
+			charge_hists[5].Fill(float(charge[q]))
+			significance_hists[5].Fill(float(sig[q]))
+			y_hists[5].Fill(float(y[q]))
+			x_hists[5].Fill(float(x[q]))
+			size_hists[5].Fill(int(size[q]))
+		layer[0]=int(plane[q])
+		ccharge[0]=float(charge[q])
+		significance[0]=float(sig[q])
+		yPos[0]=float(y[q])
+		csize[0]=int(size[q])
+		onTrack[0]=HitOnTrack[q]
+		corrClusterTree.Fill()
 		charge_hist.Fill(float(charge[q]))
+		if (HitOnTrack[q] == 1):
+			track_charge_hist.Fill(float(charge[q]))
+			if (int(size[q]) == 1):
+				charge_size1.Fill(float(charge[q]))
+			elif (int(size[q]) == 2):
+				charge_size2.Fill(float(charge[q]))
+			elif (int(size[q]) == 3):
+				charge_size3.Fill(float(charge[q]))
 		significance_hist.Fill(float(sig[q]))
 		y_hist.Fill(float(y[q]))
 		x_hist.Fill(float(x[q]))
 		if (float(y[q]) > - 35 and float(y[q]) < -15):
 			charge_hist2.Fill(float(charge[q]))
 			significance_hist2.Fill(float(sig[q]))
-
+print counter
 for i in all_hists:
 	if isinstance(i, list):
 		for j in i:
@@ -157,6 +240,7 @@ for i in all_hists:
 		i.Scale(1.0/i.GetEntries())
 
 outHistFile.Write()
+outHistFile.Close()
 #charge_hist.Draw("hist e")
 #c1.Modified()
 #c1.Update()

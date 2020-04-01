@@ -30,11 +30,13 @@ class clustr
 		double Significance2; //Adding noises in quadrature and later dividing chargesum by this noise sum
 		double CoGSoN;
 		double Sigma;
+        uint ID;
 		
 		std::map<int,double> Elements;
 		std::map<int,double> Noise;
 		
-		void SetParameters();
+        void SetParameters(uint clusterID);
+        void SetParameters();
 		int MaxCharge();
 		int MaxSoN();
 		

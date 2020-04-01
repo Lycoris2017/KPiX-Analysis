@@ -98,7 +98,7 @@ int main ( int argc, char **argv ) {
 			auto key = fc.first;
             auto k =Cycle::getKpix(key);
             auto c = Cycle::getChannel(key);
-            auto rTkey = Cycle::rmTime(fc.first);
+            auto rTkey = fc.first;
 
             if (k%2 ==0 ) strip.push_back(kpix2strip_left.at(c));
             else strip.push_back(kpix2strip_right.at(c));
@@ -107,7 +107,7 @@ int main ( int argc, char **argv ) {
             bucket.push_back(Cycle::getBucket(key));
             time.push_back(Cycle::getTime(key));
             charge.push_back(fc.second);
-            noise.push_back(noiseTimemap.at(key));
+            //noise.push_back(noiseTimemap.at(key));
             noise2.push_back(noisemap.at(rTkey));
 
 

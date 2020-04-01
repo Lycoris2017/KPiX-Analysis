@@ -93,7 +93,7 @@ int main ( int argc, char **argv ) {
     vectorTree->Branch("size", &vector_size);
     vectorTree->Branch("time", &time);
     vectorTree->Branch("pos", &vector_pos);
-
+    uint ClusterID = 0;
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
 		eventnumber = ev.eventNumber();
@@ -103,7 +103,7 @@ int main ( int argc, char **argv ) {
 		
 		//!- 1) fill the input maps
 		for (auto &fc: ev.m_m_fc){
-            auto key = Cycle::rmTime(fc.first); // noisemap is not time resolved therefore with time key it is out of range
+            auto key = fc.first; // noisemap is not time resolved therefore with time key it is out of range
 			if (Cycle::getBucket(key)!=0) continue;
 			
 			kpix = Cycle::getKpix(key);
@@ -149,8 +149,8 @@ int main ( int argc, char **argv ) {
                 //double SoN_order = 0;
 
 				//MaximumSoN[sensor][Input.MaxSoN()]+=weight;
-				NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
-
+                NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999, ClusterID);
+                ClusterID++;
 //                cout << "Test" << endl;
                 vector_charge.push_back(NomNom.getClusterCharge());
                 vector_sigma.push_back(NomNom.getClusterSignificance2());

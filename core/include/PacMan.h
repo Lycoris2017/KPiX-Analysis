@@ -16,7 +16,7 @@ class PacMan
 		PacMan();	
 	// Deconstructor
 		~PacMan();
-		
+        uint getClusterID();
 		double getClusterCoG();
 		double getClusterSigma();
 		double getClusterCoGSoN();
@@ -26,7 +26,8 @@ class PacMan
 		int getClusterElementssize();
 		
 		clustr getCluster();
-		void Eater(clustr&, int, int, double);
+        void Eater(clustr&, int, int, double, uint);
+        void Eater(clustr&, int, int, double);
 		
 	private:
 		clustr Cluster;

@@ -5,7 +5,7 @@
 // Project       : KPiX Analysis
 //-----------------------------------------------------------------------------
 // Description :
-// External trigger debugging.
+// Analysis of external triggering KPiX Data.
 //-----------------------------------------------------------------------------
 // Copyright (c) 2012 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
@@ -15,7 +15,6 @@
 // 06/28/2017: large scale rewrite of original calibrationFitter.cpp
 // 22/03/2018: clean up ecal plots and add strip plots by <mengqing.wu@desy.de>
 // 24/09/2018: Branch off of original analysis.cxx to better focus on external trigger data.
-// 06/08/2019: Branch off of cluster_analysis.cxx to focus on debugging of external trigger data.
 //-----------------------------------------------------------------------------
 
 #include <iostream>
@@ -50,758 +49,596 @@
 
 #include "kpixmap.h"
 #include "kpix_left_and_right.h"
-#include "testbeam201905_noise_mask.h"
+#include "testbeam201907_noise_mask.h"
 #include "clustr.h"
 #include "PacMan.h"
 #include "TBFunctions.h"
 using namespace std;
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 //////////////////////////////////////////
 // Global Variables
 //////////////////////////////////////////
-vector<TGraphErrors*> calib_graphs; //needed for current loopdir	
-vector<TH1F*> pedestal_hists;
 //////////////////////////////////////////
 // Functions
 //////////////////////////////////////////
 
-
-void loopdir(TDirectory* dir, string histname)
+struct tree_cluster_input
 {
-	
-	TDirectory *dirsav = gDirectory;
-	TIter keys_iter(dir->GetListOfKeys());
-	TKey* key;
-	
-	while ((key = (TKey*)keys_iter()))
-	{
-		if (key->IsFolder())
-		{
-			dir->cd(key->GetName());
-			TDirectory *subdir = gDirectory;
-			//subfolder->cd();
-			loopdir(subdir, histname);
-			dirsav->cd();
-			continue;
-		}
-		else
-		{
-			string keyname = key->GetName();
-			string keytype = key->GetClassName();
-			
-			
-			if (int(histname.find("pedestal") != -1))
-			{
-				int found2 = keyname.find("_b0");
-				if (int(keytype.find("TH1") != -1))
-				{
-					if (int( keyname.find("hist_fc_") != -1) && found2 != -1)
-					{
-						//cout << "Pedestal name " << keyname << endl;
-						TH1F *pedestal_hist = (TH1F*)key->ReadObj();
-						pedestal_hist->SetName(key->GetName());
-						pedestal_hists.push_back(pedestal_hist);
-					}
-				}
-			}
-			else if ( int(histname.find("calib") != -1))
-			{
-				if (int(keytype.find("TH1") == -1) && int(keyname.find("b0") != -1))
-				{
-					
-					if (int(keyname.find("calib") != -1) && int(keyname.find("DAC") == -1)) 
-					{
-						//cout << "Calibration name " << keyname << endl;
-						TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
-						calib_graph->SetName(key->GetName());
-						calib_graphs.push_back(calib_graph);
-					}
-				}
-			
-			}
-		}
-	}
-}
-
-struct kpixdata
-{
-	int time;
-	double charge;
-	int channel;
+    double CoG ;
+    double Charge;
+    double Significance2; //Adding noises in quadrature and later dividing chargesum by this noise sum
+    double Sigma;
+    int Size;
 };
+
+//void loopdir(TDirectory* dir, string histname)
+//{
+
+//	TDirectory *dirsav = gDirectory;
+//	TIter keys_iter(dir->GetListOfKeys());
+//	TKey* key;
+
+//	while ((key = (TKey*)keys_iter()))
+//	{
+//		if (key->IsFolder())
+//		{
+//			dir->cd(key->GetName());
+//			TDirectory *subdir = gDirectory;
+//			//subfolder->cd();
+//			loopdir(subdir, histname);
+//			dirsav->cd();
+//			continue;
+//		}
+//		else
+//		{
+//			string keyname = key->GetName();
+//			string keytype = key->GetClassName();
+
+
+//			if (int(histname.find("pedestal") != -1))
+//			{
+//				int found2 = keyname.find("_b0");
+//				if (int(keytype.find("TH1") != -1))
+//				{
+//					if (int( keyname.find("hist_fc_") != -1) && found2 != -1)
+//					{
+//						//cout << "Pedestal name " << keyname << endl;
+//						TH1F *pedestal_hist = (TH1F*)key->ReadObj();
+//						pedestal_hist->SetName(key->GetName());
+//						pedestal_hists.push_back(pedestal_hist);
+//					}
+//				}
+//			}
+//			else if ( int(histname.find("calib") != -1))
+//			{
+//				if (int(keytype.find("TH1") == -1) && int(keyname.find("b0") != -1))
+//				{
+
+//					if (int(keyname.find("calib") != -1) && int(keyname.find("DAC") == -1))
+//					{
+//						//cout << "Calibration name " << keyname << endl;
+//						TGraphErrors *calib_graph = (TGraphErrors*)key->ReadObj();
+//						calib_graph->SetName(key->GetName());
+//						calib_graphs.push_back(calib_graph);
+//					}
+//				}
+
+//			}
+//		}
+//	}
+//}
+
+
+
 
 //////////////////////////////////////////
 // Begin of main analysis
 //////////////////////////////////////////
 int main ( int argc, char **argv )
 {
-	cout << "DEBUG 0" << endl;
-	TH1::SetDefaultSumw2();
-	//////////////////////////////////////////
-	// Class declaration and histogram initialization
-	//////////////////////////////////////////
-	
-	cout << "CURRENTLY USING VERSION FOR NEWDAQ FOR OLD DAQ NEED TO EXCHANGE /Run WITH /20 !" << endl;
-	
-	
-	DataRead               dataRead;  //kpix event classes used for analysis of binary date
-	off_t                  fileSize;  //
-	off_t                  filePos;   //
-	KpixEvent              event;    //
-	KpixSample             *sample;   //
-	
-	const unsigned int n_buckets = 1;
-    const unsigned int n_kpix = 32;
-    const unsigned int n_blocks = 32;
-	const unsigned int n_channels = 1024;
-	const unsigned int n_BCC = 8192;
-	const unsigned int n_strips = 1840;
-	
-    const unsigned int n_input_kpix = 32;
-	const unsigned int n_input_buckets = 4;
-	const unsigned int n_input_channels = 1024;
-	
-	// cycles to skip in front:
-	long int                   skip_cycles_front;
-	FILE*                  f_skipped_cycles;
-	string                 outtxt;
-	
-	string                 calState;
-	uint                   lastPct;
-	uint                   currPct;
-	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
-	bool                   channelFound[n_kpix][n_channels] = {false};
-	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
-	uint                   x;
-	uint                   value;
-	uint                   kpix;
-	uint                   sensor;
-	uint                   channel;
-	uint                   bucket;
-	double                  tstamp;
-	uint 					subCount;
-	double 					bunchClk;
-	double 					y;
-	string                 serial;
-	KpixSample::SampleType type;	
 
-	uint64_t				frameruntime;
-	uint64_t				runtime;
+    TH1::SetDefaultSumw2();
+    //////////////////////////////////////////
+    // Class declaration and histogram initialization
+    //////////////////////////////////////////
 
-	//TTree*					cluster_tree;
-	
-	TH1F					*fc_response_medCM_subtracted[n_kpix];
-		
-	TH1F					*noise_distribution[n_kpix][2];
-	TH1F					*noise_distribution_sensor[n_kpix/2][2];
-	TH1F					*noise_v_position[n_kpix/2][2];
-	TH1F					*noise_v_channel[n_kpix][2];
-	TGraphErrors 			*noise_v_time_graph;
-	TH1F					*noise_v_time[n_kpix];
-	TH1F					*noise_v_time_block[n_kpix][4];
-	
-	// Stringstream initialization for histogram naming
-	stringstream           tmp;
-	stringstream           tmp_units;
-	
-	// Stringstream initialization for folder naming
-	
-	stringstream			FolderName;
-	
-	ofstream				noise_file;
-	ofstream               xml;
-	ofstream               csv;
-	unsigned int           acqCount; // acquisitionCount
-	unsigned int           acqProcessed;
-	string                 outRoot;
-	TFile                  *rFile;
-	stringstream           crossString;
-	stringstream           crossStringCsv;
-	XmlVariables           config;
-	ofstream               debug;
-	
-	// Calibration slope, is filled when 
-	double					calib_slope[n_input_kpix][n_input_channels] = {1}; //ADD buckets later.
-	
-	double					pedestal_MedMAD[n_input_kpix][n_input_channels][n_input_buckets][2] = {0};
-	int						calibration_check = 0;
-	double 					noise[n_kpix][n_channels];
-	double 					noise_cut[n_kpix][n_channels];
-	double 					MaximumSoN[n_strips] = {0};
-	//int						pedestal_check = 0;
-	
-	unordered_map<uint, uint> kpix2strip_left;
-	unordered_map<uint, uint> kpix2strip_right;
-	
-	
-	kpix2strip_left = kpix_left();
-	kpix2strip_right = kpix_right();
-	
-	pixel					pixel_kpix[n_channels];
-	pixel_mapping(pixel_kpix);
-	
-	
-	
-	//////////////////////////////////////////
-	// Skip cycle/Read calibration file
-	//////////////////////////////////////////
-	
-	// Data file is the first and only arg
-	if (argc < 4) {
-	cout << "Usage: ./analysis data_file [skip_cycles_front (int)]||[read calibration input file (char)] \n";
-	return(1);
-	}
-	char* end;
-	
-	cout << "DEBUG 1" << endl;
-	if ( argc >= 4 ) {
-		//cout << "Even more debug " << strtol(argv[2], &end, 10) << endl;
-		if (strtol(argv[2], &end, 10) != 0 )
-		{
-			skip_cycles_front = strtol(argv[2], &end, 10);
-			cout<< " -- I am skipping first events: " << skip_cycles_front << endl;
-			tmp.str("");
-			tmp << argv[1] << ".printSkipped.txt";
-			outtxt = tmp.str();
-			f_skipped_cycles = fopen(outtxt.c_str(), "w");
-		}
-		else
-		{
-			cout << " -- Reading " << argv[2] << " as calibration input file." << endl;
-			skip_cycles_front = 0;
-			TFile *calibration_file = TFile::Open(argv[2]);
-			calibration_check = 1;
-			loopdir(calibration_file, "calib");
-			
-			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
-			
-			for (unsigned int i = 0; i<calib_graphs.size(); ++i)
-			{
-				//cout << "Current key1 = " << cal_key->GetClassName() << endl;
-				
-				string calib_name         = calib_graphs[i]->GetName();
-				//cout << calib_name << endl;
-				size_t kpix_num_start     = calib_name.find("_k")+2;
-				size_t channel_num_start  = calib_name.find("_c")+2;
-				size_t kpix_num_length       = calib_name.length() - kpix_num_start;
-				size_t channel_num_length    = calib_name.find("_b") - channel_num_start;
-				
-				//cout << kpix_num_start << endl;
-				//cout << kpix_num_length << endl;
-				//
-				//cout << channel_num_start << endl;
-				//cout << channel_num_length << endl;
-				
-				string channel_string = calib_name.substr(channel_num_start, channel_num_length);
-				string kpix_string = calib_name.substr(kpix_num_start, kpix_num_length);
-			    
-			   //cout << "Channel Number = " <<  channel_string << endl;
-			   //cout << "KPiX Number = " << kpix_string << endl;
-			    
-			    
-				int kpix_num = stoi(kpix_string);
-				int channel_num = stoi(channel_string);
-				
-				//cout << "KPiX Number = " << kpix_num << endl;
-				//cout << "Channel Number = " << channel_num << endl;
-				
-				calib_slope[kpix_num][channel_num] = calib_graphs[i]->GetFunction("pol1")->GetParameter(1);
-				//cout << "Slope of KPiX " << kpix_num << " and channel " << channel_num << " is " <<  calib_slope[kpix_num][channel_num] << endl;
-				
-			}
-			
-			cout << " -- Reading " << argv[3] << " as pedestal subtraction input file." << endl;
-			skip_cycles_front = 0;
-			TFile *pedestal_file = TFile::Open(argv[3]);
+    cout << "CURRENTLY USING VERSION FOR NEWDAQ FOR OLD DAQ NEED TO EXCHANGE /Run WITH /20 !" << endl;
 
-			TTree* pedestal_tree = (TTree*)pedestal_file->Get("pedestal_tree");
-			
-			
-			int kpix_num, channel_num, bucket_num;
-			double pedestal_median, pedestal_MAD;
-			
-			pedestal_tree->SetBranchAddress("pedestal_median", &pedestal_median);
-			pedestal_tree->SetBranchAddress("kpix_num", &kpix_num);
-			pedestal_tree->SetBranchAddress("channel_num", &channel_num);
-			pedestal_tree->SetBranchAddress("bucket_num", &bucket_num);
-			pedestal_tree->SetBranchAddress("pedestal_MAD", &pedestal_MAD);
-			
-			long int nentries = pedestal_tree->GetEntries();
-            cout << "DEEEEEEEBUUUUUUUG" << endl;
-			for (long int i = 0; i < nentries; ++i)
-			{
-				pedestal_tree->GetEntry(i);
-				pedestal_MedMAD[kpix_num][channel_num][bucket_num][0] = pedestal_median;
-				pedestal_MedMAD[kpix_num][channel_num][bucket_num][1] = pedestal_MAD;
-			}
-			
-			
-			
-			gROOT->GetListOfFiles()->Remove(calibration_file);
-			calibration_file->Close();
-			gROOT->GetListOfFiles()->Remove(pedestal_file);
-			pedestal_file->Close();
-			
-		}
-		
-	
-	}
-	
-	
-	//////////////////////////////////////////
-	// Open Data file
-	//////////////////////////////////////////
-	
-	
-	cout << "DEBUG 2" << endl;
-	if ( ! dataRead.open(argv[1])  ) {
-		cout << "Error opening data file " << argv[1] << endl;
-		return(1);
-	}
-	
-	// Create output names
-	string pedestalname = argv[3];
-	string outname = argv[1];
-	
-    size_t name_start;
-    size_t name_length;
 
-    if (int(pedestalname.find("/Run")) != -1)
-         name_start = pedestalname.find("/Run") + 1;
-    else
-        name_start = pedestalname.find("/201") + 1;
-    if (int(pedestalname.find(".dat")) != -1)
-        name_length = pedestalname.find(".dat") - name_start;
-    else
-        name_length = pedestalname.find(".bin") - name_start;
+    DataRead               dataRead;  //kpix event classes used for analysis of binary date
+    off_t                  fileSize;  //
+    off_t                  filePos;   //
+    KpixEvent              event;    //
+    KpixSample             *sample;   //
 
-    cout << " FIND RESULT " << name_length << endl;
-	
-	pedestalname = pedestalname.substr(name_start, name_length);
-	
-	cout << "Name of output file is " <<  pedestalname << endl;
-	tmp.str("");
-	tmp << argv[1] << "_" << pedestalname << ".debug.root";
-	outRoot = tmp.str();
-	
-	
-	//////////////////////////////////////////
-	// Read Data
-	//////////////////////////////////////////
-	cout << "Opened data file: " << argv[1] << endl;
-	fileSize = dataRead.size();
-	filePos  = dataRead.pos();
-	
-	// Init
-	currPct          	= 0;
-	lastPct          	= 100;
-	
-	cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
-	//goodTimes       	= 0;
-	
-	// Open root file
-	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
-	rFile->cd(); // move into root folder base
-	vector<double>* vec_corr_charge[n_kpix]; //delete does not work if I do not initialize all vectors
-	std::map<int, double> common_modes_median[n_kpix];
-	while ( dataRead.next(&event) ) // event read to check for filled channels and kpix to reduce number of empty histograms.
-	{
-		
-		acqCount++;
-		if (acqCount > skip_cycles_front)
-		{
-			acqProcessed++;
-			
-			
-			for (x=0; x < event.count(); x++)
-			{
-		
-				//// Get sample
-				sample  = event.sample(x);
-				kpix    = (sample->getKpixAddress());
-				tstamp  = sample->getSampleTime();
-				channel = sample->getKpixChannel();
-				bucket  = sample->getKpixBucket();
-				value   = sample->getSampleValue();
-				type    = sample->getSampleType();
-				
-				//cout << type <<endl;
-				//cout << "DEBUG 2" << endl;
-				if ( type == KpixSample::Data )
-				{
-//					cout << "testing again " << kpix << endl;
-					kpixFound[kpix]          = true;
-					channelFound[kpix][channel] = true;
-					bucketFound[kpix][channel][bucket] = true;
-					//cout << "Found KPIX " << kpix << endl;
-					if (bucket == 0)
-					{
-						if (calibration_check == 1)
-						{
-							//cout << "Pedestal MAD " << pedestal_MedMAD[kpix][channel][bucket][1] << endl;
-							if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0)
-							{
-								
-								if (vec_corr_charge[kpix] == NULL)
-								{
-									vec_corr_charge[kpix] = new std::vector<double>;
-									if (vec_corr_charge[kpix]==NULL)
-									{
-										std::cerr << "Memory allocation error for vector kpix " <<
-										kpix <<std::endl;
-										exit(-1); // probably best to bail out
-									}
-								}
-								
-								//cout << "DEBUG 2.1 " << kpix << endl;
-								double charge_value = double(value)/calib_slope[kpix][channel];
-								double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-								vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
-							}
-						}
-					}
-				}
-			}
-			for (unsigned int k = 0; k < n_kpix ; k++)
-			{
-				if (kpixFound[k])
-				{
-					if (vec_corr_charge[k] != nullptr)
-					{
-						//cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl;
-						common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
-						delete vec_corr_charge[k];
-						vec_corr_charge[k] = NULL;
-					}
-				}
-			}
-			
-		}
-		else
-		{
-			auto byte = event.count();
-			auto train = event.eventNumber();
-			if (f_skipped_cycles!=NULL)
-			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
-		}
-	}
-	
-	if (f_skipped_cycles!=NULL)  {
-		fclose( f_skipped_cycles);
-		cout << endl;
-		cout << "Wrote skipped cycles to " << outtxt << endl;
-		cout << endl;
-	}
-	//cout << tstamp << endl;
-	dataRead.close();
-	double weight = 1.0/acqProcessed;
-	
-	cout << "DEBUG 3" << endl;
-	
-	//////////////////////////////////////////
-	// New histogram generation within subfolder structure
-	//////////////////////////////////////////
-	
-	const unsigned int response_bins = 220;
-	const double response_xmin = -20.5;
-	const double response_xmax = 19.5;
-	
-	
-	//clustr* clusttree = new clustr;
-	//int sensr;
-	//cluster_tree = new TTree("cluster_tree", "A ROOT Tree");
-	//cluster_tree->Branch("cluster", &clusttree);
-	//cluster_tree->Branch("sensor", &sensr, "sensr/I");
+    const unsigned int n_buckets = 4;
+    const unsigned int n_kpix = 32;//24;
+//	const unsigned int n_blocks = 32;
+    const unsigned int n_channels = 1024;
+    const unsigned int n_BCC = 8192;
+//	const unsigned int n_strips = 1840;
 
-	//TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
-	
-	for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
-	{
-		if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
-		{
+    // cycles to skip in front:
+    long int                   skip_cycles_front;
+    FILE*                  f_skipped_cycles;
+    string                 outtxt;
 
-			rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
-			FolderName.str("");
-			FolderName << "Sensor_" << sensor;
-			rFile->mkdir(FolderName.str().c_str());
-			TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
-			sensor_folder->cd();
-			
-			
-			
-			tmp.str("");
-			tmp << "noise_v_position_s" << sensor << "_b0";
-			noise_v_position[sensor][0]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-46000, 46000);
-			tmp.str("");
-			tmp << "noise_distribution_s" << sensor << "_b0";
-			noise_distribution_sensor[sensor][0] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 0.995);
-			
-			tmp.str("");
-			tmp << "noise_v_position_cut_s" << sensor << "_b0";
-			noise_v_position[sensor][1]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-46000, 46000);
-			tmp.str("");
-			tmp << "noise_distribution_cut_s" << sensor << "_b0";
-			noise_distribution_sensor[sensor][1] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 0.995);
-			
-			
-			
-			for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
-			{
-				kpix = (sensor*2)+k;
+    string                 calState;
+    uint                   lastPct;
+    uint                   currPct;
+    bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+    bool                   channelFound[n_kpix][n_channels] = {false};
+//	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
+    uint                    x;
+    uint                    value;
+    uint                    kpix;
+    uint                    sensor;
+    uint                    channel;
+    uint                    bucket;
+    uint                    time;
+    double                  charge;
+    uint                    strip;
+    double                  tstamp;
+    uint 					subCount;
+    double 					bunchClk;
+    double 					y;
+    string                 serial;
+    KpixSample::SampleType type;
 
-				if (kpixFound[kpix])
-				{
-					FolderName.str("");
-					FolderName << "KPiX_" << kpix;
-					sensor_folder->mkdir(FolderName.str().c_str());
-					TDirectory *kpix_folder = sensor_folder->GetDirectory(FolderName.str().c_str());
-					rFile->cd(kpix_folder->GetPath());
-					tmp.str("");
-					tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
-					fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+    uint64_t				frameruntime;
+    uint64_t				runtime;
 
-					tmp.str("");
-					tmp << "noise_distribution_k" << kpix << "_b0";
-					noise_distribution[kpix][0] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 4.995);
-					tmp.str("");
-					tmp << "noise_v_channel_k" << kpix << "_b0";
-					noise_v_channel[kpix][0]  = new TH1F(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
+    //TTree*					cluster_tree;
 
-					tmp.str("");
-					tmp << "noise_distribution_cut_k" << kpix << "_b0";
-					noise_distribution[kpix][1] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 4.995);
-					tmp.str("");
-					tmp << "noise_v_channel_cut_k" << kpix << "_b0";
-					noise_v_channel[kpix][1]  = new TH1F(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
-					
-					tmp.str("");
-					tmp << "noise_v_time_k" << kpix << "_b0";
-					tmp_units.str("");
-					tmp_units << "noise_v_time; Time (BCC); Noise (fC) ";
-					noise_v_time[kpix]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
-					
-					
-					for (int b = 0; b < 4; ++b)
-					{
-						tmp.str("");
-						tmp << "noise_v_time_block" << b << "_k" << kpix << "_b0";
-						tmp_units.str("");
-						tmp_units << "noise_v_time_block; Time (BCC); Noise (fC) ";
-						noise_v_time_block[kpix][b]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
-					}
-					
-			
-				}
-			}
-		}
-		
-	}
-	//////////////////////////////////////////
-	// Data read for all events for detailed look
-	//////////////////////////////////////////
-	dataRead.open(argv[1]); //open file again to start from the beginning
 
-	cout << "DEBUG 4" << endl;
-	int header = 1;
-	
-	std::vector<double>* corrected_charge_vec[n_kpix][n_channels] = {nullptr};
-	std::vector<double>* corrected_charge_vec_cut[n_kpix][n_channels] = {nullptr};
-	std::vector<double>* corrected_charge_vec_time[n_kpix][n_BCC]  = {nullptr};
-//	std::vector<double>* corrected_charge_vec_time_block[n_kpix][n_BCC][4]  = {nullptr};
-	//std::vector<double>* test[n_kpix][n_channels] = {nullptr}; // = { new std::vector<double> };
-//	cout << "DEBUG 5" << endl;
-	while ( dataRead.next(&event) ) //preread to determine noise value of each channel in each KPiX.
-	{
-		int not_empty= 0;
-		for (x=0; x < event.count(); x++)
-		{
-			//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
-			//// Get sample
-			sample  = event.sample(x);
-			kpix    = (sample->getKpixAddress());
-			channel = sample->getKpixChannel();
-			bucket  = sample->getKpixBucket();
-			value   = sample->getSampleValue();
-			type    = sample->getSampleType();
-			tstamp  = sample->getSampleTime();
-			sensor = kpix/2;
-			unsigned int block = channel/32;
-			bunchClk = sample->getBunchCount();
-			subCount = sample->getSubCount();
-		
-			if ( type == KpixSample::Data ) // If event is of type KPiX data
-			{
-				if (bucket == 0)
-				{
-					if (pedestal_MedMAD[kpix][channel][bucket][1] != 0 && calib_slope[kpix][channel] != 0 ) //ensuring we ignore 0 MAD channels
-					{
-						//cout << "DEBUG 1" << endl;
-						double charge_value = double(value)/calib_slope[kpix][channel];
-						double corrected_charge_value_median = charge_value - pedestal_MedMAD[kpix][channel][bucket][0];
-						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-						if (isnan(charge_CM_corrected))
-						{
-							cout << "Slopes " << calib_slope[kpix][channel] << endl;
-							cout << "Pedestal " << pedestal_MedMAD[kpix][channel][bucket][0] << endl;
-							cout << "CommonMOde " << common_modes_median[kpix].at(event.eventNumber()) << endl;
-						}
-//						if (block < 4)
-//						{
-//							if (corrected_charge_vec_time_block[kpix][int(tstamp)][block] == NULL)
-//							{
-//								corrected_charge_vec_time_block[kpix][int(tstamp)][block] = new std::vector<double>;
-//								if (corrected_charge_vec_time_block[kpix][int(tstamp)][block]==NULL)
-//								{
-//									std::cerr << "Memory allocation error for vector kpix " <<
-//												 kpix << " tstamp "  << tstamp  <<" " <<std::endl;
-//									exit(-1); // probably best to bail out
-//								}
-//							}
-//						}
-						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
-						{
-							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
-							if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
-							{
-								std::cerr << "Memory allocation error for vector kpix " <<
-								kpix << " tstamp "  << tstamp <<" " <<std::endl;
-								exit(-1); // probably best to bail out
-							}
-						}
-						if (corrected_charge_vec[kpix][channel] == NULL)
-						{
-							corrected_charge_vec[kpix][channel] = new std::vector<double>;
-							if (corrected_charge_vec[kpix][channel] == NULL)
-							{
-								std::cerr << "Memory allocation error for vector kpix " <<
-								kpix << " tstamp "  << tstamp <<" " <<std::endl;
-								exit(-1); // probably best to bail out
-							}
-						}
-						if (corrected_charge_vec_cut[kpix][channel] == NULL)
-						{
-							corrected_charge_vec_cut[kpix][channel] = new std::vector<double>;
-							if (corrected_charge_vec_cut[kpix][channel] == NULL)
-							{
-								std::cerr << "Memory allocation error for vector kpix " <<
-								kpix << " tstamp "  << tstamp <<" " <<std::endl;
-								exit(-1); // probably best to bail out
-							}
-						}
-						corrected_charge_vec[kpix][channel]->push_back(charge_CM_corrected);
-						if (tstamp > 3000 && tstamp < 6000) //current cut criteria
-							corrected_charge_vec_cut[kpix][channel]->push_back(charge_CM_corrected);
-						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
-//						if (block < 4)
-//							corrected_charge_vec_time_block[kpix][int(tstamp)][block]->push_back(charge_CM_corrected);
-						
-					}
-					//else if (pedestal_MedMAD[kpix][channel][bucket][1] == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
-				}
-			}
-		}
-		filePos  = dataRead.pos();
-		currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
-		if ( currPct != lastPct )
-		{
-			cout << "\rReading File for noise determination: " << currPct << " %      " << flush;
-			lastPct = currPct;
-		}
-	}
-	dataRead.close();
-	cout << "DEBUG 6" << endl;
-	 // END OF PREREAD
-	 // BEGIN OF NOISE CALCULATION
-	for (int k = 0; k < n_kpix; ++k)
-	{
-		if (kpixFound[k])
-		{
+    // Stringstream initialization for histogram naming
+    stringstream           tmp;
+    stringstream           tmp_units;
 
-			double x[n_BCC];
-			double x_err[n_BCC];
-			double y_graph[n_BCC];
-			double y_graph_err[n_BCC];
-			int sensor = k/2;
-			for (int c = 0; c < n_channels; ++c)
-			{
-				if (channelFound[k][c])
-				{
-					int sensor = k/2;
-					int strip = 9999;
+    // Stringstream initialization for folder naming
 
-					if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
-					else strip  = kpix2strip_right.at(c); // if right kpix
-					
-					if (pedestal_MedMAD[k][c][0][1] != 0)
-					{
-//						cout << "testing " << k << endl;
-						y = yParameterSensor(strip, sensor);
-						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
-						noise_cut[k][c] = 1.4826*MAD(corrected_charge_vec_cut[k][c]);
-//						if (isnan(noise[k][c]))
-//						{
-//							cout << k << " " << c << endl;
-//							cout << calib_slope[k][c] << endl;
-//							for (auto const i:(*corrected_charge_vec[k][c]))
-//							{
-//								cout << "Bla " << i << endl;
-//							}
-//						}
-						if (strip != 9999)
-						{
-							noise_distribution[k][0]->Fill(noise[k][c]);
-							noise_distribution_sensor[k/2][0]->Fill(noise[k][c]);
-							noise_v_position[k/2][0]->Fill(y, noise[k][c]);
+    stringstream			FolderName;
 
-							noise_distribution[k][1]->Fill(noise_cut[k][c]);
-							noise_distribution_sensor[k/2][1]->Fill(noise_cut[k][c]);
-							noise_v_position[k/2][1]->Fill(y, noise_cut[k][c]);
-						}
-						noise_v_channel[k][0]->SetBinContent(c+1, noise[k][c]);
+    ofstream				claus_file;
+    ofstream				CM_file;
+    ofstream				noise_file;
+    ofstream               xml;
+    ofstream               csv;
+    uint                   acqCount = 0; // acquisitionCount
+    uint                   acqProcessed;
+    string                 outRoot;
+    TFile					*rFile;
 
-						noise_v_channel[k][1]->SetBinContent(c+1, noise_cut[k][c]);
-						
-					}
-				}
-				
-			}
-			for (int t = 0; t < n_BCC ; ++t)
-			{
-				noise_v_time[k]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
-//				for (unsigned int b = 0; b < 4; ++b)
-//					noise_v_time_block[k][b]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time_block[k][t][b]));
-//				x[t] = t;
-//				x_err[t] = 0;
-//				y_graph[t] = 1.4826*MAD(corrected_charge_vec_time[k][t]);
-//				y_graph_err[t] = 0;
-				//cout << x[t] << endl;
-			}
-//			noise_v_time_graph = new TGraphErrors(2*n_BCC ,x, y_graph, x_err, y_graph_err);
-//			noise_v_time_graph->Draw("Ap");
-//			noise_v_time_graph->GetXaxis()->SetTitle("Time (BCC)");
-//			noise_v_time_graph->GetYaxis()->SetTitle("Noise (fC)");
-//			tmp.str("");
-//			tmp << "noise_v_time_graph_k" << k;
-			
-//			noise_v_time_graph->SetTitle(tmp.str().c_str());
-			
-//			noise_v_time_graph->Write(tmp.str().c_str());
-			
-			
-		}
-	}
-	cout << "DEBUG 7" << endl;
-	cout << endl;
-	cout << "Writing root plots to " << outRoot << endl;
-	cout << endl;
-	
-	rFile->Write();
-	gROOT->GetListOfFiles()->Remove(rFile); //delete cross links that make production of subfolder structure take forever
-	rFile->Close();
-	
-	
-	
-	dataRead.close();
-	return(0);
+
+    stringstream           crossString;
+    stringstream           crossStringCsv;
+    XmlVariables           config;
+    ofstream               debug;
+
+    // Calibration slope, is filled when
+    //std::bitset<18> index;
+    //std::unordered_map<std::bitset<18>, std::pair<double, double>> calibs;
+    //std::unordered_map<std::bitset<18>, std::pair<double, double>> pedestals;
+
+    uint index;
+    std::unordered_map<uint, std::pair<double, double>> calibs;
+    std::unordered_map<uint, std::pair<double, double>> pedestals;
+    double                  pearsson_cut = 0.8;
+
+    int						calibration_check = 0;
+    double 					MaximumSoN[n_kpix/2][1840] = {0};
+    //int						pedestal_check = 0;
+
+    int maxAcquisitions = 50000;
+
+    unordered_map<uint, uint> kpix2strip_left;
+    unordered_map<uint, uint> kpix2strip_right;
+
+
+    kpix2strip_left = kpix_left();
+    kpix2strip_right = kpix_right();
+
+    pixel					pixel_kpix[n_channels];
+    pixel_mapping(pixel_kpix);
+
+    unordered_map<uint, uint> sensor2layer;
+
+    sensor2layer.insert(make_pair(0, 10));
+    sensor2layer.insert(make_pair(1, 11));
+    sensor2layer.insert(make_pair(2, 12));
+    sensor2layer.insert(make_pair(3, 15));
+    sensor2layer.insert(make_pair(4, 14));
+    sensor2layer.insert(make_pair(5, 13));
+    sensor2layer.insert(make_pair(6, 9999));
+    sensor2layer.insert(make_pair(7, 9999));
+    sensor2layer.insert(make_pair(8, 9999));
+    sensor2layer.insert(make_pair(9, 9999));
+    sensor2layer.insert(make_pair(10, 9999));
+    sensor2layer.insert(make_pair(11, 9999));
+
+
+    //////////////////////////////////////////
+    // Skip cycle/Read calibration file
+    //////////////////////////////////////////
+
+    // Data file is the first and only arg
+    if (argc < 4) {
+    cout << "Usage: ./analysis data_file [skip_cycles_front (int)]||[read calibration input file (char)] \n";
+    return(1);
+    }
+    //cout << "DEBUG: 1" << endl;
+    char* end;
+
+
+    if ( argc >= 4 ) {
+        //cout << "Even more debug " << strtol(argv[2], &end, 10) << endl;
+        if (strtol(argv[2], &end, 10) != 0 )
+        {
+            skip_cycles_front = strtol(argv[2], &end, 10);
+            cout<< " -- I am skipping first events: " << skip_cycles_front << endl;
+            tmp.str("");
+            tmp << argv[1] << ".printSkipped.txt";
+            outtxt = tmp.str();
+            f_skipped_cycles = fopen(outtxt.c_str(), "w");
+        }
+        else
+        {
+            cout << " -- Reading " << argv[2] << " as calibration input file." << endl;
+            skip_cycles_front = 0;
+            TFile *calibration_file = TFile::Open(argv[2]);
+            calibration_check = 1;
+
+//			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
+            TTree *calib_tree = (TTree*)calibration_file->Get("calibration_tree");
+            uint kpix_calib, channel_calib, bucket_calib, range_calib;
+            double slope_calib, slope_error_calib, pearsson_calib;
+            calib_tree->SetBranchAddress("kpix", &kpix_calib);
+            calib_tree->SetBranchAddress("channel", &channel_calib);
+            calib_tree->SetBranchAddress("bucket", &bucket_calib);
+            calib_tree->SetBranchAddress("range", &range_calib);
+            calib_tree->SetBranchAddress("calib_slope", &slope_calib);
+            calib_tree->SetBranchAddress("calib_error", &slope_error_calib);
+            calib_tree->SetBranchAddress("calib_pearsson", &pearsson_calib);
+            long int nEnTrees = calib_tree->GetEntries();
+            for (long int i = 0; i < nEnTrees; ++i){
+                calib_tree->GetEntry(i);
+                index = keyhash(kpix_calib, channel_calib, bucket_calib);
+                std::pair<double,double> calib_entry = std::make_pair(slope_calib, pearsson_calib);
+                calibs.emplace(index,calib_entry);
+            }
+            cout << " -- Reading " << argv[3] << " as pedestal subtraction input file." << endl;
+            skip_cycles_front = 0;
+            TFile *pedestal_file = TFile::Open(argv[3]);
+
+            TTree* pedestal_tree = (TTree*)pedestal_file->Get("pedestal_tree");
+
+            int kpix_pedestal, channel_pedestal, bucket_pedestal;
+            double pedestal_median, pedestal_MAD;
+
+            pedestal_tree->SetBranchAddress("pedestal_median", &pedestal_median);
+            pedestal_tree->SetBranchAddress("kpix_num", &kpix_pedestal);
+            pedestal_tree->SetBranchAddress("channel_num", &channel_pedestal);
+            pedestal_tree->SetBranchAddress("bucket_num", &bucket_pedestal);
+            pedestal_tree->SetBranchAddress("pedestal_MAD", &pedestal_MAD);
+
+            long int nentries = pedestal_tree->GetEntries();
+            for (long int i = 0; i < nentries; ++i)
+            {
+                pedestal_tree->GetEntry(i);
+                index = keyhash(kpix_pedestal, channel_pedestal, bucket_pedestal);
+                std::pair<double,double> pedestal_entry = std::make_pair(pedestal_median, pedestal_MAD);
+                pedestals.emplace(index, pedestal_entry);
+            }
+
+
+
+            gROOT->GetListOfFiles()->Remove(calibration_file);
+            calibration_file->Close();
+            gROOT->GetListOfFiles()->Remove(pedestal_file);
+            pedestal_file->Close();
+
+        }
+
+
+    }
+
+
+    //cout << "DEBUG: 2" << endl;
+    //////////////////////////////////////////
+    // Open Data file
+    //////////////////////////////////////////
+
+
+
+    if ( ! dataRead.open(argv[1])  ) {
+        cout << "Error opening data file " << argv[1] << endl;
+        return(1);
+    }
+    CM_file.open("test.txt");
+    // Create output names
+    string pedestalname = argv[3];
+    string outname = argv[1];
+
+
+    size_t name_start  = pedestalname.find("/Run") + 1;
+
+    if (name_start == 0){
+        printf(ANSI_COLOR_RED "DEBUG: Name start not found, seeing whether input is /Calibration" ANSI_COLOR_RESET "\n");
+        name_start = pedestalname.find("/Calibration")+1;
+    }
+    size_t name_length = pedestalname.find(".dat") - name_start;
+
+    pedestalname = pedestalname.substr(name_start, name_length);
+
+    cout << "Name of output file is " <<  pedestalname << endl;
+    tmp.str("");
+    tmp << argv[1] << "_" << pedestalname << ".cluster.root";
+    outRoot = tmp.str();
+
+    tmp.str("");
+    tmp << argv[1] << ".GBL_input.txt" ;
+    cout << "Write to GBL input file : " << tmp.str() << endl;
+    //claus_file.open("claus_file_new.txt");
+    claus_file.open(tmp.str());
+
+    //////////////////////////////////////////
+    // Read Data
+    //////////////////////////////////////////
+    cout << "Opened data file: " << argv[1] << endl;
+    fileSize = dataRead.size();
+    filePos  = dataRead.pos();
+
+    // Init
+    currPct          	= 0;
+    lastPct          	= 100;
+    printf(ANSI_COLOR_YELLOW "(Warning) Maximum number of cycles that are being considered is set to %i" ANSI_COLOR_RESET "\n", maxAcquisitions);
+    cout << "\rReading File: 0 %" << flush;  // Printout of progress bar
+    //goodTimes       	= 0;
+
+    // Open root file
+    rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
+    rFile->cd(); // move into root folder base
+
+
+
+
+
+    vector<double>* vec_corr_charge[n_kpix] = {nullptr}; //delete does not work if I do not initialize all vectors
+    std::map<int, double> common_modes_median[n_kpix];
+    while ( dataRead.next(&event)  &&  event.eventNumber() <= maxAcquisitions) // event read to check for filled channels and kpix to reduce number of empty histograms.
+    {
+
+        acqCount++;
+        if (acqCount > skip_cycles_front)
+        {
+            acqProcessed++;
+
+            for (x=0; x < event.count(); x++)
+            {
+
+                //// Get sample
+                sample  = event.sample(x);
+                kpix    = sample->getKpixAddress();
+                tstamp  = sample->getSampleTime();
+                channel = sample->getKpixChannel();
+                bucket  = sample->getKpixBucket();
+                value   = sample->getSampleValue();
+                type    = sample->getSampleType();
+                bunchClk = sample->getBunchCount();
+                subCount = sample->getSubCount();
+                index = keyhash(kpix, channel, bucket);
+
+
+
+                //cout << type <<endl;
+                //cout << "DEBUG 2" << endl;
+                if ( type == KpixSample::Data )
+                {
+                    //cout << kpix << endl;
+                    kpixFound[kpix]          = true;
+                    channelFound[kpix][channel] = true;
+//					bucketFound[kpix][channel][bucket] = true;
+                    //cout << "Found KPIX " << kpix << endl;
+
+                    if (bucket == 0)
+                    {
+//                        cout << "Just testing something: Index " << index << " KPiX " << kpix << " Channel " << channel << " Bucket " << bucket << endl;
+//                        cout << "Previous calib slope " << calib_slope[kpix][channel][bucket] << endl;
+//                        cout << "New calib slope " << calibs.at(index).first << endl;
+                        if (calibration_check == 1)
+                        {
+                            //cout << "2nd Pedestal MAD " << pedestals.at(index).second << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
+                            if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85)
+                            {
+
+
+
+                                if (vec_corr_charge[kpix] == nullptr)
+                                {
+                                    vec_corr_charge[kpix] = new std::vector<double>;
+                                    if (vec_corr_charge[kpix]==nullptr)
+                                    {
+                                        std::cerr << "Memory allocation error for vector kpix " <<
+                                        kpix <<std::endl;
+                                        exit(-1); // probably best to bail out
+                                    }
+                                }
+
+                                //cout << "DEBUG 2.1 " << kpix << endl;
+                                double corrected_charge_value_median = double(value - pedestals.at(index).first)/calibs.at(index).first;
+                                vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
+                                //cout << "Pointer of vec_corr_charge " << vec_corr_charge[kpix] << endl;
+                            }
+                        }
+                    }
+                }
+            }
+            for (unsigned int k = 0; k < n_kpix ; k++)
+            {
+                //cout << "Pointer of vec_corr_charge " << vec_corr_charge[k] << endl;
+                if (vec_corr_charge[k] != nullptr)
+                {
+                    //cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl;
+
+                    CM_file << k << " " << median(vec_corr_charge[k]) << " " <<  event.eventNumber() << endl;
+                    common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
+
+                    delete vec_corr_charge[k];
+                    //cout << "Common modes median of EventNumber " << event.eventNumber()  << " kpix " << k  << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
+                    vec_corr_charge[k] = nullptr;
+
+                }
+            }
+
+        }
+        else
+        {
+            auto byte = event.count();
+            auto train = event.eventNumber();
+            if (f_skipped_cycles!=NULL)
+            fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
+        }
+    }
+
+    if (f_skipped_cycles!=NULL)  {
+        fclose( f_skipped_cycles);
+        cout << endl;
+        cout << "Wrote skipped cycles to " << outtxt << endl;
+        cout << endl;
+    }
+    //cout << "DEBUG: 3" << endl;
+    //cout << tstamp << endl;
+    dataRead.close();
+    double weight = 1.0/acqProcessed;
+    ;//acqProcessed;
+
+
+
+    std::vector<double> vec_noise, vec_charge;
+    std::vector<int> vec_kpix, vec_channel, vec_strip, vec_bucket, vec_time;
+    //////////////////////////////////////////
+    // New histogram generation within subfolder structure
+    //////////////////////////////////////////
+
+    int response_bins = 220;
+    double response_xmin = -20.5;
+    double response_xmax = 19.5;
+    TTree* noiseTimeTree = new TTree("noise_time_tree", "noise_time_tree");
+    noiseTimeTree->Branch("kpix", &vec_kpix);
+    noiseTimeTree->Branch("channel", &vec_channel);
+    noiseTimeTree->Branch("strip", &vec_strip);
+    noiseTimeTree->Branch("bucket", &vec_bucket);
+    noiseTimeTree->Branch("time", &vec_time);
+    noiseTimeTree->Branch("noise", &vec_noise);
+    noiseTimeTree->Branch("charge", &vec_charge);
+
+
+
+    //TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
+
+
+    //////////////////////////////////////////
+    // Data read for all events for detailed look
+    //////////////////////////////////////////
+    dataRead.open(argv[1]); //open file again to start from the beginning
+
+    int header = 1;
+
+
+    int clstrcounter[n_kpix][1840] = {0};
+
+
+
+
+
+    rFile->cd();
+    std::unordered_map<uint, std::vector<double>> QTrue;
+    std::unordered_map<uint, double> noise;
+    while ( dataRead.next(&event)  &&  event.eventNumber() <= maxAcquisitions) //preread to determine noise value of each channel in each KPiX.
+    {
+        int not_empty= 0;
+        std::vector<double> time_ext;
+
+
+        for (x=0; x < event.count(); x++)
+        {
+            //cout << "DEBUG: EVENT COUNT " << event.count() << endl;
+            //// Get sample
+            sample  = event.sample(x);
+            kpix    = sample->getKpixAddress();
+            channel = sample->getKpixChannel();
+            bucket  = sample->getKpixBucket();
+            value   = sample->getSampleValue();
+            type    = sample->getSampleType();
+            tstamp  = sample->getSampleTime();
+            sensor = kpix/2;
+            unsigned int block = channel/32;
+            bunchClk = sample->getBunchCount();
+            subCount = sample->getSubCount();
+            index = keyhash(kpix, channel, bucket);
+            uint index1 = keyhash(kpix, channel, bucket, tstamp);
+            //cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+            cout << "DEBUG 0" << endl;
+            if ( type == KpixSample::Data ) // If event is of type KPiX data
+            {
+                if (bucket == 0)
+                {
+                    if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD channels
+                    {
+                         cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+                        //if (kpix == 0 && channel == 188) cout << "Just testing things: " << calibs.at(index).first << " " << calibs.at(index).second;
+                        double charge_ped_corrected = value - pedestals.at(index).first;
+                        cout << "DEBUG 1" << endl;
+                        double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
+                        double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+                        cout << "DEBUG 2" << endl;
+                        cout << "Time standard: " << tstamp <<  " and time index recalculated: " << index1/pow(2,17) << endl;
+                        cout << "Channel standard: " << channel <<  " and channel index recalculated: " << (index1 % int(pow(2,17)))/pow(2,7) << endl;
+//                        cout << "KPiX standard: " << kpix <<  " and kpix index recalculated: " << ((index1 % pow(2,17))%pow(2,7))/pow(2,2) << endl;
+//                        cout << "Bucket standard: " << bucket <<  " and bucket index recalculated: " << ((index1 % pow(2,17))%pow(2,7))%pow(2,2) << endl;
+//                        QTrue.at(index1).push_back(charge_CM_corrected);
+//                        cout << "CM corrected charge is " << charge_CM_corrected << " for KPiX " << kpix << " and channel " << channel << endl;
+
+                    }
+                    //else if (pedestals.at(index).second == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
+                }
+            }
+        }
+
+        filePos  = dataRead.pos();
+        currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
+        if ( currPct != lastPct )
+        {
+            cout << "\rReading File for noise determination: " << currPct << " %      " << flush;
+            lastPct = currPct;
+        }
+
+
+    }
+    dataRead.close();
+
+    //cout << "DEBUG 2" << endl;
+    /////////////////////////////////////////////////////////
+    //// BEGIN OF CLUSTER READ
+    dataRead.open(argv[1]);
+
+    int global_trig_counter = 0;
+//	std::vector<clustr> all_clusters[n_kpix/2];
+
+    cout << endl;
+    cout << "Writing root plots to " << outRoot << endl;
+    cout << endl;
+
+    rFile->Write();
+    gROOT->GetListOfFiles()->Remove(rFile); //delete cross links that make production of subfolder structure take forever
+    rFile->Close();
+
+
+
+    dataRead.close();
+    return(0);
 }

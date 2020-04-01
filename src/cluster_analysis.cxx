@@ -192,10 +192,8 @@ int main ( int argc, char **argv )
 
 	//TTree*					cluster_tree;
 	
-	TH1F					*fc_response_medCM_subtracted[n_kpix];
-	TH1F					*fc_response_med[n_kpix];
-    TH1F					*fc_response_medCM_subtracted_sensor[n_kpix/2];
-    TH1F					*QTrue[n_kpix][n_channels][4];
+    TH1F					*QTrue[n_kpix][4];
+    TH1F					*QTrue_channel[n_kpix][n_channels][4];
 		
 	TH1F 					*Max_SoN[n_kpix/2];
 		
@@ -725,10 +723,6 @@ int main ( int argc, char **argv )
             tmp_units << "noise_v_time; Time (BCC); Noise (fC) ";
             noise_v_time[sensor]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
 
-            tmp.str("");
-            tmp << "fc_response_median_made_CMmedian_subtracted_s" << sensor << "_b0";
-            fc_response_medCM_subtracted_sensor[sensor] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
-
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
                 kpix = (sensor*2)+k;
@@ -741,12 +735,21 @@ int main ( int argc, char **argv )
                     rFile->cd(kpix_folder->GetPath());
 
                     tmp.str("");
-                    tmp << "fc_response_median_made_CMmedian_subtracted_k" << kpix << "_b0";
-                    fc_response_medCM_subtracted[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+                    tmp << "QTrue_k" << kpix << "_b0";
+                    QTrue[kpix][0] = new TH1F(tmp.str().c_str(), "True charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
 
                     tmp.str("");
-                    tmp << "fc_response_median_made_k" << kpix << "_b0";
-                    fc_response_med[kpix] = new TH1F(tmp.str().c_str(), "fc_response; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+                    tmp << "Q_ADC_k" << kpix << "_b0";
+                    QTrue[kpix][1] = new TH1F(tmp.str().c_str(), "ADC charge; Charge (fC); #Entries", 8192, 0, 8192);
+
+                    tmp.str("");
+                    tmp << "Q_Ped_sub_k" << kpix << "_b0";
+                    QTrue[kpix][2] = new TH1F(tmp.str().c_str(), "ped sub ADC charge; Charge (fC); #Entries", 8192, -4096, 4096);
+
+                    tmp.str("");
+                    tmp << "Q_fC_k" << kpix << "_b0";
+                    QTrue[kpix][3] = new TH1F(tmp.str().c_str(), "ped sub fC charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+
 
 
                     tmp.str("");
@@ -776,19 +779,19 @@ int main ( int argc, char **argv )
 							
 							tmp.str("");
 							tmp << "Q_true_k" << kpix << "_c" << channel << "_b0";
-                            QTrue[kpix][channel][0] = new TH1F(tmp.str().c_str(), "True charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+                            QTrue_channel[kpix][channel][0] = new TH1F(tmp.str().c_str(), "True charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
 
                             tmp.str("");
                             tmp << "Q_ADC_k" << kpix << "_c" << channel << "_b0";
-                            QTrue[kpix][channel][1] = new TH1F(tmp.str().c_str(), "ADC charge; Charge (fC); #Entries", 8192, 0, 8192);
+                            QTrue_channel[kpix][channel][1] = new TH1F(tmp.str().c_str(), "ADC charge; Charge (fC); #Entries", 8192, 0, 8192);
 
                             tmp.str("");
                             tmp << "Q_Ped_sub_k" << kpix << "_c" << channel << "_b0";
-                            QTrue[kpix][channel][2] = new TH1F(tmp.str().c_str(), "ped sub ADC charge; Charge (fC); #Entries", 8192, -4096, 4096);
+                            QTrue_channel[kpix][channel][2] = new TH1F(tmp.str().c_str(), "ped sub ADC charge; Charge (fC); #Entries", 8192, -4096, 4096);
 
                             tmp.str("");
                             tmp << "Q_fC_k" << kpix << "_c" << channel << "_b0";
-                            QTrue[kpix][channel][3] = new TH1F(tmp.str().c_str(), "fC ped sub charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
+                            QTrue_channel[kpix][channel][3] = new TH1F(tmp.str().c_str(), "ped sub fC charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
 						}
 					}
                 }
@@ -868,13 +871,13 @@ int main ( int argc, char **argv )
                         double time_diff_triggers = smallest_time_diff(time_ext, tstamp);
                         double charge_ped_corrected = value - pedestals.at(index).first;
                         trig_diff[kpix]->Fill(time_diff_triggers);
-                        QTrue[kpix][channel][1]->Fill(value, weight);
-                        QTrue[kpix][channel][2]->Fill(charge_ped_corrected, weight);
+                        QTrue_channel[kpix][channel][1]->Fill(value, weight);
+                        QTrue_channel[kpix][channel][2]->Fill(charge_ped_corrected, weight);
 						//cout << "DEBUG 1" << endl;
                         double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
-                        QTrue[kpix][channel][3]->Fill(corrected_charge_value_median, weight);
-                        double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-                        QTrue[kpix][channel][0]->Fill(charge_CM_corrected, weight);
+                        QTrue_channel[kpix][channel][3]->Fill(corrected_charge_value_median, weight);
+                        double true_charge = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+                        QTrue_channel[kpix][channel][0]->Fill(true_charge, weight);
                         common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()), weight);
 						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
 						{
@@ -896,9 +899,9 @@ int main ( int argc, char **argv )
 								exit(-1); // probably best to bail out
 							}
 						} 
-//                        cout << "CM corrected charge is " << charge_CM_corrected << " for KPiX " << kpix << " and channel " << channel << endl;
-						corrected_charge_vec[kpix][channel]->push_back(charge_CM_corrected);
-						corrected_charge_vec_time[kpix][int(tstamp)]->push_back(charge_CM_corrected);
+//                        cout << "CM corrected charge is " << true_charge << " for KPiX " << kpix << " and channel " << channel << endl;
+                        corrected_charge_vec[kpix][channel]->push_back(true_charge);
+                        corrected_charge_vec_time[kpix][int(tstamp)]->push_back(true_charge);
 
 					}
                     //else if (pedestals.at(index).second == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
@@ -966,7 +969,7 @@ int main ( int argc, char **argv )
 	int global_trig_counter = 0;
 //	std::vector<clustr> all_clusters[n_kpix/2];
 
-
+    uint clusterID = 0;
 
     //cout << "DEBUG 3" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
@@ -1036,23 +1039,26 @@ int main ( int argc, char **argv )
 					{
                         //cout <<"DEBUG3.2 " << kpix << " " <<  channel << endl;
 						//// ====== Calculation of Charge values, with pedestal and common mode subtraction  =============
-                        double corrected_charge_value_median = double(value - pedestals.at(index).first)/calibs.at(index).first;
+                        QTrue[kpix][1]->Fill(value, weight);
+                        double ped_sub_ADC = double(value) - pedestals.at(index).first;
 
-                        fc_response_med[kpix]->Fill(corrected_charge_value_median, weight);
+                        QTrue[kpix][2]->Fill(ped_sub_ADC, weight);
+                        double ped_sub_fC = ped_sub_ADC/calibs.at(index).first;
 
-						double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+                        QTrue[kpix][3]->Fill(ped_sub_fC, weight);
+
+
+                        double true_charge = ped_sub_fC - common_modes_median[kpix].at(event.eventNumber());
 						//// ========= Event cut ============
-                
-                        fc_response_medCM_subtracted[kpix]->Fill(charge_CM_corrected, weight);
-                        fc_response_medCM_subtracted_sensor[sensor]->Fill(charge_CM_corrected, weight);
+                        QTrue[kpix][0]->Fill(true_charge, weight);
 
-                        charge_v_position[sensor]->Fill(yParameterSensor(strip, sensor), charge_CM_corrected);
-                        charge_v_strip[sensor]->Fill(strip, charge_CM_corrected);
+                        charge_v_position[sensor]->Fill(yParameterSensor(strip, sensor), true_charge);
+                        charge_v_strip[sensor]->Fill(strip, true_charge);
                         //cout <<"DEBUG3.2.1 " << kpix << " " <<  channel << endl;
-                        if ( charge_CM_corrected > 3*noise[kpix][channel] && strip != 9999)
-//                        if ( charge_CM_corrected > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 3 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
+                        if ( true_charge > 2*noise[kpix][channel] && strip != 9999)
+//                        if ( true_charge > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 3 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
-							cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, charge_CM_corrected));
+                            cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, true_charge));
 							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
                             eventSample = x;
 //                            cout << "Time check " << tstamp << endl;
@@ -1100,7 +1106,8 @@ int main ( int argc, char **argv )
 							double SoN_order = 0;
 							Max_SoN[sensor]->Fill(Input.MaxSoN(), weight);
 							MaximumSoN[sensor][Input.MaxSoN()]+=weight;
-							NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999);
+                            NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999, clusterID);
+                            clusterID++;
 							if (num_of_clusters == 0)
 							{
 								cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -1129,7 +1136,7 @@ int main ( int argc, char **argv )
 //							all_clusters_pointer[sensor][event.eventNumber()]->push_back(NomNom.getCluster());
 
 
-							if (NomNom.getClusterSignificance2() >= 7.0 && NomNom.getClusterCharge() >= 1.0 && NomNom.getClusterElementssize() <= 2)
+                            if (NomNom.getClusterSignificance2() >= 6.0)
 							{
 								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1142,7 +1149,7 @@ int main ( int argc, char **argv )
 
 							if (header == 1){
 								header = 0;
-								claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,runtime,runtime_ns,trigN" << endl;
+                                claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
 							}
 							claus_file << setw(5) << event.eventNumber()  << ","
 							           << setw(1) << sensor2layer.at(sensor)  << ","
@@ -1151,7 +1158,8 @@ int main ( int argc, char **argv )
 							           << setw(7) << NomNom.getClusterSignificance2() << ","
 							           << setw(2) << NomNom.getClusterElementssize() << ","
 							           << setw(7) << NomNom.getClusterCharge() << ","
-							           << tmp.str().c_str()
+                                       << tmp.str().c_str() << ","
+                                       << setw(7) << NomNom.getClusterID()
 							           << endl;
 
 							num_of_clusters++;
