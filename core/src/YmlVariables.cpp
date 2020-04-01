@@ -44,11 +44,10 @@ using namespace std;
 
 YmlVariables::YmlVariables(){
 
-  //yml_level = _yml_level;
-  if (_debug) printf("X-Macro: yml level test = %s\n", yml_level[test]);
-  _vars.clear();
-  _debug=false;
-  
+	//yml_level = _yml_level;
+	_vars.clear();
+	_debug=false;
+	if (_debug) printf("X-Macro: yml level test = %s\n", yml_level[test]);
 }
 
 YmlVariables::~YmlVariables(){}  // empty template
