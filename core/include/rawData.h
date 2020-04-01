@@ -16,29 +16,37 @@
  Mengqing <mengqing.wu@desy.de>
  @ 2019-10-17
  @ finalized 2019-10-24
+ @ updated   2020-03-26 - Add external trig info
  Currently for external trigger only
  */
 
 namespace Lycoris{
-
-  constexpr uint G_BUCKET_HASH_UNIT { 30000 };
-  constexpr uint G_TIME_HASH_UNIT { 150000 };
-
+	struct trigger_t{
+		uint runtime;   //!64bit runtime counter using 200MHz clock
+		uint tstamp;    //!BCC based 13bit counter using Acq. clock
+		uint triggerid; //!Global trigger ID
+	};
+	
+	constexpr uint G_BUCKET_HASH_UNIT { 30000 };
+	//constexpr uint G_TIME_HASH_UNIT { 150000 };
+	
   class Cycle{
 	public:
 		// Global channel num = kpix_index*2014+channel;
 		Cycle(KpixEvent &event,
+		      uint &ntrig_ext,
 		      uint nbuckets = 1,
 		      uint begin_ch = 0,
 		      uint end_ch   = 1023,
 		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
-		uint16_t m_ts;
+		uint m_ts64;
 		uint m_nbuckets;
+		std::vector<trigger_t> m_v_exttrigs;
 	
 		const uint eventNumber() const{return m_cyclenumber;}
-		const uint runtime() const{return m_ts;}
+		const uint runtime() const{return m_ts64;}
 
 		//! get timestamp based on channel and bucket
 		uint getDataTime(uint hwid) {
