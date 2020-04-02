@@ -51,15 +51,14 @@ double MAD(std::vector<T>* v){
 			return 0.0;
 		else{
 			T med = median(v);
-			std::vector<T>* deviation;
-			deviation = new std::vector<T>;
+			std::vector<T> deviation;
 			
 			for (auto const i:(*v)){
 				if (std::is_unsigned<T>::value &&  i<med)
 					throw std::runtime_error("MAD: error uint a- uint b, a<b");
-				deviation->push_back(fabs(i - med));
+				deviation.push_back(fabs(i - med));
 			}
-			return median(deviation);
+			return median(&deviation);
 		}
 	}
 }
