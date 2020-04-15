@@ -7,18 +7,13 @@
 #include <iostream>
 
 #include "TROOT.h"
-#include "TFile.h"
 #include "TString.h"
 #include "TH1.h"
 #include "THStack.h"
 #include "TCanvas.h"
-#include "TCollection.h"
-#include "TKey.h"
-#include "TLegend.h"
-#include "RooPlot.h"
 #include "TAxis.h"
 #include "TGaxis.h"
-#include "TF1.h"
+#include "TMath.h"
 #include "TLatex.h"
 
 //! definition of funcs
