@@ -78,6 +78,18 @@ double xParameterSensor(double strip, int sensor)
 	}
 }
 
+int sensor2layer(int sensor)
+{
+    switch (sensor) {
+        case 0: return 10;
+        case 1: return 11;
+        case 2: return 12;
+        case 3: return 15;
+        case 4: return 14;
+        case 5: return 13;
+    }
+}
+
 // template <typename T>
 // double median(std::vector<T>* v)
 // {

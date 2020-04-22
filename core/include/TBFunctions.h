@@ -16,6 +16,8 @@ double yParameter(double, int);
 double yParameterSensor(double, int);
 double xParameterSensor(double, int);
 double smallest_time_diff(std::vector<double>, int);
+int sensor2layer(int);
+
 
 template <typename T>
 double median(std::vector<T>* vec){

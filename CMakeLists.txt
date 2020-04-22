@@ -276,8 +276,6 @@ add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS pedestal_tree)
 
-
-
 # tree builders:
 
 #add_executable(ntupleTest ${PROJECT_SOURCE_DIR}/src/ntupleTest.cxx)

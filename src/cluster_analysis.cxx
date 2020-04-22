@@ -190,7 +190,8 @@ int main ( int argc, char **argv )
 	uint64_t				frameruntime;
 	uint64_t				runtime;
 
-	//TTree*					cluster_tree;
+    TTree*					clusterTree;
+    TTree*					stripTree;
 	
     TH1F					*QTrue[n_kpix][4];
     TH1F					*QTrue_channel[n_kpix][n_channels][4];
@@ -283,20 +284,20 @@ int main ( int argc, char **argv )
 	pixel					pixel_kpix[n_channels];
 	pixel_mapping(pixel_kpix);
 	
-	unordered_map<uint, uint> sensor2layer;
+//	unordered_map<uint, uint> sensor2layer;
 	
-	sensor2layer.insert(make_pair(0, 10));
-	sensor2layer.insert(make_pair(1, 11));
-	sensor2layer.insert(make_pair(2, 12));
-	sensor2layer.insert(make_pair(3, 15));
-	sensor2layer.insert(make_pair(4, 14));
-	sensor2layer.insert(make_pair(5, 13));
-	sensor2layer.insert(make_pair(6, 9999));
-	sensor2layer.insert(make_pair(7, 9999));
-	sensor2layer.insert(make_pair(8, 9999));
-	sensor2layer.insert(make_pair(9, 9999));
-	sensor2layer.insert(make_pair(10, 9999));
-	sensor2layer.insert(make_pair(11, 9999));
+//	sensor2layer.insert(make_pair(0, 10));
+//	sensor2layer.insert(make_pair(1, 11));
+//	sensor2layer.insert(make_pair(2, 12));
+//	sensor2layer.insert(make_pair(3, 15));
+//	sensor2layer.insert(make_pair(4, 14));
+//	sensor2layer.insert(make_pair(5, 13));
+//	sensor2layer.insert(make_pair(6, 9999));
+//	sensor2layer.insert(make_pair(7, 9999));
+//	sensor2layer.insert(make_pair(8, 9999));
+//	sensor2layer.insert(make_pair(9, 9999));
+//	sensor2layer.insert(make_pair(10, 9999));
+//	sensor2layer.insert(make_pair(11, 9999));
 	
 	
 	//////////////////////////////////////////
@@ -971,6 +972,24 @@ int main ( int argc, char **argv )
 
     uint clusterID = 0;
 
+    std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos, strip_pos, strip_signi, strip_charge;
+    std::vector<int> vector_sensor, vector_ID,  strip_sensor, strip_ID;
+
+    clusterTree = new TTree("vector_cluster", "vector cluster tree");
+    clusterTree->Branch("sensor", &vector_sensor);
+    clusterTree->Branch("charge", &vector_charge);
+    clusterTree->Branch("signi", &vector_sigma);
+    clusterTree->Branch("size", &vector_size);
+    clusterTree->Branch("pos", &vector_pos);
+    clusterTree->Branch("ID", &vector_ID);
+
+    stripTree = new TTree("vector_sub_cluster", "vector strip tree");
+    stripTree->Branch("sensor", &strip_sensor);
+    stripTree->Branch("charge", &strip_charge);
+    stripTree->Branch("signi", &strip_signi);
+    stripTree->Branch("pos", &strip_pos);
+    stripTree->Branch("ID", &strip_ID);
+
     //cout << "DEBUG 3" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
 	{
@@ -1108,6 +1127,7 @@ int main ( int argc, char **argv )
 							MaximumSoN[sensor][Input.MaxSoN()]+=weight;
                             NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999, clusterID);
                             clusterID++;
+                            clustr Cluster = NomNom.getCluster();
 							if (num_of_clusters == 0)
 							{
 								cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
@@ -1134,7 +1154,28 @@ int main ( int argc, char **argv )
 							//						all_clusters[sensor].push_back(NomNom.getCluster());
 //							cout << "Sensor number: " << sensor << endl;
 //							all_clusters_pointer[sensor][event.eventNumber()]->push_back(NomNom.getCluster());
+                            vector_charge.push_back(NomNom.getClusterCharge());
+                            vector_sigma.push_back(NomNom.getClusterSignificance2());
+                            vector_size.push_back(NomNom.getClusterElementssize());
+                            vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
+                            vector_ID.push_back(NomNom.getClusterID());
 
+
+                            for (auto const& i : Cluster.Elements)
+                            {
+                                strip_pos.push_back(yParameterSensor(i.first,sensor));
+                                strip_charge.push_back(i.second);
+                                strip_signi.push_back(i.second/Cluster.Noise.at(i.first));
+                                strip_sensor.push_back(sensor);
+                                strip_ID.push_back(Cluster.ID);
+                            }
+
+                            stripTree->Fill();
+                            strip_pos.clear();
+                            strip_charge.clear();
+                            strip_signi.clear();
+                            strip_sensor.clear();
+                            strip_ID.clear();
 
                             if (NomNom.getClusterSignificance2() >= 6.0)
 							{
@@ -1152,7 +1193,7 @@ int main ( int argc, char **argv )
                                 claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
 							}
 							claus_file << setw(5) << event.eventNumber()  << ","
-							           << setw(1) << sensor2layer.at(sensor)  << ","
+                                       << setw(1) << sensor2layer(sensor)  << ","
 							           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << ","
 							           << setw(7) << NomNom.getClusterSignificance() << ","
 							           << setw(7) << NomNom.getClusterSignificance2() << ","
@@ -1227,6 +1268,13 @@ int main ( int argc, char **argv )
 
 //				}
 			}
+            clusterTree->Fill();
+            vector_charge.clear();
+            vector_sigma.clear();
+            vector_size.clear();
+            vector_pos.clear();
+            vector_sensor.clear();
+            vector_ID.clear();
 		}
 	////   Show progress
 		filePos  = dataRead.pos();

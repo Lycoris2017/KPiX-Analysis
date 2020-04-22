@@ -1110,7 +1110,7 @@ for root_file in args.file_in:
 	if (args.olddaq):
 		filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
 	elif (args.other):
-		filename_list.append(root_file[0:root_file.rfind('.root')])
+		filename_list.append(root_file[0:root_file.rfind('root')])
 	else:
 		if '/Run_' in root_file:
 			filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
