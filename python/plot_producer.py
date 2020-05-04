@@ -9,7 +9,7 @@ import argcomplete
 from operator import add
 import sys
 from decimal import Decimal
-#from pyroot_functions import loopdir_new
+from pyroot_functions import saveFile
 
 ROOT.gROOT.SetBatch(True)
 
@@ -19,7 +19,17 @@ graph_list = []
 
 
 
-
+#def saveFile(c1, filename_list, inCounter, counter, folder_loc, outName):
+#	if (inCounter == 1):
+#		run_name = filename_list[0][:-1]
+#	else:
+#		run_name = filename_list[counter][:-1]
+#	saveName = folder_loc+run_name+'_'+outName
+#	print 'Creating '+saveName
+#	c1.SaveAs(saveName+'.svg')
+#	c1.SaveAs(saveName+'.eps')
+#	c1.SaveAs(saveName+'.png')
+#	c1.SaveAs(saveName+'.C')
 
 def arrangeStats(hists, statBoxW, statBoxH, name):
 	i=0
@@ -253,21 +263,11 @@ def hist_plotter():
 		ROOT.gStyle.SetOptFit(0)
 		c1.Modified()
 		c1.Update()
-		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+run_name+'_'+args.output_name
-			print 'Creating '+outname
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = args.output_name
 		else:
-			outname = folder_loc+run_name+'_'+graph.GetName()
-			print 'Creating '+outname+'.svg/eps/png'
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = histogram.GetName()
+		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
 		c1.Close()
 	elif ('same' in args.draw_option):
 		##------------------
@@ -405,21 +405,11 @@ def hist_plotter():
 		
 		c1.Modified()
 		c1.Update()
-		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+run_name+'_'+args.output_name
-			print 'Creating '+outname
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = args.output_name
 		else:
-			outname = folder_loc+run_name+'_'+graph.GetName()
-			print 'Creating '+outname+'.png/svg/eps'
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = histogram.GetName()
+		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
 		c1.Close()
 	else:
 		counter = 0
@@ -536,21 +526,11 @@ def hist_plotter():
 			c1.Update()
 			if args.nofit:
 				obj.GetFunction('gaus').SetRange(0.0, 0.0, 0.01, 0.01) #IMPORTANT: workaround to remove fit from the plot
-			run_name = filename_list[counter][:-1]
 			if (args.output_name):
-				outname = folder_loc+run_name+'_'+args.output_name
-				print 'Creating '+outname
-				c1.SaveAs(outname+'.svg')
-				c1.SaveAs(outname+'.eps')
-				c1.SaveAs(outname+'.png')
-				c1.SaveAs(outname+'.C')
+				canvasName = args.output_name
 			else:
-				outname = folder_loc+run_name+'_'+histogram.GetName()
-				print 'Creating '+outname+'.pvg'
-				c1.SaveAs(outname+'.svg')
-				c1.SaveAs(outname+'.eps')
-				c1.SaveAs(outname+'.png')
-				c1.SaveAs(outname+'.C')
+				canvasName = histogram.GetName()
+			saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):
@@ -659,25 +639,11 @@ def graph_plotter():
 			print 'test'
 		yaxis.SetTitle(y_title)
 		#if (args.ylog is True):
-		run_name = filename_list[0][:-1]
 		if (args.output_name):
-			outname = folder_loc+run_name+'_'+args.output_name
-			print 'Creating '+outname
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = args.output_name
 		else:
-			search_name=''
-			for q in args.name:
-				search_name = search_name + '_' + q
-			print search_name
-			outname = folder_loc+run_name+'graphs_w'+search_name
-			print 'Creating '+outname+'.png'
-			c1.SaveAs(outname+'.svg')
-			c1.SaveAs(outname+'.eps')
-			c1.SaveAs(outname+'.png')
-			c1.SaveAs(outname+'.C')
+			canvasName = histogram.GetName()
+		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
 		c1.Close()
 	else:
 		counter = 0
@@ -709,25 +675,11 @@ def graph_plotter():
 			obj.Draw(args.draw_option)
 			#ROOT.gROOT.SetBatch(0)
 			#raw_input('Press Enter to look at the next histogram')
-			run_name = filename_list[0][:-1]
 			if (args.output_name):
-				outname = folder_loc+run_name+'_'+args.output_name
-				print 'Creating '+outname
-				c1.SaveAs(outname+'.svg')
-				c1.SaveAs(outname+'.eps')
-				c1.SaveAs(outname+'.png')
-				c1.SaveAs(outname+'.C')
+				canvasName = args.output_name
 			else:
-				search_name=''
-				for q in args.name:
-					search_name = search_name + '_' + q
-				print search_name
-				outname = folder_loc+run_name+'_'+graph.GetName()
-				print 'Creating '+outname+'.pvg'
-				c1.SaveAs(outname+'.svg')
-				c1.SaveAs(outname+'.eps')
-				c1.SaveAs(outname+'.png')
-				c1.SaveAs(outname+'.C')
+				canvasName = histogram.GetName()
+			saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):

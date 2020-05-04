@@ -47,6 +47,9 @@ x_hist = ROOT.TH1F("x", "Cluster x; position (mm); Number of Entries ", 1840, -4
 corr_hist = ROOT.TH1F("Correlations", "Correlations; num of correlated planes; Number of Hits ", 10, 0, 9)
 correlation_l10_l11 = ROOT.TH2F("correlation", "correlation y; Layer 10 (mm); Layer 11 (mm); Number of Hits", 1840, -46, 46, 1840, -46, 46)
 
+size_hist = ROOT.TH1F("cluster_size", "Cluster_Size; size; Number of Entries",  10, -0.5, 9.5)
+size_hist_on_track = ROOT.TH1F("cluster_size_on_track", "Cluster_Size_on_track; size; Number of Entries",  10, -0.5, 9.5)
+
 trackhits_hist = ROOT.TH1F("Track hits", "Track hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
 
 significance_hists =  []
@@ -90,7 +93,9 @@ size_hists.append(ROOT.TH1F("size_l13", "size; #strips; Number of Entries ", 10,
 size_hists.append(ROOT.TH1F("size_l14", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
 size_hists.append(ROOT.TH1F("size_l15", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
 
-all_hists = [charge_hist, charge_hist2, significance_hist, significance_hist2, y_hist, x_hist, corr_hist, trackhits_hist, charge_hists, y_hists[0:3], x_hists[0:3], size_hists[0:3], significance_hists ]
+noise_on_track_hists = []
+
+all_hists = [charge_hist, charge_hist2, significance_hist, significance_hist2, y_hist, x_hist, corr_hist, trackhits_hist, charge_hists, y_hists[0:3], x_hists[0:3], size_hists[0:3], significance_hists, size_hist, size_hist_on_track]
 
 print all_hists
 plane = []
@@ -109,6 +114,7 @@ counter = 0
 layer=array('i', [0])
 ccharge=array('f', [0])
 significance=array('f', [0])
+noise=array('f', [0])
 csize=array('i', [0])
 yPos=array('f', [0])
 onTrack=array('i', [0])
@@ -117,6 +123,7 @@ corrClusterTree = ROOT.TTree("corr_clusters", "corr_clusters");
 corrClusterTree.Branch("layer", layer, 'layer/I');
 corrClusterTree.Branch("charge", ccharge, 'charge/F');
 corrClusterTree.Branch("significance", significance, 'significance/F');
+corrClusterTree.Branch("noise", noise, 'noise/F');
 corrClusterTree.Branch("csize", csize, 'csize/I');
 corrClusterTree.Branch("yPos", yPos, 'yPos/F');
 corrClusterTree.Branch("onTrack", onTrack, 'onTrack/I');
@@ -202,15 +209,18 @@ for q in xrange(1,len(charge)):
             size_hists[5].Fill(int(size[q]))
         layer[0]=int(plane[q])
         ccharge[0]=float(charge[q])
+        noise[0]=float(charge[q])/float(sig[q])
         significance[0]=float(sig[q])
         yPos[0]=float(y[q])
         csize[0]=int(size[q])
+        size_hist.Fill(int(size[q]))
         onTrack[0]=HitOnTrack[q]
         corrClusterTree.Fill()
         charge_hist.Fill(float(charge[q]))
         if (HitOnTrack[q] == 1):
             track_charge_hist.Fill(float(charge[q]))
             y_hist_on_track.Fill(float(y[q]))
+            size_hist_on_track.Fill(int(size[q]))
             if (int(size[q]) == 1):
                 charge_size1.Fill(float(charge[q]))
             elif (int(size[q]) == 2):

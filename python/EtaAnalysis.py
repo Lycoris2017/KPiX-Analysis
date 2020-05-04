@@ -132,7 +132,8 @@ for entry in stripTree:
             stripOnTrackTree.Fill()
 
 
-
+for j in eta_hists:
+    j.Scale(1.0/j.GetEntries())
 
 
 

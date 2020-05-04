@@ -10,6 +10,7 @@ from operator import add
 import sys
 from decimal import Decimal
 from pyroot_functions import loopdir_new
+from pyroot_functions import plot_tree
 
 ROOT.gROOT.SetBatch(True)
 
@@ -70,6 +71,21 @@ parser.add_argument(
 	default='',
 	help='specify the drawing option as given by the root draw option, needs to be given as a single string (e.g. hist same or hist same multifile'
 )
+
+parser.add_argument(
+	'-c', '--conditions',
+	dest='conditions',
+	default='',
+	help='specify the root ttree conditions such as only ploy with y > 0 etc.'
+)
+
+parser.add_argument(
+	'-v', '--variables',
+	dest='variables',
+	nargs='*',
+	help='specify which ttree variable should be plotted'
+)
+
 parser.add_argument(
 	'-o', '--output',
 	dest='output_name',
@@ -133,14 +149,23 @@ parser.add_argument(
 	dest='ytitle',
 	help='choose the name of the y axis title'
 )
+parser.add_argument(
+	'-b', '--binRange',
+	dest='bin_range',
+	nargs='*',
+	help='set the number of bins'
+)
+
 args = parser.parse_args()
 
+if (len(args.variables) == 0 or len(args.variables) > 2):
+	print "Please enter 1 or 2 variables not more and not less"
+	sys.exit()
 
 mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
 mystyle.SetPaintTextFormat("5.3f");
-
 
 #set the background color to white
 mystyle.SetFillColor(0)
@@ -268,7 +293,7 @@ for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	object_list= object_list + (loopdir_new(key_root, args.name))
 	
-folder_loc = '/home/lycoris-dev/Documents/testbeam201907/'
+folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
 ##-----------------	
 ##general output
 #print args.color
@@ -283,11 +308,15 @@ if (args.ylog and args.yaxisrange[0] is 0):
 ##------------------
 ##start of the plotting.
 
+bin_range = args.bin_range
+variables = args.variables
+
+
 if ((len(hist_list) > len(args.color) or len(graph_list) > len(args.color))) and ("same" in args.draw_option):
 	print 'You do not have enough colors ', len(args.color), 'for the number of histograms you have ', len(hist_list)
 	sys.exit(1)
 if (len(object_list) is not 0):
-	print 'Need to implement actual plotting here'
+	plot_tree(object_list, args.conditions, variables ,bin_range,0, args.output_name)
 else:
 	print 'There are NO valid histograms/graphs in the current selection'
 	print ''
