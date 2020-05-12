@@ -136,7 +136,7 @@ def hist_plotter():
 		statBoxH = 0.105
 		legend = ROOT.TLegend(args.legendloc[0], args.legendloc[1], args.legendloc[0]+statBoxW, args.legendloc[1]+statBoxH)
 		hist_comp = ROOT.THStack()
-		counter = 1
+		counter = 0
 		x_title = None
 		y_title = None
 		x_low = None
@@ -195,7 +195,7 @@ def hist_plotter():
 			obj.SetMarkerColor(args.color[counter-1])
 			if (args.fill):
 				obj.SetFillColor(args.color[counter-1])
-
+			#obj.GetFunction('gaus').SetLineColor(args.color[counter-1])
 
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -206,15 +206,14 @@ def hist_plotter():
 			##adjust legend and the x and y title name if chosen
 			if (not args.legend):
 				if len(filename_list) > 1:
-					legend.AddEntry(obj, filename_list[counter-1]+'_'+histogram.GetName())
-					legendname.append(filename_list[counter-1]+'_'+histogram.GetName())
+					legend.AddEntry(obj, filename_list[counter]+'_'+histogram.GetName())
+					legendname.append(filename_list[counter]+'_'+histogram.GetName())
 				else:
 					legend.AddEntry(obj, histogram.GetName())
 					legendname.append(histogram.GetName())
 			else:
-				legend.AddEntry(obj, args.legend[counter-1])
-				legendname.append(args.legend[counter-1])
-			counter +=1
+				legend.AddEntry(obj, args.legend[counter])
+				legendname.append(args.legend[counter])
 			if (args.xtitle):
 				x_title = args.xtitle
 			else:
@@ -223,7 +222,7 @@ def hist_plotter():
 				y_title = args.ytitle
 			else:
 				y_title = y_axis.GetTitle()
-			
+			counter +=1
 #			ROOT.TGaxis.SetMaxDigits(3)
 			
 		##------------------
@@ -267,7 +266,7 @@ def hist_plotter():
 			canvasName = args.output_name
 		else:
 			canvasName = histogram.GetName()
-		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
+		saveFile(c1, filename_list, len(args.file_in), counter-1, folder_loc, canvasName)
 		c1.Close()
 	elif ('same' in args.draw_option):
 		##------------------

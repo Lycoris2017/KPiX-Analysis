@@ -47,10 +47,13 @@ x_hist = ROOT.TH1F("x", "Cluster x; position (mm); Number of Entries ", 1840, -4
 corr_hist = ROOT.TH1F("Correlations", "Correlations; num of correlated planes; Number of Hits ", 10, 0, 9)
 correlation_l10_l11 = ROOT.TH2F("correlation", "correlation y; Layer 10 (mm); Layer 11 (mm); Number of Hits", 1840, -46, 46, 1840, -46, 46)
 
+
+
 size_hist = ROOT.TH1F("cluster_size", "Cluster_Size; size; Number of Entries",  10, -0.5, 9.5)
 size_hist_on_track = ROOT.TH1F("cluster_size_on_track", "Cluster_Size_on_track; size; Number of Entries",  10, -0.5, 9.5)
 
 trackhits_hist = ROOT.TH1F("Track hits", "Track hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
+trackNum = ROOT.TH1F("Nr. of Tracks", "Nr._of_Tracks; #Nr. of Tracks; Number of Entries ", 10, -0.5, 9.5)
 
 significance_hists =  []
 significance_hists.append(ROOT.TH1F("Significance_l10", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
@@ -142,11 +145,14 @@ with open(args.file_in) as inFile:
                 y_l10 = []
                 y_l11 = []
             trackhits_hist.Fill(hits_on_track)
+            if (counter > 1):
+                trackNum.Fill(int(tracks))
             hits_on_track=0
             line = inFile.readline()
         else:
             a = line.split( )
             plane.append(a[0])
+            tracks = a[10]
             x.append(a[1])
             y.append(a[2])
             z.append(a[3])

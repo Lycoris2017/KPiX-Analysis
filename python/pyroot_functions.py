@@ -51,6 +51,8 @@ def saveFile(c1, filename_list, inCounter, counter, folder_loc, outName):
 	if (inCounter == 1):
 		run_name = filename_list[0][:-1]
 	else:
+		print counter
+		print filename_list[0][:-1]
 		run_name = filename_list[counter][:-1]
 	saveName = folder_loc+run_name+'_'+outName
 	print 'Creating '+saveName

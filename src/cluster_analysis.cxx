@@ -224,6 +224,7 @@ int main ( int argc, char **argv )
 	TH1F					*cuts_performance[3][n_kpix/2][n_kpix/2-1];
 
 	TH1F					*noise_distribution[n_kpix];
+	TH1F					*noise_distribution_strips_only[n_kpix];
 	TH1F					*noise_distribution_sensor[n_kpix/2];
 	TH1F					*noise_v_position[n_kpix/2];
     TH1F					*noise_v_strip[n_kpix/2];
@@ -562,9 +563,9 @@ int main ( int argc, char **argv )
     // New histogram generation within subfolder structure
     //////////////////////////////////////////
 
-    int response_bins = 220;
-    double response_xmin = -20.5;
-    double response_xmax = 19.5;
+    int response_bins = 500;
+    double response_xmin = -10.5;
+    double response_xmax = 9.5;
 
 
     tmp.str("");
@@ -754,8 +755,12 @@ int main ( int argc, char **argv )
 
 
                     tmp.str("");
+                    tmp << "noise_distribution_strips_only_k" << kpix << "_b0";
+                    noise_distribution_strips_only[kpix] = new TH1F(tmp.str().c_str(), "noise_distribution_strips_only; Noise(fC);   #channels", 500,-0.005, 4.995);
+
+                    tmp.str("");
                     tmp << "noise_distribution_k" << kpix << "_b0";
-                    noise_distribution[kpix] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 100,-0.005, 4.995);
+                    noise_distribution[kpix] = new TH1F(tmp.str().c_str(), "noise_distribution; Noise(fC);   #channels", 500,-0.005, 4.995);
                     cout << "Found the following KPiX in the file: " <<  kpix << endl;
 
                     tmp.str("");
@@ -942,10 +947,11 @@ int main ( int argc, char **argv )
 					{
 						y = yParameterSensor(strip, sensor);
 						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
+						noise_distribution[k]->Fill(noise[k][c]);
 //                        cout << "Noise of kpix " << k << " and channel " << c << " is " << noise[k][c] << endl;
 						if (strip != 9999)
 						{
-							noise_distribution[k]->Fill(noise[k][c]);
+							noise_distribution_strips_only[k]->Fill(noise[k][c]);
 							noise_distribution_sensor[sensor]->Fill(noise[k][c]);
 							noise_v_position[sensor]->Fill(y, noise[k][c]);
                             noise_v_strip[sensor]->Fill(strip, noise[k][c]);
