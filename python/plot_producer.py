@@ -266,7 +266,7 @@ def hist_plotter():
 			canvasName = args.output_name
 		else:
 			canvasName = histogram.GetName()
-		saveFile(c1, filename_list, len(args.file_in), counter-1, folder_loc, canvasName)
+		saveFile(c1, filename_list, counter-1, folder_loc, canvasName)
 		c1.Close()
 	elif ('same' in args.draw_option):
 		##------------------
@@ -408,10 +408,11 @@ def hist_plotter():
 			canvasName = args.output_name
 		else:
 			canvasName = histogram.GetName()
-		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
+		saveFile(c1, filename_list, counter, folder_loc, canvasName)
 		c1.Close()
 	else:
 		counter = 0
+		file_counter = 0
 		for histogram in hist_list:
 			##------------------
 			##loop through the histograms, get all parameters and adjust the xrange
@@ -495,9 +496,10 @@ def hist_plotter():
 				x_axis.SetTitle(args.xtitle)
 			if (args.ytitle):
 				y_axis.SetTitle(args.ytitle)
-			obj.Draw(args.draw_option)
 			if (args.fit):
 				obj.Fit(args.fit)
+			obj.Draw(args.draw_option)
+
 #			if args.upperXaxis:
 #				print "adding an upper x axis"
 #				print x_low, y_low, x_high, y_high
@@ -529,9 +531,11 @@ def hist_plotter():
 				canvasName = args.output_name
 			else:
 				canvasName = histogram.GetName()
-			saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
+			saveFile(c1, filename_list, file_counter, folder_loc, canvasName)
 			c1.Close()
 			counter= counter+1
+			file_counter = counter/(len(hist_list)/len(filename_list))
+
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):
 			#'	print obj.GetBinContent(i)							
 	
@@ -642,7 +646,7 @@ def graph_plotter():
 			canvasName = args.output_name
 		else:
 			canvasName = histogram.GetName()
-		saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
+		saveFile(c1, filename_list, counter, folder_loc, canvasName)
 		c1.Close()
 	else:
 		counter = 0
@@ -678,7 +682,7 @@ def graph_plotter():
 				canvasName = args.output_name
 			else:
 				canvasName = histogram.GetName()
-			saveFile(c1, filename_list, len(args.file_in), counter, folder_loc, canvasName)
+			saveFile(c1, filename_list, counter, folder_loc, canvasName)
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):
@@ -990,7 +994,7 @@ mystyle.SetHistLineWidth(2)
 
 #mystyle.SetOptStat(args.statBox)
 #mystyle.SetOptFit(args.fitBox)
-mystyle.SetOptStat(1111)
+mystyle.SetOptStat(1001111)
 mystyle.SetOptFit(111)
 #mystyle.SetOptStat(0000001) #only name
 #

@@ -194,6 +194,7 @@ int main ( int argc, char **argv )
     TTree*					stripTree;
 	
     TH1F					*QTrue[n_kpix][4];
+    TH1F					*SoNTrue[n_kpix];
     TH1F					*QTrue_channel[n_kpix][n_channels][4];
 		
 	TH1F 					*Max_SoN[n_kpix/2];
@@ -228,7 +229,14 @@ int main ( int argc, char **argv )
 	TH1F					*noise_distribution_sensor[n_kpix/2];
 	TH1F					*noise_v_position[n_kpix/2];
     TH1F					*noise_v_strip[n_kpix/2];
-	TH1F					*noise_v_channel[n_kpix];
+    TH1F					*noise_v_channel[n_kpix];
+
+    TH1F                    *kpix_temp[n_kpix];
+
+    TH2F                    *noise_on_kpix[n_kpix];
+//    TH1F					*noise_v_column[n_kpix];
+//    TH1F					*noise_v_row[n_kpix];
+
 	
 	TH1F					*noise_v_time[n_kpix/2];
 
@@ -243,6 +251,7 @@ int main ( int argc, char **argv )
 	stringstream			FolderName;
 	
 	ofstream				claus_file;
+    ofstream				marcel_file;
     ofstream				CM_file;
 	ofstream				noise_file;
 	ofstream               xml;
@@ -266,6 +275,9 @@ int main ( int argc, char **argv )
     uint index;
     std::unordered_map<uint, std::pair<double, double>> calibs;
     std::unordered_map<uint, std::pair<double, double>> pedestals;
+
+    std::unordered_map<uint, std::pair<uint, double>> KPIX_temp;
+
     double                  pearsson_cut = 0.8;
 	
 	int						calibration_check = 0;
@@ -425,6 +437,11 @@ int main ( int argc, char **argv )
 	//claus_file.open("claus_file_new.txt");
 	claus_file.open(tmp.str());
 	
+    tmp.str("");
+    tmp << argv[1] << ".marcel.csv" ;
+    marcel_file.open(tmp.str());
+
+
 	//////////////////////////////////////////
 	// Read Data
 	//////////////////////////////////////////
@@ -453,9 +470,11 @@ int main ( int argc, char **argv )
 	{
 		
 		acqCount++;		
+//        cout << "New acquisition" << endl;
 		if (acqCount > skip_cycles_front)
 		{
 			acqProcessed++;
+
 			
 			for (x=0; x < event.count(); x++)
 			{
@@ -470,12 +489,18 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
                 bunchClk = sample->getBunchCount();
                 subCount = sample->getSubCount();
+                int eventNum = sample->getEventNum();
                 index = keyhash(kpix, channel, bucket);
 
 
 
 				//cout << type <<endl;
 				//cout << "DEBUG 2" << endl;
+//                if (type == KpixSample::Temperature)
+//                {
+//                    cout << " KPiX " << kpix << " Temperature " << value << " Time " << tstamp << " eventNum " << eventNum << endl;
+//                }
+
 				if ( type == KpixSample::Data )
 				{
 					//cout << kpix << endl;
@@ -526,7 +551,6 @@ int main ( int argc, char **argv )
 
                     CM_file << k << " " << median(vec_corr_charge[k]) << " " <<  event.eventNumber() << endl;
 					common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
-				
 					delete vec_corr_charge[k];
 					//cout << "Common modes median of EventNumber " << event.eventNumber()  << " kpix " << k  << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
 					vec_corr_charge[k] = nullptr;
@@ -554,7 +578,7 @@ int main ( int argc, char **argv )
 	//cout << tstamp << endl;
 	dataRead.close();
 	double weight = 1.0/acqProcessed;
-	;//acqProcessed;
+	//acqProcessed;
 	
 	
 	
@@ -635,13 +659,13 @@ int main ( int argc, char **argv )
             cluster_position_y[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; #mum; #Entries", 1840,-46000, 46000);
             tmp.str("");
             tmp << "cluster_charge_seed_sens" << sensor << "_b0";
-            cluster_charge[sensor][0] = new TH1F(tmp.str().c_str(), "cluster charge0; Charge (fC); #Entries", 200,-0.5, 49.5);
+            cluster_charge[sensor][0] = new TH1F(tmp.str().c_str(), "cluster charge0; Charge (fC); #Entries", 500,-0.5, 19.5);
             tmp.str("");
             tmp << "cluster_significance_seed_sens" << sensor << "_b0";
-            cluster_significance[sensor][0] = new TH1F(tmp.str().c_str(), "cluster significance_0; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance[sensor][0] = new TH1F(tmp.str().c_str(), "cluster significance_0; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_significance2_seed_sens" << sensor << "_b0";
-            cluster_significance2[sensor][0] = new TH1F(tmp.str().c_str(), "cluster significance2_0; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance2[sensor][0] = new TH1F(tmp.str().c_str(), "cluster significance2_0; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_sigma_seed_sens" << sensor << "_b0";
             cluster_sigma[sensor][0] = new TH1F(tmp.str().c_str(), "cluster sigmae0; #sigma; #Entries", 200,-0.5, 4.95);
@@ -662,13 +686,13 @@ int main ( int argc, char **argv )
             cluster_position_y[sensor][1] = new TH1F(tmp.str().c_str(), "cluster position y1; #mum; #Entries", 1840,-46000, 46000);
             tmp.str("");
             tmp << "cluster_charge_all_sens" << sensor << "_b0";
-            cluster_charge[sensor][1] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 200,-0.5, 49.5);
+            cluster_charge[sensor][1] = new TH1F(tmp.str().c_str(), "cluster charge1; Charge (fC); #Entries", 500,-0.5, 19.5);
             tmp.str("");
             tmp << "cluster_significance_all_sens" << sensor << "_b0";
-            cluster_significance[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance_1; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance_1; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_significance2_all_sens" << sensor << "_b0";
-            cluster_significance2[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance2_1; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance2[sensor][1] = new TH1F(tmp.str().c_str(), "cluster significance2_1; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_sigma_all_sens" << sensor << "_b0";
             cluster_sigma[sensor][1] = new TH1F(tmp.str().c_str(), "cluster sigma1; #sigma; #Entries", 200,-0.5, 4.95);
@@ -686,13 +710,13 @@ int main ( int argc, char **argv )
             cluster_position_y[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; #Entries", 1840,-46000, 46000);
             tmp.str("");
             tmp << "cluster_charge_CUTS_sens" << sensor << "_b0";
-            cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); #Entries", 200,-0.5, 49.5);
+            cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); #Entries", 500,-0.5, 19.5);
             tmp.str("");
             tmp << "cluster_significance_CUTS_sens" << sensor << "_b0";
-            cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance_2; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance_2; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_significance2_CUTS_sens" << sensor << "_b0";
-            cluster_significance2[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance2_2; S/N; #Entries", 200,-0.5, 49.5);
+            cluster_significance2[sensor][2] = new TH1F(tmp.str().c_str(), "cluster significance2_2; S/N; #Entries", 500,-0.5, 49.5);
             tmp.str("");
             tmp << "cluster_sigma_CUTS_sens" <<sensor << "_b0";
             cluster_sigma[sensor][2] = new TH1F(tmp.str().c_str(), "cluster sigma2; #sigma; #Entries", 200,-0.5, 4.95);
@@ -752,6 +776,10 @@ int main ( int argc, char **argv )
                     tmp << "Q_fC_k" << kpix << "_b0";
                     QTrue[kpix][3] = new TH1F(tmp.str().c_str(), "ped sub fC charge; Charge (fC); #Entries", response_bins, response_xmin, response_xmax);
 
+                    tmp.str("");
+                    tmp << "SoNTrue_k" << kpix << "_b0";
+                    SoNTrue[kpix] = new TH1F(tmp.str().c_str(), "True S/N; S/N; #Entries", 4*response_bins, 4*response_xmin, 4*response_xmax);
+
 
 
                     tmp.str("");
@@ -768,6 +796,18 @@ int main ( int argc, char **argv )
                     noise_v_channel[kpix]  = new TH1F(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
 
                     tmp.str("");
+                    tmp << "noise_on_kpix_k" << kpix << "_b0";
+                    noise_on_kpix[kpix]  = new TH2F(tmp.str().c_str(), "Noise (fc); KPiX x; KPiX y", 32,0,32 ,32,0,32);
+
+//                    tmp.str("");
+//                    tmp << "noise_v_column_k" << kpix << "_b0";
+//                    noise_v_column[kpix]  = new TH1F(tmp.str().c_str(), "Noise; column; Noise (fC)", 32,0, 31);
+
+//                    tmp.str("");
+//                    tmp << "noise_v_row_k" << kpix << "_b0";
+//                    noise_v_row[kpix]  = new TH1F(tmp.str().c_str(), "Noise; row; Noise (fC)", 32,0, 31);
+
+                    tmp.str("");
                     tmp << "trig_diff_k" << kpix << "_b0";
                     trig_diff[kpix] = new TH1F(tmp.str().c_str(), "Trigger difference; #Delta t (BCC); #Entries", 80, 0, 10);
 
@@ -775,6 +815,11 @@ int main ( int argc, char **argv )
                     tmp << "common_mode_k" << kpix << "_b0";
                     common_mode_kpix[kpix] = new TH1F(tmp.str().c_str(), "common mode; Common Mode(fC);   #entries", 240,-12, 12);
 					
+                    tmp.str("");
+                    tmp << "kpix_temp_k" << kpix;
+                    kpix_temp[kpix] = new TH1F(tmp.str().c_str(), "kpix_temp; Temperature; #entries", 8192,0, 8192);
+
+
 					for (int channel = 0; channel < 1024; channel++){
 						if (channelFound) {
 							FolderName.str("");
@@ -858,6 +903,12 @@ int main ( int argc, char **argv )
 			subCount = sample->getSubCount();
             index = keyhash(kpix, channel, bucket);
 //            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+
+            if (type == KpixSample::Temperature)
+            {
+                kpix_temp[kpix]->Fill(value);
+            }
+
             if (type == 2)// If event is of type external timestamp
             {
                 double time = bunchClk + double(subCount * 0.125);
@@ -884,7 +935,7 @@ int main ( int argc, char **argv )
                         QTrue_channel[kpix][channel][3]->Fill(corrected_charge_value_median, weight);
                         double true_charge = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
                         QTrue_channel[kpix][channel][0]->Fill(true_charge, weight);
-                        common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()), weight);
+                        if (channel == 0) common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()), weight);
 						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
 						{
 							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
@@ -925,7 +976,7 @@ int main ( int argc, char **argv )
 
 	}
 	dataRead.close();
-	
+    marcel_file << "Sensor, Time (BCC), Noise (fC)" << endl;
 
     //cout << "DEBUG 1" << endl;
 	 // END OF PREREAD
@@ -943,7 +994,7 @@ int main ( int argc, char **argv )
 					int strip = 9999;
 					if (k%2 == 0) strip = kpix2strip_left.at(c);// if left kpix
 					else strip  = kpix2strip_right.at(c); // if right kpix
-                    if (pedestals.at(index).second != 0 != 0)
+					if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 )
 					{
 						y = yParameterSensor(strip, sensor);
 						noise[k][c] = 1.4826*MAD(corrected_charge_vec[k][c]);
@@ -957,6 +1008,9 @@ int main ( int argc, char **argv )
                             noise_v_strip[sensor]->Fill(strip, noise[k][c]);
 						}
 						noise_v_channel[k]->SetBinContent(c+1, noise[k][c]);
+						noise_on_kpix[k]->SetBinContent((c+1)/32, (c+1)%32, noise[k][c]);
+						//noise_v_column[k]->SetBinContent((c+1)/32, noise[k][c]);
+						//noise_v_row[k]->SetBinContent((c+1)%32, noise[k][c]);
 						
 					}
 				}
@@ -964,7 +1018,12 @@ int main ( int argc, char **argv )
 			}
 			for (unsigned int t = 0; t < n_BCC ; ++t)
 			{
-				noise_v_time[sensor]->SetBinContent(t+1, 1.4826*MAD(corrected_charge_vec_time[k][t]));
+                double time_noise =  1.4826*MAD(corrected_charge_vec_time[k][t]);
+                noise_v_time[sensor]->SetBinContent(t+1, time_noise);
+                marcel_file << setw(3) << sensor  << ","
+                            << setw(5) << t << ","
+                            << setw(5) << time_noise
+                            << endl;
 			}	
 		}
 	}
@@ -1074,8 +1133,10 @@ int main ( int argc, char **argv )
 
 
                         double true_charge = ped_sub_fC - common_modes_median[kpix].at(event.eventNumber());
+                        double true_SoN = true_charge/noise[kpix][channel];
 						//// ========= Event cut ============
                         QTrue[kpix][0]->Fill(true_charge, weight);
+                        SoNTrue[kpix]->Fill(true_SoN, weight);
 
                         charge_v_position[sensor]->Fill(yParameterSensor(strip, sensor), true_charge);
                         charge_v_strip[sensor]->Fill(strip, true_charge);
@@ -1161,6 +1222,7 @@ int main ( int argc, char **argv )
 //							cout << "Sensor number: " << sensor << endl;
 //							all_clusters_pointer[sensor][event.eventNumber()]->push_back(NomNom.getCluster());
                             vector_charge.push_back(NomNom.getClusterCharge());
+                            vector_sensor.push_back(sensor);
                             vector_sigma.push_back(NomNom.getClusterSignificance2());
                             vector_size.push_back(NomNom.getClusterElementssize());
                             vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
@@ -1183,7 +1245,7 @@ int main ( int argc, char **argv )
                             strip_sensor.clear();
                             strip_ID.clear();
 
-                            if (NomNom.getClusterSignificance2() >= 6.0)
+							if (NomNom.getClusterSignificance2() > 6.0)
 							{
 								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1583,6 +1645,7 @@ int main ( int argc, char **argv )
 
     //cout <<"DEBUG6" << endl;
 	claus_file.close();
+    marcel_file.close();
     CM_file.close();
 	
 	cout << endl;

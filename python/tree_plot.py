@@ -310,13 +310,21 @@ if (args.ylog and args.yaxisrange[0] is 0):
 
 bin_range = args.bin_range
 variables = args.variables
-
+draw_option = args.draw_option
+if (9999 in args.yaxisrange and len(bin_range) > 3):
+	yaxisrange = [float(bin_range[4]), float(bin_range[5])]
+else:
+	yaxisrange = args.yaxisrange
+if (9999 in args.xaxisrange):
+	xaxisrange = [float(bin_range[1]), float(bin_range[2])]
+else:
+	xaxisrange = args.xaxisrange
 
 if ((len(hist_list) > len(args.color) or len(graph_list) > len(args.color))) and ("same" in args.draw_option):
 	print 'You do not have enough colors ', len(args.color), 'for the number of histograms you have ', len(hist_list)
 	sys.exit(1)
 if (len(object_list) is not 0):
-	plot_tree(object_list, args.conditions, variables ,bin_range,0, args.output_name)
+	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, args.output_name, xaxisrange, yaxisrange)
 else:
 	print 'There are NO valid histograms/graphs in the current selection'
 	print ''

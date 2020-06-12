@@ -142,6 +142,7 @@ int main ( int argc, char **argv )
 {
 
     TH1::SetDefaultSumw2();
+    cout <<"DEBUG1" << endl;
     //////////////////////////////////////////
     // Class declaration and histogram initialization
     //////////////////////////////////////////
@@ -155,11 +156,11 @@ int main ( int argc, char **argv )
     KpixEvent              event;    //
     KpixSample             *sample;   //
 
-    const unsigned int n_buckets = 4;
+//	const unsigned int n_buckets = 4;
     const unsigned int n_kpix = 32;//24;
 //	const unsigned int n_blocks = 32;
     const unsigned int n_channels = 1024;
-    const unsigned int n_BCC = 8192;
+//	const unsigned int n_BCC = 8192;
 //	const unsigned int n_strips = 1840;
 
     // cycles to skip in front:
@@ -170,29 +171,21 @@ int main ( int argc, char **argv )
     string                 calState;
     uint                   lastPct;
     uint                   currPct;
-    bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
-    bool                   channelFound[n_kpix][n_channels] = {false};
+//	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+//	bool                   channelFound[n_kpix][n_channels] = {false};
 //	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};
-    uint                    x;
-    uint                    value;
-    uint                    kpix;
-    uint                    sensor;
-    uint                    channel;
-    uint                    bucket;
-    uint                    time;
-    double                  charge;
-    uint                    strip;
+    uint                   x;
+    uint                   value;
+    uint                   kpix;
+    uint                   channel;
+    uint                   bucket;
     double                  tstamp;
-    uint 					subCount;
-    double 					bunchClk;
+//	uint 					subCount;
+//	double 					bunchClk;
     double 					y;
     string                 serial;
     KpixSample::SampleType type;
 
-    uint64_t				frameruntime;
-    uint64_t				runtime;
-
-    //TTree*					cluster_tree;
 
 
     // Stringstream initialization for histogram naming
@@ -203,21 +196,12 @@ int main ( int argc, char **argv )
 
     stringstream			FolderName;
 
-    ofstream				claus_file;
-    ofstream				CM_file;
-    ofstream				noise_file;
-    ofstream               xml;
-    ofstream               csv;
     uint                   acqCount = 0; // acquisitionCount
     uint                   acqProcessed;
     string                 outRoot;
     TFile					*rFile;
 
-
-    stringstream           crossString;
-    stringstream           crossStringCsv;
     XmlVariables           config;
-    ofstream               debug;
 
     // Calibration slope, is filled when
     //std::bitset<18> index;
@@ -227,10 +211,11 @@ int main ( int argc, char **argv )
     uint index;
     std::unordered_map<uint, std::pair<double, double>> calibs;
     std::unordered_map<uint, std::pair<double, double>> pedestals;
+
+    std::unordered_map<uint, std::pair<uint, double>> KPIX_temp;
+
     double                  pearsson_cut = 0.8;
 
-    int						calibration_check = 0;
-    double 					MaximumSoN[n_kpix/2][1840] = {0};
     //int						pedestal_check = 0;
 
     int maxAcquisitions = 50000;
@@ -245,20 +230,20 @@ int main ( int argc, char **argv )
     pixel					pixel_kpix[n_channels];
     pixel_mapping(pixel_kpix);
 
-    unordered_map<uint, uint> sensor2layer;
+//	unordered_map<uint, uint> sensor2layer;
 
-    sensor2layer.insert(make_pair(0, 10));
-    sensor2layer.insert(make_pair(1, 11));
-    sensor2layer.insert(make_pair(2, 12));
-    sensor2layer.insert(make_pair(3, 15));
-    sensor2layer.insert(make_pair(4, 14));
-    sensor2layer.insert(make_pair(5, 13));
-    sensor2layer.insert(make_pair(6, 9999));
-    sensor2layer.insert(make_pair(7, 9999));
-    sensor2layer.insert(make_pair(8, 9999));
-    sensor2layer.insert(make_pair(9, 9999));
-    sensor2layer.insert(make_pair(10, 9999));
-    sensor2layer.insert(make_pair(11, 9999));
+//	sensor2layer.insert(make_pair(0, 10));
+//	sensor2layer.insert(make_pair(1, 11));
+//	sensor2layer.insert(make_pair(2, 12));
+//	sensor2layer.insert(make_pair(3, 15));
+//	sensor2layer.insert(make_pair(4, 14));
+//	sensor2layer.insert(make_pair(5, 13));
+//	sensor2layer.insert(make_pair(6, 9999));
+//	sensor2layer.insert(make_pair(7, 9999));
+//	sensor2layer.insert(make_pair(8, 9999));
+//	sensor2layer.insert(make_pair(9, 9999));
+//	sensor2layer.insert(make_pair(10, 9999));
+//	sensor2layer.insert(make_pair(11, 9999));
 
 
     //////////////////////////////////////////
@@ -290,7 +275,6 @@ int main ( int argc, char **argv )
             cout << " -- Reading " << argv[2] << " as calibration input file." << endl;
             skip_cycles_front = 0;
             TFile *calibration_file = TFile::Open(argv[2]);
-            calibration_check = 1;
 
 //			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
             TTree *calib_tree = (TTree*)calibration_file->Get("calibration_tree");
@@ -358,7 +342,6 @@ int main ( int argc, char **argv )
         cout << "Error opening data file " << argv[1] << endl;
         return(1);
     }
-    CM_file.open("test.txt");
     // Create output names
     string pedestalname = argv[3];
     string outname = argv[1];
@@ -376,14 +359,10 @@ int main ( int argc, char **argv )
 
     cout << "Name of output file is " <<  pedestalname << endl;
     tmp.str("");
-    tmp << argv[1] << "_" << pedestalname << ".cluster.root";
+    tmp << argv[1] << "_" << pedestalname << ".noise.root";
     outRoot = tmp.str();
 
-    tmp.str("");
-    tmp << argv[1] << ".GBL_input.txt" ;
-    cout << "Write to GBL input file : " << tmp.str() << endl;
-    //claus_file.open("claus_file_new.txt");
-    claus_file.open(tmp.str());
+
 
     //////////////////////////////////////////
     // Read Data
@@ -413,9 +392,11 @@ int main ( int argc, char **argv )
     {
 
         acqCount++;
+//        cout << "New acquisition" << endl;
         if (acqCount > skip_cycles_front)
         {
             acqProcessed++;
+
 
             for (x=0; x < event.count(); x++)
             {
@@ -428,19 +409,21 @@ int main ( int argc, char **argv )
                 bucket  = sample->getKpixBucket();
                 value   = sample->getSampleValue();
                 type    = sample->getSampleType();
-                bunchClk = sample->getBunchCount();
-                subCount = sample->getSubCount();
+                int eventNum = sample->getEventNum();
                 index = keyhash(kpix, channel, bucket);
 
 
 
                 //cout << type <<endl;
                 //cout << "DEBUG 2" << endl;
+//                if (type == KpixSample::Temperature)
+//                {
+//                    cout << " KPiX " << kpix << " Temperature " << value << " Time " << tstamp << " eventNum " << eventNum << endl;
+//                }
+
                 if ( type == KpixSample::Data )
                 {
                     //cout << kpix << endl;
-                    kpixFound[kpix]          = true;
-                    channelFound[kpix][channel] = true;
 //					bucketFound[kpix][channel][bucket] = true;
                     //cout << "Found KPIX " << kpix << endl;
 
@@ -449,8 +432,6 @@ int main ( int argc, char **argv )
 //                        cout << "Just testing something: Index " << index << " KPiX " << kpix << " Channel " << channel << " Bucket " << bucket << endl;
 //                        cout << "Previous calib slope " << calib_slope[kpix][channel][bucket] << endl;
 //                        cout << "New calib slope " << calibs.at(index).first << endl;
-                        if (calibration_check == 1)
-                        {
                             //cout << "2nd Pedestal MAD " << pedestals.at(index).second << " kpix " << kpix << " channel " << channel << " bucket " << bucket << endl;
                             if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85)
                             {
@@ -473,7 +454,7 @@ int main ( int argc, char **argv )
                                 vec_corr_charge[kpix]->push_back(corrected_charge_value_median);
                                 //cout << "Pointer of vec_corr_charge " << vec_corr_charge[kpix] << endl;
                             }
-                        }
+
                     }
                 }
             }
@@ -483,10 +464,7 @@ int main ( int argc, char **argv )
                 if (vec_corr_charge[k] != nullptr)
                 {
                     //cout << "Debug size of vec: " << vec_corr_charge[k]->size() << endl;
-
-                    CM_file << k << " " << median(vec_corr_charge[k]) << " " <<  event.eventNumber() << endl;
                     common_modes_median[k].insert(std::pair<int, double>(event.eventNumber(), median(vec_corr_charge[k])));
-
                     delete vec_corr_charge[k];
                     //cout << "Common modes median of EventNumber " << event.eventNumber()  << " kpix " << k  << " entry " << common_modes_median[k].at(event.eventNumber()) << endl;
                     vec_corr_charge[k] = nullptr;
@@ -510,23 +488,16 @@ int main ( int argc, char **argv )
         cout << "Wrote skipped cycles to " << outtxt << endl;
         cout << endl;
     }
-    //cout << "DEBUG: 3" << endl;
-    //cout << tstamp << endl;
+
     dataRead.close();
     double weight = 1.0/acqProcessed;
-    ;//acqProcessed;
-
-
 
     std::vector<double> vec_noise, vec_charge;
     std::vector<int> vec_kpix, vec_channel, vec_strip, vec_bucket, vec_time;
     //////////////////////////////////////////
-    // New histogram generation within subfolder structure
+    // TTree
     //////////////////////////////////////////
 
-    int response_bins = 220;
-    double response_xmin = -20.5;
-    double response_xmax = 19.5;
     TTree* noiseTimeTree = new TTree("noise_time_tree", "noise_time_tree");
     noiseTimeTree->Branch("kpix", &vec_kpix);
     noiseTimeTree->Branch("channel", &vec_channel);
@@ -546,10 +517,7 @@ int main ( int argc, char **argv )
     //////////////////////////////////////////
     dataRead.open(argv[1]); //open file again to start from the beginning
 
-    int header = 1;
 
-
-    int clstrcounter[n_kpix][1840] = {0};
 
 
 
@@ -560,7 +528,6 @@ int main ( int argc, char **argv )
     std::unordered_map<uint, double> noise;
     while ( dataRead.next(&event)  &&  event.eventNumber() <= maxAcquisitions) //preread to determine noise value of each channel in each KPiX.
     {
-        int not_empty= 0;
         std::vector<double> time_ext;
 
 
@@ -575,29 +542,26 @@ int main ( int argc, char **argv )
             value   = sample->getSampleValue();
             type    = sample->getSampleType();
             tstamp  = sample->getSampleTime();
-            sensor = kpix/2;
-            unsigned int block = channel/32;
-            bunchClk = sample->getBunchCount();
-            subCount = sample->getSubCount();
             index = keyhash(kpix, channel, bucket);
             uint index1 = keyhash(kpix, channel, bucket, tstamp);
             //cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
-            cout << "DEBUG 0" << endl;
+            //cout << "DEBUG 0" << endl;
             if ( type == KpixSample::Data ) // If event is of type KPiX data
             {
                 if (bucket == 0)
                 {
-                    if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD channels
+                    if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD+Slope channels
                     {
-                         cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
+                        //cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
                         //if (kpix == 0 && channel == 188) cout << "Just testing things: " << calibs.at(index).first << " " << calibs.at(index).second;
                         double charge_ped_corrected = value - pedestals.at(index).first;
-                        cout << "DEBUG 1" << endl;
+                        //cout << "DEBUG 1" << endl;
                         double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
-                        double charge_CM_corrected = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-                        cout << "DEBUG 2" << endl;
-                        cout << "Time standard: " << tstamp <<  " and time index recalculated: " << index1/pow(2,17) << endl;
-                        cout << "Channel standard: " << channel <<  " and channel index recalculated: " << (index1 % int(pow(2,17)))/pow(2,7) << endl;
+                        double true_charge = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
+
+                        //cout << "DEBUG 2" << endl;
+                        //cout << "Time standard: " << tstamp <<  " and time index recalculated: " << index1/pow(2,17) << endl;
+                        //cout << "Channel standard: " << channel <<  " and channel index recalculated: " << (index1 % int(pow(2,17)))/pow(2,7) << endl;
 //                        cout << "KPiX standard: " << kpix <<  " and kpix index recalculated: " << ((index1 % pow(2,17))%pow(2,7))/pow(2,2) << endl;
 //                        cout << "Bucket standard: " << bucket <<  " and bucket index recalculated: " << ((index1 % pow(2,17))%pow(2,7))%pow(2,2) << endl;
 //                        QTrue.at(index1).push_back(charge_CM_corrected);
@@ -626,7 +590,6 @@ int main ( int argc, char **argv )
     //// BEGIN OF CLUSTER READ
     dataRead.open(argv[1]);
 
-    int global_trig_counter = 0;
 //	std::vector<clustr> all_clusters[n_kpix/2];
 
     cout << endl;

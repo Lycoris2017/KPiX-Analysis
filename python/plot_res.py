@@ -60,32 +60,32 @@ with open(args.file_in) as inFile:
 	while line:
 		#print line
 		splitline = line.split( )
-		if (abs(float(splitline[5])) > 0.00005):
-			if int(splitline[1]) is 10:
-				residual_hist[0].Fill(float(splitline[5]))
-			if int(splitline[1]) is 11:
-				residual_hist[1].Fill(float(splitline[5]))
-			if int(splitline[1]) is 12:
-				residual_hist[2].Fill(float(splitline[5]))
-			if int(splitline[1]) is 13:
-				residual_hist[3].Fill(float(splitline[5]))
-			if int(splitline[1]) is 14:
-				residual_hist[4].Fill(float(splitline[5]))
-			if int(splitline[1]) is 15:
-				residual_hist[5].Fill(float(splitline[5]))
-		if (abs(float(splitline[5])) > 0.00005):
-			if int(splitline[1]) is 10:
-				residual_hist2[0].Fill(float(splitline[18]))
-			if int(splitline[1]) is 11:
-				residual_hist2[1].Fill(float(splitline[18]))
-			if int(splitline[1]) is 12:
-				residual_hist2[2].Fill(float(splitline[18]))
-			if int(splitline[1]) is 13:
-				residual_hist2[3].Fill(float(splitline[18]))
-			if int(splitline[1]) is 14:
-				residual_hist2[4].Fill(float(splitline[18]))
-			if int(splitline[1]) is 15:
-				residual_hist2[5].Fill(float(splitline[18]))
+		#if (abs(float(splitline[5])) > 0.00005):
+		if int(splitline[1]) is 10:
+			residual_hist[0].Fill(float(splitline[5]))
+		if int(splitline[1]) is 11:
+			residual_hist[1].Fill(float(splitline[5]))
+		if int(splitline[1]) is 12:
+			residual_hist[2].Fill(float(splitline[5]))
+		if int(splitline[1]) is 13:
+			residual_hist[3].Fill(float(splitline[5]))
+		if int(splitline[1]) is 14:
+			residual_hist[4].Fill(float(splitline[5]))
+		if int(splitline[1]) is 15:
+			residual_hist[5].Fill(float(splitline[5]))
+		#if (abs(float(splitline[5])) > 0.00005):
+		if int(splitline[1]) is 10:
+			residual_hist2[0].Fill(float(splitline[18]))
+		if int(splitline[1]) is 11:
+			residual_hist2[1].Fill(float(splitline[18]))
+		if int(splitline[1]) is 12:
+			residual_hist2[2].Fill(float(splitline[18]))
+		if int(splitline[1]) is 13:
+			residual_hist2[3].Fill(float(splitline[18]))
+		if int(splitline[1]) is 14:
+			residual_hist2[4].Fill(float(splitline[18]))
+		if int(splitline[1]) is 15:
+			residual_hist2[5].Fill(float(splitline[18]))
 		line = inFile.readline()
 
 #c1 = ROOT.TCanvas( 'test', 'Test', 1600, 900 )

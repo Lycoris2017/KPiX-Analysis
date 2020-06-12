@@ -36,7 +36,8 @@ outHistFile.cd()
 charge_hist = ROOT.TH1F("Charge", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
 charge_size1 = ROOT.TH1F("Charge_on_Track_csize1", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
 charge_size2 = ROOT.TH1F("Charge_on_Track_csize2", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
-charge_size3 = ROOT.TH1F("Charge_on_Track_csize3", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+charge_size3 = ROOT.TH1F("Charge_on_Track_csize3+", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
+charge_size1_3 = ROOT.TH1F("Charge_on_Track_csize1_3+", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
 significance_hist = ROOT.TH1F("Significance", "Cluster Significance; S/N; Number of Entries ", 500, 0, 50)
 y_hist = ROOT.TH1F("y", "Cluster y; position (mm); Number of Entries ", 1840, -46, 46)
 x_hist = ROOT.TH1F("x", "Cluster x; position (mm); Number of Entries ", 1840, -46, 46)
@@ -47,8 +48,8 @@ correlation_l10_l11 = ROOT.TH2F("correlation", "correlation y; Layer 10 (mm); La
 
 size_hist = ROOT.TH1F("cluster_size", "Cluster_Size; size; Number of Entries",  10, -0.5, 9.5)
 
-trackhits_hist = ROOT.TH1F("Track hits", "Track hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
-trackNum = ROOT.TH1F("Nr. of Tracks", "Nr._of_Tracks; #Nr. of Tracks; Number of Entries ", 10, -0.5, 9.5)
+trackhits_hist = ROOT.TH1F("Track_hits", "Track_hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
+trackNum = ROOT.TH1F("Nr._of_Tracks", "Nr._of_Tracks; #Nr. of Tracks; Number of Entries ", 10, -0.5, 9.5)
 
 significance_hists =  []
 significance_hists.append(ROOT.TH1F("Significance_l10", "Cluster Significance; S/N; Number of Entries ", 200, 0, 100))
@@ -170,7 +171,16 @@ with open(args.file_in) as inFile:
 
 for q in xrange(1,len(charge)):
     corr_hist.Fill(int(corr[q]))
-    if (int(corr[q]) >= 1 and HitOnTrack[q] == 1):
+    if (int(corr[q]) >= 1):
+        layer[0]=int(plane[q])
+        ccharge[0]=float(charge[q])
+        noise[0]=float(charge[q])/float(sig[q])
+        significance[0]=float(sig[q])
+        yPos[0]=float(y[q])
+        csize[0]=int(size[q])
+        onTrack[0]=HitOnTrack[q]
+        corrClusterTree.Fill()
+    if (HitOnTrack[q] == 1):
         if ("10" in plane[q]):
             charge_hists[0].Fill(float(charge[q]))
             significance_hists[0].Fill(float(sig[q]))
@@ -207,22 +217,16 @@ for q in xrange(1,len(charge)):
             y_hists[5].Fill(float(y[q]))
             x_hists[5].Fill(float(x[q]))
             size_hists[5].Fill(int(size[q]))
-        layer[0]=int(plane[q])
-        ccharge[0]=float(charge[q])
-        noise[0]=float(charge[q])/float(sig[q])
-        significance[0]=float(sig[q])
-        yPos[0]=float(y[q])
-        csize[0]=int(size[q])
         size_hist.Fill(int(size[q]))
-        onTrack[0]=HitOnTrack[q]
-        corrClusterTree.Fill()
         charge_hist.Fill(float(charge[q]))
         if (int(size[q]) == 1):
            charge_size1.Fill(float(charge[q]))
+           charge_size1_3.Fill(float(charge[q]))
         elif (int(size[q]) == 2):
            charge_size2.Fill(float(charge[q]))
-        elif (int(size[q]) == 3):
+        elif (int(size[q]) >= 3):
            charge_size3.Fill(float(charge[q]))
+           charge_size1_3.Fill(float(charge[q]))
         significance_hist.Fill(float(sig[q]))
         y_hist.Fill(float(y[q]))
         x_hist.Fill(float(x[q]))

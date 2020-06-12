@@ -1133,7 +1133,7 @@ for (kpix=0; kpix<24; kpix++)
 									// Calibration point is valid
 									if ( chanData[kpix][channel][bucket][range]->calibCount[x] > 0 ) 
 									{
-//										if (chanData[kpix][channel][bucket][range]->calibCount[x] > 1) cout << "Found " << chanData[kpix][channel][bucket][range]->calibCount[x] << " values calibration values for DAC " << x << " channel " << channel << " kpix " << kpix << endl;
+										if (chanData[kpix][channel][bucket][range]->calibCount[x] > 1) cout << "Found " << chanData[kpix][channel][bucket][range]->calibCount[x] << " values calibration values for DAC " << x << " channel " << channel << " kpix " << kpix << endl;
 										//cout << " Number of CalDacCounts for DAC " << x << " is " << chanData[kpix][channel][bucket][range]->calibCount[x] << endl;
 										
 										grX[grCount]    = calibCharge ( x, positive[kpix], ((bucket==0)?b0CalibHigh:false));

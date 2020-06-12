@@ -40,8 +40,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 if len(sys.argv) < 2:
-    print parser.print_help()
-    sys.exit(1)
+	print parser.print_help()
+	sys.exit(1)
 print ''
 
 ROOT.TH1.SetDefaultSumw2()
@@ -51,16 +51,17 @@ ROOT.TH1.SetDefaultSumw2()
 #//////////////////////////////////////////
 print 'Reading GBL File'
 
-fitpos = {}
+test = {}
 with open(args.GBL_in) as GBLFile:
     line = GBLFile.readline()
     line = GBLFile.readline()
     while line:
-        #print line
-        column = line.split( )
-        #print column[13]
-        fitpos[int(column[17])] = float(column[13])
-        line = GBLFile.readline()
+        if "run" in line:
+            line = GBLFile.readline()
+        else:
+            column = line.split( )
+            test[int(column[8])] = column[9]
+            line = GBLFile.readline()
 
 #print IDonTrack
 #//////////////////////////////////////////
@@ -83,63 +84,23 @@ stripOnTrackTree.Branch("signi", signi, 'signi/F')
 stripOnTrackTree.Branch("pos", pos, 'pos/F')
 stripOnTrackTree.Branch("ID", ID, 'ID/I')
 
-eta_hists = []
-eta_hists.append(ROOT.TH1F("Eta_total", "Eta_total; Eta; Number of Entries", 30, -0.5,1.5))
-eta_hists.append(ROOT.TH1F("Eta_1", "Eta_1; Eta; Number of Entries", 30, -0.5,1.5))
-eta_hists.append(ROOT.TH1F("Eta_2", "Eta_2; Eta; Number of Entries", 30, -0.5,1.5))
-eta_hists.append(ROOT.TH1F("Eta_3+", "Eta_3+; Eta; Number of Entries", 30, -0.5,1.5))
-
-skewed_hists = []
-skewed_hists.append(ROOT.TH1F("skewed_total", "skewed_total; Eta; Number of Entries", 30, -0.5,1.5))
-skewed_hists.append(ROOT.TH1F("skewed_1", "skewed_1; Eta; Number of Entries", 30, -0.5,1.5))
-skewed_hists.append(ROOT.TH1F("skewed_2", "skewed_2; Eta; Number of Entries", 30, -0.5,1.5))
-skewed_hists.append(ROOT.TH1F("skewed_3+", "skewed_3+; Eta; Number of Entries", 30, -0.5,1.5))
-
 
 print 'Reading ROOT File'
 
 f = ROOT.TFile(args.root_in)
 stripTree = f.Get("vector_sub_cluster")
-
-print 'Performing analysis'
-charge_right = 0
-charge_left = 0
-count = 1
 for entry in stripTree:
     for i in xrange(len(entry.sensor)):
-        if fitpos.get(entry.ID[i], -99) != -99:
+        if test.get(entry.ID[i], 'False') == 'True':
             layer[0] = entry.sensor[i]
             charge[0] = entry.charge[i]
             signi[0] = entry.signi[i]
-            pos[0] = entry.pos[i]/1000
-            if (ID[0] == entry.ID[i]):
-                count = count + 1
-                if (pos[0]-fitpos.get(entry.ID[i]) > 0):
-                    charge_right = charge_right + charge[0]
-                else:
-                    charge_left = charge_left + charge[0]
-            else:
-                if (pos[0]-fitpos.get(entry.ID[i]) > 0):
-                    charge_right = charge_right + charge[0]
-                else:
-                    charge_left = charge_left + charge[0]
-                eta = charge_right/(charge_left + charge_right)
-                eta_hists[0].Fill(eta)
-                if (count == 1):
-                    eta_hists[1].Fill(eta)
-                elif (count == 2):
-                    eta_hists[2].Fill(eta)
-                else:
-                    eta_hists[3].Fill(eta)
-                charge_left = 0
-                charge_right = 0
-                count = 1
+            pos[0] = entry.pos[i]
             ID[0] = entry.ID[i]
             stripOnTrackTree.Fill()
 
 
-for j in eta_hists:
-    j.Scale(1.0/j.GetEntries())
+
 
 
 
