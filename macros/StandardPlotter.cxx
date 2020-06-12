@@ -56,7 +56,7 @@ int main(int argc, char*argv[]){
 	gROOT->ProcessLine("SetAtlasStyle()");
 	// get rid of gDirectory dependence
 
-	TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 500);
+	TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
 
 	//** !! START: variables to check !! **
 	TString subdir = "";
@@ -78,10 +78,10 @@ int main(int argc, char*argv[]){
 	
 	//gROOT->ProcessLine("LycorisLabel(0.48,0.75,\"Preliminary\",1);");
 	//gROOT->ProcessLine("LycorisLabel(0.2,0.85,\"Preliminary\",1);");
-	gROOT->ProcessLine("LycorisLabel(0.55,0.6,\"Preliminary\",1);");
+	gROOT->ProcessLine("LycorisLabel(0.5,0.8,\"Preliminary\",1);");
 
 	
-	canvas->SaveAs("out.eps");
+	canvas->SaveAs("out.pdf");
 	file->Close();
 	delete file;
 	return(1);
@@ -137,21 +137,22 @@ int PlotSingle(TFile *file, TString hist, bool doFit=false, TString fitfunc="" )
 
 int PlotFitres(TFile *file){
 	RooPlot* rplot=0;
-	//TString rpname = "frame_fitTo_langauss";
-	TString rpname = "frame_fitTo_lanOnly";
+	TString rpname = "frame_fitTo_langauss";
+	//TString rpname = "frame_fitTo_lanOnly";
 	rplot=(RooPlot*)file->Get(rpname);
-
 	if (rplot == 0) {
 		std::cerr << "Error: did not find hist object called - "<< rpname << std::endl;
 		return (0);
 	}
-
-    gPad->SetLeftMargin(0.15);
-    gPad->SetRightMargin(0.15);
-    gPad->SetBottomMargin(0.16);
-    gPad->SetTopMargin(0.05);
+	gROOT->ForceStyle(); 
+	//! Set style for param box
+	TString parambox = rplot->GetTitle();
+	parambox += "_paramBox";
+	rplot->getAttText(parambox)->SetTextColor(kBlack);
+	rplot->getAttFill(parambox)->SetFillStyle(0);
+	rplot->getAttLine(parambox)->SetLineWidth(0);
 	rplot->Draw();
-		
+
 	return(1);
 }
 
