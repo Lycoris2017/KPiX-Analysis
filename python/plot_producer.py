@@ -197,6 +197,7 @@ def hist_plotter():
 			#obj.SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(args.color[counter]))
 			obj.SetMarkerStyle(myMarker[counter])
+			obj.SetMarkerSize(myMarkerSize[counter])
 			#if (args.fill):
 			#	obj.SetFillColor(ROOT.TColor.GetColor(args.color[counter]))
 			#obj.GetFunction('gaus').SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
@@ -349,6 +350,7 @@ def hist_plotter():
 			#obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			obj.SetMarkerStyle(myMarker[counter])
+			obj.SetMarkerSize(myMarkerSize[counter])
 			#if (args.fill):
 			#	obj.SetFillColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			
@@ -498,6 +500,7 @@ def hist_plotter():
 			##obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			obj.SetMarkerStyle(myMarker[counter])
+			obj.SetMarkerSize(myMarkerSize[counter])
 			#if (args.fill):
 				#obj.SetFillColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			
@@ -610,6 +613,7 @@ def graph_plotter():
 			#obj.SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(args.color[counter]))
 			obj.SetMarkerStyle(myMarker[counter])
+			obj.SetMarkerSize(myMarkerSize[counter])
 			#if (args.fill):
 			#	obj.SetFillColor(ROOT.TColor.GetColor(args.color[counter]))
 			
@@ -961,7 +965,7 @@ mystyle.SetLegendBorderSize(0)
 mystyle.SetLegendTextSize(0.04)
 #
 ##use the primary color palette
-mystyle.SetPalette(112)
+mystyle.SetPalette(112)#112)
 #
 ##set the default line color for a histogram to be black
 #mystyle.SetHistLineColor(1)
@@ -1032,7 +1036,7 @@ mystyle.SetOptFit(111)
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(2.0)
+mystyle.SetMarkerSize(2.5)
 mystyle.SetLineWidth(3)
 
 #done
@@ -1045,8 +1049,9 @@ mystyle.SetLineWidth(3)
 #["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
 #["#0d0887", "#5302a3","#8b0aa5","#b83289","#db5c68","#f48849","#febd2a","#f0f921"]]
 
-myMarker = [20, 21, 22, 23, 33, 30, 20, 21, 22, 23, 33, 30]
-
+myMarker = [20, 21, 22, 23, 33, 29, 20, 21, 22, 23, 33, 30] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
+myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2, 2.0, 2.0, 2.5, 2.5, 3.2, 3.2]
+myMarkerSize = [x*1.2 for x in myMarkerSize] #Scaling up the sizes
 if ('everything' in args.name2):
 	args.name2 = args.name
 

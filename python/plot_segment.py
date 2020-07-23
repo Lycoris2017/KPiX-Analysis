@@ -49,17 +49,23 @@ hist_yColl = ROOT.TH1F("y(coll)", "y(coll); y(mm); #Entries ", 1840, -46, 46)
 
 hist_yColl_v_dy = ROOT.TH2F("yColl_v_dy", "yColl_v_dy; yColl (mm); dy (rad); Nr. of Entries", 1840,-46,46, 201, -0.02, 0.02)
 
+hist_x_v_tracks = ROOT.TH2F("x_v_tracks", "x_v_tracks; x (mm); Nr. of tracks; Nr. of Entries",  1840,-46,46, 9,0.5,9.5)
 count = 0
 matchCounter = 0
-
+tracks = 0
+_x = []
 with open(args.file_in) as inFile:
 	for line in inFile:
 		if "run" in line or "Hits" in line:
+			for i in _x:
+				hist_x_v_tracks.Fill( i,len(_x))
+			_x = []
 			continue
 		#print line
 		fields = line.split( )
 		hits = int(fields[0])
 		x = float(fields[1])
+		_x.append(x)
 		y = float(fields[2])
 		z1 = float(fields[3])
 		z2 = float(fields[4])
@@ -83,7 +89,6 @@ with open(args.file_in) as inFile:
 		hist_yColl.Fill(y_coll)
 
 		hist_yColl_v_dy.Fill(y_coll,dy)
-
 		if hits >= 7:
 			matchCounter +=1
 
