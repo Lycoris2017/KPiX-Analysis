@@ -32,19 +32,25 @@ outfile = args.file_in[:-4]+'.root'
 outHistFile = ROOT.TFile.Open(outfile, "RECREATE")
 outHistFile.cd()
 
-hist_x = ROOT.TH1F("x", "x; x(mm); #Entries ", 1840, -46, 46)
-hist_y = ROOT.TH1F("y", "y; y(mm); #Entries ", 1840, -46, 46)
-hist_z1 = ROOT.TH1F("z1", "z1; z(mm); #Entries ", 101, 50, 50)
-hist_z2 = ROOT.TH1F("z2", "z2; z(mm); #Entries ", 101, 50, 50)
+hist_x = ROOT.TH1F("x(0)", "x(0); x(mm); Nr. of Entries ", 1840, -46, 46)
+hist_y = ROOT.TH1F("y(0)", "y(0); y(mm); Nr. of Entries ", 1840, -46, 46)
+hist_z1 = ROOT.TH1F("z(0)", "z(0); z(mm); Nr. of Entries ", 101, 50, 50)
+hist_z2 = ROOT.TH1F("z(-1)", "z(-1); z(mm); Nr. of Entries ", 101, 50, 50)
 
-hist_dx = ROOT.TH1F("dx", "dx; dx(rad); #Entries ", 1001, -0.1, 0.1)
-hist_dy = ROOT.TH1F("dy", "y; dy(rad); #Entries ", 1001, -0.1, 0.1)
+hist_dx = ROOT.TH1F("dx", "dx; dx(rad); Nr. of Entries ", 1001, -0.1, 0.1)
+hist_dy = ROOT.TH1F("dy", "y; dy(rad); Nr. ofEntries ", 1001, -0.02, 0.02)
 
-hist_SbyN = ROOT.TH1F("SbyN", "SbyN; SbyN; #Entries ", 1000, 0, 100)
+hist_SbyN = ROOT.TH1F("SbyN", "SbyN; SbyN; Nr. of Entries ", 1000, 0, 100)
 
-hist_HitsOnTrack = ROOT.TH1F("HitsOnTrack", "HitOnTrack; Nr. of Hits; #Entries ", 7, 0, 7)
+hist_HitsOnTrack = ROOT.TH1F("HitsOnTrack", "HitOnTrack; Nr. of Hits; Nr. of Entries ", 13, -0.5, 12.5)
+
+hist_xColl = ROOT.TH1F("x(coll)", "x(coll); x(mm); #Entries ", 1840, -46, 46)
+hist_yColl = ROOT.TH1F("y(coll)", "y(coll); y(mm); #Entries ", 1840, -46, 46)
+
+hist_yColl_v_dy = ROOT.TH2F("yColl_v_dy", "yColl_v_dy; yColl (mm); dy (rad); Nr. of Entries", 1840,-46,46, 201, -0.02, 0.02)
 
 count = 0
+matchCounter = 0
 
 with open(args.file_in) as inFile:
 	for line in inFile:
@@ -53,12 +59,17 @@ with open(args.file_in) as inFile:
 		#print line
 		fields = line.split( )
 		hits = int(fields[0])
-		x = int(fields[1])
-		y = int(fields[2])
-		z1 = int(fields[3])
-		z2 = int(fields[4])
-		dx = int(fields[5])
-		dy = int(fields[6])
+		x = float(fields[1])
+		y = float(fields[2])
+		z1 = float(fields[3])
+		z2 = float(fields[4])
+		dx = float(fields[5])
+		dy = float(fields[6])
+		SbyN = float(fields[9])
+		x_coll = float(fields[10])
+		y_coll = float(fields[11])
+		z_coll = float(fields[12])
+		#print fields
 
 		hist_x.Fill(x)
 		hist_y.Fill(y)
@@ -67,11 +78,19 @@ with open(args.file_in) as inFile:
 		hist_dx.Fill(dx)
 		hist_dy.Fill(dy)
 		hist_HitsOnTrack.Fill(hits)
+		hist_SbyN.Fill(SbyN)
+		hist_xColl.Fill(x_coll)
+		hist_yColl.Fill(y_coll)
+
+		hist_yColl_v_dy.Fill(y_coll,dy)
+
+		if hits >= 7:
+			matchCounter +=1
 
 
 #c1 = ROOT.TCanvas( 'test', 'Test', 1600, 900 )
 #c1.cd()
-
+print matchCounter
 outHistFile.Write()
 #charge_hist.Draw("hist e")
 #c1.Modified()

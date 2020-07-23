@@ -23,16 +23,16 @@ ROOT.TH1.SetDefaultSumw2()
 
 parser = MyParser()
 parser.add_argument('file_in', help='name of the input file')
-parser.add_argument('file_out', help='name of the output file')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
 	sys.exit(1)
 print ''
 
-outHistFile = ROOT.TFile.Open(args.file_out, "RECREATE")
+outName = args.file_in[:-4]+'.root'
+outHistFile = ROOT.TFile.Open(outName, "RECREATE")
 outHistFile.cd()
-residual_hist = ROOT.TH1F("mom_residual", "mom_residual; momentum (GeV/c); #Entries ", 101, -50e-2, 50e-2)
+residual_hist = ROOT.TH1F("mom_residual", "mom_residual; momentum (GeV/c); #Entries ", 2001, -100e-2, 100e-2)
 loccov_hist = ROOT.TH1F("loccov", "loccov; A.U.; #Entries ", 101, -50e-3, 50e-3)
 
 count = 0

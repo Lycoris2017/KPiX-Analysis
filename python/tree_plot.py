@@ -124,6 +124,7 @@ parser.add_argument(
 parser.add_argument(
 	'--ylog',
 	dest='ylog',
+	action='store_true',
 	help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!'
 )
 parser.add_argument(
@@ -134,8 +135,7 @@ parser.add_argument(
 parser.add_argument(
 	'--color',
 	dest='color',
-	default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614],
-	nargs='*',
+	default=0,
 	help='list of colors to be used'
 )
 #parser.add_argument('--color', dest='color', default=[590, 591, 593, 596, 600, 602, 604, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
@@ -155,7 +155,19 @@ parser.add_argument(
 	nargs='*',
 	help='set the number of bins'
 )
-
+parser.add_argument(
+	'--nobox',
+	dest='nobox',
+	action='store_true',
+	help='suppresses tstatbox from being added. Does not work with stack/nostack option'
+)
+parser.add_argument(
+	'--order',
+	dest='order',
+	nargs='+',
+	type=int,
+	help='choose the order of plotting with same (to ensure no histograms overlap)'
+)
 args = parser.parse_args()
 
 if (len(args.variables) == 0 or len(args.variables) > 2):
@@ -254,7 +266,7 @@ mystyle.SetOptFit(111)
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(0.7)
+mystyle.SetMarkerSize(1.5)
 mystyle.SetLineWidth(2)
 
 #done
@@ -268,8 +280,25 @@ mystyle.SetLineWidth(2)
 #legend_location = [0.65,0.65,0.98,0.85] # x_left, y_bottom, x_right, y_top
 legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 
+
+default_colors=[["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+[],
+]
+
 ##-----------------	
 ##produce empty root file and filename lists.
+
+if (args.nobox):
+	if ('stack' in args.draw_option):
+		print 'ERROR: nobox does not work with stack/nostack'
+		sys.exit(1)
+	else:
+		print 'Not printing stats box after all'
+		mystyle.SetOptStat(0)
+		mystyle.SetOptFit(0)
+
 
 # finish setting root style
 mystyle.cd()
@@ -291,7 +320,8 @@ print filename_list
 object_list = []
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
-	object_list= object_list + (loopdir_new(key_root, args.name))
+	#object_list = object_list + (loopdir_new(key_root, args.name))
+	object_list.append((loopdir_new(key_root, args.name)[0]))
 	
 folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
 ##-----------------	
@@ -307,7 +337,13 @@ if (args.ylog and args.yaxisrange[0] is 0):
 	print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
 ##------------------
 ##start of the plotting.
-
+if (args.output_name):
+	outName  = args.output_name
+else:
+	stringStart = args.file_in[0].find('/testbeam')
+	outName = '/home/lycoris-dev/Documents'+args.file_in[0][stringStart:-5]
+	for i in args.variables:
+		outName = outName+"_"+i
 bin_range = args.bin_range
 variables = args.variables
 draw_option = args.draw_option
@@ -320,11 +356,11 @@ if (9999 in args.xaxisrange):
 else:
 	xaxisrange = args.xaxisrange
 
-if ((len(hist_list) > len(args.color) or len(graph_list) > len(args.color))) and ("same" in args.draw_option):
-	print 'You do not have enough colors ', len(args.color), 'for the number of histograms you have ', len(hist_list)
+if ((len(hist_list) > len(default_colors[args.color]) or len(graph_list) > len(default_colors[args.color]))) and ("same" in args.draw_option):
+	print 'You do not have enough colors ', len(default_colors[args.color]), 'for the number of histograms you have ', len(hist_list)
 	sys.exit(1)
 if (len(object_list) is not 0):
-	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, args.output_name, xaxisrange, yaxisrange)
+	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, outName, xaxisrange, yaxisrange, default_colors[args.color], args.legend, args.order, args.ylog)
 else:
 	print 'There are NO valid histograms/graphs in the current selection'
 	print ''

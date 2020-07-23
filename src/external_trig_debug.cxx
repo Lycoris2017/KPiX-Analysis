@@ -179,6 +179,7 @@ int main ( int argc, char **argv )
     uint                   kpix;
     uint                   channel;
     uint                   bucket;
+    uint                    time;
     double                  tstamp;
 //	uint 					subCount;
 //	double 					bunchClk;
@@ -212,7 +213,7 @@ int main ( int argc, char **argv )
     std::unordered_map<uint, std::pair<double, double>> calibs;
     std::unordered_map<uint, std::pair<double, double>> pedestals;
 
-    std::unordered_map<uint, std::pair<uint, double>> KPIX_temp;
+//    std::unordered_map<uint, std::pair<uint, double>> KPIX_temp;
 
     double                  pearsson_cut = 0.8;
 
@@ -404,7 +405,7 @@ int main ( int argc, char **argv )
                 //// Get sample
                 sample  = event.sample(x);
                 kpix    = sample->getKpixAddress();
-                tstamp  = sample->getSampleTime();
+                time  = sample->getSampleTime();
                 channel = sample->getKpixChannel();
                 bucket  = sample->getKpixBucket();
                 value   = sample->getSampleValue();
@@ -506,7 +507,7 @@ int main ( int argc, char **argv )
     noiseTimeTree->Branch("time", &vec_time);
     noiseTimeTree->Branch("noise", &vec_noise);
     noiseTimeTree->Branch("charge", &vec_charge);
-
+    TH1F* temp_hist = new TH1F("temp_hist", "temp_hist; temperature; Nr. of Entries", 256,-62, 90 );
 
 
     //TH1F* mean_noise = new TH1F("mean_noise_left", "mean_noise; noise(fC); entries", 100, -0.05, 0.95);
@@ -541,15 +542,33 @@ int main ( int argc, char **argv )
             bucket  = sample->getKpixBucket();
             value   = sample->getSampleValue();
             type    = sample->getSampleType();
-            tstamp  = sample->getSampleTime();
+            time  = sample->getSampleTime();
+            int strip = 9999;
+            if (kpix%2 == 0) strip = kpix2strip_left.at(channel);// if left kpix
+            else strip  = kpix2strip_right.at(channel); // if right kpix
             index = keyhash(kpix, channel, bucket);
-            uint index1 = keyhash(kpix, channel, bucket, tstamp);
+            uint index1 = keyhash(kpix, channel, bucket, time);
             //cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
             //cout << "DEBUG 0" << endl;
+            if (type == KpixSample::Temperature)
+            {
+//                cout << "Temperature data" << endl;
+//                std::string test = "";
+                uint temp = value%256; // supposedly only the first 8 bit are temperature values
+//                uint graytemp = time%256;
+//                test = bin(temp, test);
+//                cout << test << endl;
+//                std::string greytest = binarytoGray(test);
+//                std::string greytstamp = "";
+//                greytstamp = bin(graytemp, greytstamp);
+//                cout << greytest << " : " << greytstamp << endl;
+                double tmp=0.598*(255-temp)-62;
+                temp_hist->Fill(tmp);
+
+            }
             if ( type == KpixSample::Data ) // If event is of type KPiX data
             {
-                if (bucket == 0)
-                {
+
                     if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD+Slope channels
                     {
                         //cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
@@ -558,7 +577,12 @@ int main ( int argc, char **argv )
                         //cout << "DEBUG 1" << endl;
                         double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
                         double true_charge = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
-
+                        vec_charge.push_back(true_charge);
+                        vec_bucket.push_back(bucket);
+                        vec_channel.push_back(channel);
+                        vec_kpix.push_back(kpix);
+                        vec_strip.push_back(strip);
+                        vec_time.push_back(tstamp);
                         //cout << "DEBUG 2" << endl;
                         //cout << "Time standard: " << tstamp <<  " and time index recalculated: " << index1/pow(2,17) << endl;
                         //cout << "Channel standard: " << channel <<  " and channel index recalculated: " << (index1 % int(pow(2,17)))/pow(2,7) << endl;
@@ -567,10 +591,17 @@ int main ( int argc, char **argv )
 //                        QTrue.at(index1).push_back(charge_CM_corrected);
 //                        cout << "CM corrected charge is " << charge_CM_corrected << " for KPiX " << kpix << " and channel " << channel << endl;
 
-                    }
+
                     //else if (pedestals.at(index).second == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
-                }
+                    }
             }
+            noiseTimeTree->Fill();
+            vec_charge.clear();
+            vec_bucket.clear();
+            vec_channel.clear();
+            vec_kpix.clear();
+            vec_strip.clear();
+            vec_time.clear();
         }
 
         filePos  = dataRead.pos();

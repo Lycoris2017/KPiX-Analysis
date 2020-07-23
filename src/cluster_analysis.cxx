@@ -232,6 +232,7 @@ int main ( int argc, char **argv )
     TH1F					*noise_v_channel[n_kpix];
 
     TH1F                    *kpix_temp[n_kpix];
+    TH2F                    *kpix_temp_v_runNumber[n_kpix];
 
     TH2F                    *noise_on_kpix[n_kpix];
 //    TH1F					*noise_v_column[n_kpix];
@@ -276,7 +277,6 @@ int main ( int argc, char **argv )
     std::unordered_map<uint, std::pair<double, double>> calibs;
     std::unordered_map<uint, std::pair<double, double>> pedestals;
 
-    std::unordered_map<uint, std::pair<uint, double>> KPIX_temp;
 
     double                  pearsson_cut = 0.8;
 	
@@ -285,7 +285,7 @@ int main ( int argc, char **argv )
 	double 					MaximumSoN[n_kpix/2][1840] = {0};
 	//int						pedestal_check = 0;
 	
-    int maxAcquisitions = 50000;
+    int maxAcquisitions = 100000;
 
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;
@@ -343,7 +343,6 @@ int main ( int argc, char **argv )
 			skip_cycles_front = 0;
 			TFile *calibration_file = TFile::Open(argv[2]);
 			calibration_check = 1;
-			
 //			cout << "Number of calibration slopes = " << calib_graphs.size() << endl;
             TTree *calib_tree = (TTree*)calibration_file->Get("calibration_tree");
             uint kpix_calib, channel_calib, bucket_calib, range_calib;
@@ -404,7 +403,9 @@ int main ( int argc, char **argv )
 	// Open Data file
 	//////////////////////////////////////////
 	
-	
+	double SoNCut = 4;
+	string NameAdd = to_string(SoNCut);
+	NameAdd = NameAdd.substr(0,3);
 	
 	if ( ! dataRead.open(argv[1])  ) {
 		cout << "Error opening data file " << argv[1] << endl;
@@ -428,17 +429,17 @@ int main ( int argc, char **argv )
 	
 	cout << "Name of output file is " <<  pedestalname << endl;
 	tmp.str("");
-	tmp << argv[1] << "_" << pedestalname << ".cluster.root";
+	tmp << argv[1] << "_" << pedestalname << "_SoNG" << NameAdd << ".cluster.root";
 	outRoot = tmp.str();
 
 	tmp.str("");
-	tmp << argv[1] << ".GBL_input.txt" ;
+	tmp << argv[1] << "_SoNG" << NameAdd << ".GBL_input.txt" ;
 	cout << "Write to GBL input file : " << tmp.str() << endl;
 	//claus_file.open("claus_file_new.txt");
 	claus_file.open(tmp.str());
 	
     tmp.str("");
-    tmp << argv[1] << ".marcel.csv" ;
+    tmp << argv[1] << "_SoNG" << NameAdd << ".marcel.csv" ;
     marcel_file.open(tmp.str());
 
 
@@ -577,8 +578,8 @@ int main ( int argc, char **argv )
 	//cout << "DEBUG: 3" << endl;
 	//cout << tstamp << endl;
 	dataRead.close();
-	double weight = 1.0/acqProcessed;
-	//acqProcessed;
+    double weight = 1.0;//acqProcessed;
+    //acqProcessed;
 	
 	
 	
@@ -817,7 +818,10 @@ int main ( int argc, char **argv )
 					
                     tmp.str("");
                     tmp << "kpix_temp_k" << kpix;
-                    kpix_temp[kpix] = new TH1F(tmp.str().c_str(), "kpix_temp; Temperature; #entries", 8192,0, 8192);
+                    kpix_temp[kpix] = new TH1F("temp_hist", "temp_hist; temperature; Nr. of Entries", 256,-62, 90 );
+                    tmp.str("");
+                    tmp << "kpix_temp_v_runNumber_k" << kpix;
+                    kpix_temp_v_runNumber[kpix] = new TH2F(tmp.str().c_str(), "kpix_temp_v_runNumber; runNumber; Temperature(C)", 10000,0,100000, 123,-24, 52);
 
 
 					for (int channel = 0; channel < 1024; channel++){
@@ -857,7 +861,7 @@ int main ( int argc, char **argv )
 
 	//////////////////////////////////////////
 	// Data read for all events for detailed look
-	//////////////////////////////////////////
+	/////////////////////////////////////////SoNCut/
 	dataRead.open(argv[1]); //open file again to start from the beginning
 	
 	int header = 1;
@@ -906,7 +910,21 @@ int main ( int argc, char **argv )
 
             if (type == KpixSample::Temperature)
             {
-                kpix_temp[kpix]->Fill(value);
+                uint temp = value%256; // supposedly only the first 8 bit are temperature values
+//                uint graytemp = time%256;
+//                test = bin(temp, test);
+//                cout << test << endl;
+//                std::string greytest = binarytoGray(test);
+//                std::string greytstamp = "";
+//                greytstamp = bin(graytemp, greytstamp);
+//                cout << greytest << " : " << greytstamp << endl;
+                double tmp=0.598*(255-temp)-62;
+//                cout << kpix << endl;
+//                cout << "test" << endl;
+//                cout << tmp<< endl;
+
+                kpix_temp[kpix]->Fill(tmp);
+                kpix_temp_v_runNumber[kpix]->Fill(event.eventNumber(),tmp);
             }
 
             if (type == 2)// If event is of type external timestamp
@@ -1141,7 +1159,7 @@ int main ( int argc, char **argv )
                         charge_v_position[sensor]->Fill(yParameterSensor(strip, sensor), true_charge);
                         charge_v_strip[sensor]->Fill(strip, true_charge);
                         //cout <<"DEBUG3.2.1 " << kpix << " " <<  channel << endl;
-                        if ( true_charge > 2*noise[kpix][channel] && strip != 9999)
+                        if ( true_charge > SoNCut*noise[kpix][channel] && strip != 9999)
 //                        if ( true_charge > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 3 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
                             cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, true_charge));
@@ -1245,7 +1263,7 @@ int main ( int argc, char **argv )
                             strip_sensor.clear();
                             strip_ID.clear();
 
-							if (NomNom.getClusterSignificance2() > 6.0)
+                            if (NomNom.getClusterSignificance2() >= 4.0)
 							{
 								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);

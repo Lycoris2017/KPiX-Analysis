@@ -53,14 +53,13 @@ print 'Reading GBL File'
 
 fitpos = {}
 with open(args.GBL_in) as GBLFile:
-    line = GBLFile.readline()
-    line = GBLFile.readline()
-    while line:
+    for line in GBLFile:
+        if ('label' in line) or ('run' in line):
+            continue
         #print line
         column = line.split( )
         #print column[13]
         fitpos[int(column[17])] = float(column[13])
-        line = GBLFile.readline()
 
 #print IDonTrack
 #//////////////////////////////////////////

@@ -24,14 +24,15 @@ ROOT.TH1.SetDefaultSumw2()
 
 parser = MyParser()
 parser.add_argument('file_in', help='name of the input file')
-parser.add_argument('file_out', help='name of the output file')
 args = parser.parse_args()
 if len(sys.argv) < 2:
 	print parser.print_help()
 	sys.exit(1)
 print ''
 
-outHistFile = ROOT.TFile.Open(args.file_out, "RECREATE")
+maxEvents = 100000
+outfile = args.file_in[:-4]+'.root'
+outHistFile = ROOT.TFile.Open(outfile, "RECREATE")
 outHistFile.cd()
 charge_hist = ROOT.TH1F("Charge", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
 charge_size1 = ROOT.TH1F("Charge_on_Track_csize1", "Cluster Charge; Charge (fC); Number of Entries ", 200, 0, 20)
@@ -48,7 +49,9 @@ correlation_l10_l11 = ROOT.TH2F("correlation", "correlation y; Layer 10 (mm); La
 
 size_hist = ROOT.TH1F("cluster_size", "Cluster_Size; size; Number of Entries",  10, -0.5, 9.5)
 
-trackhits_hist = ROOT.TH1F("Track_hits", "Track_hits; #Hits on track; Number of Entries ", 10, -0.5, 9.5)
+trackhits_hist = ROOT.TH1F("Track_hits", "Track_hits; #Hits on track; Number of Entries ", 25, -0.5, 24.5)
+HitsPerTrack_hist = ROOT.TH1F("hits_per_track", "hits_per_track; Number of hits per track; Number of Entries ", 7, -0.5, 6.5)
+#trackhits_per_track_hist = ROOT.TH1F("Track_hits_per_track", "Track_hits_per_track; #Hits on track; Number of Entries ", 7, -0.5, 6.5)
 trackNum = ROOT.TH1F("Nr._of_Tracks", "Nr._of_Tracks; #Nr. of Tracks; Number of Entries ", 10, -0.5, 9.5)
 
 significance_hists =  []
@@ -93,9 +96,8 @@ size_hists.append(ROOT.TH1F("size_l14", "size; #strips; Number of Entries ", 10,
 size_hists.append(ROOT.TH1F("size_l15", "size; #strips; Number of Entries ", 10, -0.5, 9.5))
 
 
-all_hists = [charge_hist, significance_hist, y_hist, x_hist, corr_hist, trackhits_hist, charge_hists, y_hists[0:3], x_hists[0:3], size_hists[0:3], significance_hists, size_hist]
+all_hists = [charge_hist, significance_hist, y_hist, x_hist, corr_hist, charge_hists, y_hists[0:3], x_hists[0:3], size_hists[0:3], significance_hists, size_hist]
 
-print all_hists
 plane = []
 x = []
 y = []
@@ -108,7 +110,6 @@ HitOnTrack = []
 y_l10 = []
 y_l11 = []
 counter = 0
-
 layer=array('i', [0])
 ccharge=array('f', [0])
 significance=array('f', [0])
@@ -125,12 +126,14 @@ corrClusterTree.Branch("noise", noise, 'noise/F');
 corrClusterTree.Branch("csize", csize, 'csize/I');
 corrClusterTree.Branch("yPos", yPos, 'yPos/F');
 corrClusterTree.Branch("onTrack", onTrack, 'onTrack/I');
-
+prev_run = '0'
+track0Counter = 0
 with open(args.file_in) as inFile:
     line = inFile.readline()
     hits_on_track = 0
 
-    while line:
+    while line and counter < maxEvents:
+        a = line.split( )
         if "run" in line:
             counter+=1
             if (len(y_l10) is not 0  and len(y_l11) is not 0):
@@ -143,9 +146,12 @@ with open(args.file_in) as inFile:
             if (counter > 1):
                 trackNum.Fill(0)#int(tracks))
             hits_on_track=0
+            if ('0' in tracks):
+                track0Counter += 1
+                print prev_run
+            prev_run = a[2]
             line = inFile.readline()
         else:
-            a = line.split( )
             plane.append(a[0])
             tracks = a[10]
             x.append(a[1])
@@ -230,7 +236,6 @@ for q in xrange(1,len(charge)):
         significance_hist.Fill(float(sig[q]))
         y_hist.Fill(float(y[q]))
         x_hist.Fill(float(x[q]))
-print counter
 for i in all_hists:
     if isinstance(i, list):
         for j in i:
@@ -240,6 +245,7 @@ for i in all_hists:
 
 outHistFile.Write()
 outHistFile.Close()
+#print track0Counter
 #charge_hist.Draw("hist e")
 #c1.Modified()
 #c1.Update()

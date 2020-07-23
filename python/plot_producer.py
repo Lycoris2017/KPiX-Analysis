@@ -155,6 +155,9 @@ def hist_plotter():
 			##loop through the histograms, get all parameters
 			obj = histogram.ReadObj()
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
+			if args.norm:
+				norm = 1.0/obj.GetEntries()
+				obj.Scale(norm)
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
 			##------------------
@@ -191,11 +194,12 @@ def hist_plotter():
 				hist_comp.SetMinimum(y_low)
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
-			obj.SetLineColor(args.color[counter-1])
-			obj.SetMarkerColor(args.color[counter-1])
-			if (args.fill):
-				obj.SetFillColor(args.color[counter-1])
-			#obj.GetFunction('gaus').SetLineColor(args.color[counter-1])
+			#obj.SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
+			#obj.SetMarkerColor(ROOT.TColor.GetColor(args.color[counter]))
+			obj.SetMarkerStyle(myMarker[counter])
+			#if (args.fill):
+			#	obj.SetFillColor(ROOT.TColor.GetColor(args.color[counter]))
+			#obj.GetFunction('gaus').SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
 
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -271,15 +275,15 @@ def hist_plotter():
 	elif ('same' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-		drawing_option = args.draw_option
-		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
+		drawing_option = args.draw_option+"PLC PMC"
+		c1 = ROOT.TCanvas( args.output_name, 'Canvas', args.aratio[0], args.aratio[1] )
 		c1.cd()
 		#c1.SetFillColor(0)
 		statBoxW = 0.1
-		statBoxH = 0.07
+		statBoxH = 0.05*len(hist_list)
 		print args.legendloc[0]
-		legend = ROOT.TLegend(0.8, 0.85, 0.8+statBoxW, 0.85+statBoxH)
-		counter = 1
+		legend = ROOT.TLegend(0.7, 0.93-statBoxH, 0.7+statBoxW, 0.93)
+		#counter = 0
 		x_title = None
 		y_title = None
 		x_low = None
@@ -287,17 +291,27 @@ def hist_plotter():
 		y_low = None
 		y_high = None
 		new_hist_list = []
+		new_legendlist = []
 		legendname = []
 		if args.order:
 			for i in args.order:
 				new_hist_list.append(hist_list[i]) 
+				if args.legend:
+					new_legendlist.append(args.legend[i])
 		else:
 			new_hist_list = hist_list
-		for histogram in new_hist_list:
+			if args.legend:
+				new_legendlist = args.legend
+		for counter, histogram in enumerate(new_hist_list):
 			##------------------
 			##loop through the histograms, get all parameters
 			obj = histogram.ReadObj()
+			if args.norm:
+				norm = 1.0/obj.GetEntries()
+				obj.Scale(norm)
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
+			print 'Mean value = ', '%.2E' % Decimal(obj.GetMean())
+			print 'RMS = ', '%.2E' % Decimal(obj.GetRMS())
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
 			##------------------
@@ -330,14 +344,13 @@ def hist_plotter():
 			if 9999 not in args.yaxisrange:
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
-				hist_comp.SetMaximum(y_high)
-				hist_comp.SetMinimum(y_low)
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
-			obj.SetLineColor(args.color[counter-1])
-			obj.SetMarkerColor(args.color[counter-1])
-			if (args.fill):
-				obj.SetFillColor(args.color[counter-1])
+			#obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
+			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
+			obj.SetMarkerStyle(myMarker[counter])
+			#if (args.fill):
+			#	obj.SetFillColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			
 			if (args.xtitle):
 				x_title = args.xtitle
@@ -372,17 +385,19 @@ def hist_plotter():
 			##adjust legend and the x and y title name if chosen
 			if (not args.legend):
 				if len(filename_list) > 1:
-					legend.AddEntry(obj, filename_list[counter-1]+'_'+histogram.GetName())
+					legEntry = legend.AddEntry(obj, filename_list[counter]+'_'+histogram.GetName())
+
 				else:
-					legend.AddEntry(obj, '_'+histogram.GetName())
+					legEntry = legend.AddEntry(obj, '_'+histogram.GetName())
 			else:
-				legend.AddEntry(obj, args.legend[counter-1])
-				legendname.append(args.legend[counter-1])
-			counter +=1
+				legEntry = legend.AddEntry(obj, new_legendlist[counter])
+
+				legendname.append(new_legendlist[counter])
+			#counter +=1
 			
 			obj.Draw(drawing_option)
 			legend.Draw()
-			
+			legEntry.SetTextColor(obj.GetLineColor())
 			
 		##------------------
 		##set y axis to log
@@ -426,6 +441,9 @@ def hist_plotter():
 			y_high = None
 			c1 = ROOT.TCanvas( 'test', 'Test', args.aratio[0], args.aratio[1] ) #
 			obj = histogram.ReadObj()
+			if args.norm:
+				norm = 1.0/obj.GetEntries()
+				obj.Scale(norm)
 			print 'Number of total entries = ', '%.2E' % Decimal(obj.GetEntries())
 			x_axis = obj.GetXaxis()
 			y_axis = obj.GetYaxis()
@@ -477,10 +495,11 @@ def hist_plotter():
 				z_high = args.zaxisrange[1]
 				z_axis.SetRangeUser(z_low, z_high)
 
-			obj.SetLineColor(args.color[0]) #Blue
-			obj.SetMarkerColor(args.color[0]) #Blue
-			if (args.fill):
-				obj.SetFillColor(args.color[0])
+			##obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
+			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
+			obj.SetMarkerStyle(myMarker[counter])
+			#if (args.fill):
+				#obj.SetFillColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			
 			##------------------
 			##set y axis to log
@@ -496,8 +515,11 @@ def hist_plotter():
 				x_axis.SetTitle(args.xtitle)
 			if (args.ytitle):
 				y_axis.SetTitle(args.ytitle)
+
 			if (args.fit):
-				obj.Fit(args.fit)
+				print args.fit
+				f1 = ROOT.TF1("f1", str(args.fit[0]), float(args.fit[1]), float(args.fit[2]))
+				obj.Fit("f1", str(args.fit[0]), "", float(args.fit[1]), float(args.fit[2]) )
 			obj.Draw(args.draw_option)
 
 #			if args.upperXaxis:
@@ -585,10 +607,11 @@ def graph_plotter():
 
 			##------------------
 			##adjust the xrange
-			obj.SetLineColor(args.color[counter-1])
-			obj.SetMarkerColor(args.color[counter-1])
-			if (args.fill):
-				obj.SetFillColor(args.color[counter-1])
+			#obj.SetLineColor(ROOT.TColor.GetColor(args.color[counter]))
+			#obj.SetMarkerColor(ROOT.TColor.GetColor(args.color[counter]))
+			obj.SetMarkerStyle(myMarker[counter])
+			#if (args.fill):
+			#	obj.SetFillColor(ROOT.TColor.GetColor(args.color[counter]))
 			
 			##------------------
 			##draw histograms into the same canvas (equivalent to option same)
@@ -822,11 +845,12 @@ parser.add_argument(
 parser.add_argument(
 	'--color',
 	dest='color',
-	default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614],
-	nargs='*',
+	#default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614],
+	#default=["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], #blue ->orange->blue gradual change
+	default=1,#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], #gradual changing blue
+	#default=["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], 4times blue 4 times orange gradual change
 	help='list of colors to be used'
 )
-#parser.add_argument('--color', dest='color', default=[590, 591, 593, 596, 600, 602, 604, 880, 860, 632, 840, 614], nargs='*', help='list of colors to be used')
 parser.add_argument(
 	'--xtitle',
 	dest='xtitle',
@@ -879,7 +903,7 @@ parser.add_argument(
 	dest='aratio',
 	nargs='+',
 	type=float,
-	default=[1600,1200], help='aspect ratio of the output file'
+	default=[2000,1500], help='aspect ratio of the output file'
 )
 parser.add_argument(
 	'-f', '--fill',
@@ -895,14 +919,21 @@ parser.add_argument(
 )
 parser.add_argument(
 	'--fit',
+	nargs='+',
 	dest='fit',
-	help='given if one wishes to add a fit to the histogram before plotting'
+	help='given if one wishes to add a fit to the histogram before plotting. First argument is type of function, second is left range, third is right range'
 )
 parser.add_argument(
 	'--nofit',
 	dest='nofit',
 	action='store_true',
 	help='uses a workaround to remove the plot from TGRAPH'
+)
+parser.add_argument(
+	'--norm',
+	dest='norm',
+	action='store_true',
+	help='Whether to normalize the histograms relativ to their entries.'
 )
 args = parser.parse_args()
 
@@ -926,9 +957,11 @@ mystyle.SetFrameBorderMode(0)
 mystyle.SetCanvasBorderMode(0)
 mystyle.SetPadBorderMode(0)
 mystyle.SetLegendBorderSize(0)
+##set legend text size etc.
+mystyle.SetLegendTextSize(0.04)
 #
 ##use the primary color palette
-##mystyle.SetPalette(1,0)
+mystyle.SetPalette(112)
 #
 ##set the default line color for a histogram to be black
 #mystyle.SetHistLineColor(1)
@@ -968,8 +1001,7 @@ ROOT.TGaxis.SetMaxDigits(4)
 #mystyle.SetStatBorderSize(0)
 #mystyle.SetTextFont(42)
 
-##set legend text size etc.
-mystyle.SetLegendTextSize(0.04)
+
 #
 ##set line widths
 mystyle.SetFrameLineWidth(2)
@@ -994,29 +1026,26 @@ mystyle.SetHistLineWidth(2)
 
 #mystyle.SetOptStat(args.statBox)
 #mystyle.SetOptFit(args.fitBox)
-mystyle.SetOptStat(1001111)
+mystyle.SetOptStat(1111)
 mystyle.SetOptFit(111)
 #mystyle.SetOptStat(0000001) #only name
 #
 ##marker settings
 mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(0.7)
-mystyle.SetLineWidth(2)
+mystyle.SetMarkerSize(2.0)
+mystyle.SetLineWidth(3)
 
 #done
 #mystyle.cd()
 #ROOT.gROOT.ForceStyle()
 #ROOT.gStyle.ls()
 
+#default_colors=[["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#["#0d0887", "#5302a3","#8b0aa5","#b83289","#db5c68","#f48849","#febd2a","#f0f921"]]
 
-
-
-
-
-
-
-
-
+myMarker = [20, 21, 22, 23, 33, 30, 20, 21, 22, 23, 33, 30]
 
 if ('everything' in args.name2):
 	args.name2 = args.name
@@ -1054,7 +1083,6 @@ mystyle.cd()
 ROOT.gROOT.ForceStyle()
 ROOT.gStyle.ls()
 
-
 root_file_list = []
 filename_list = []
 ##-----------------
@@ -1065,7 +1093,15 @@ for root_file in args.file_in:
 	if (args.olddaq):
 		filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
 	elif (args.other):
-		filename_list.append(root_file[0:root_file.rfind('root')])
+		if 'for-lycoris' in root_file:
+			nameStart = root_file.rfind('/run-') + 9
+			nameEnd = root_file.rfind('root')
+			print nameStart
+			print nameEnd
+			print 'Output name is: ', root_file[nameStart:nameEnd]
+			filename_list.append(root_file[nameStart:nameEnd])
+		else:
+			filename_list.append(root_file[0:root_file.rfind('root')])
 	else:
 		if '/Run_' in root_file:
 			filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
@@ -1112,9 +1148,6 @@ if (args.ylog and args.yaxisrange[0] is 0):
 ##------------------
 ##start of the plotting.
 
-if ((len(hist_list) > len(args.color) or len(graph_list) > len(args.color))) and ("same" in args.draw_option):
-	print 'You do not have enough colors', len(args.color), 'for the number of histograms you have', len(hist_list)
-	sys.exit(1)
 if (len(hist_list) is not 0):
 	hist_plotter()
 elif (len(graph_list) is not 0):

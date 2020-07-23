@@ -192,7 +192,14 @@ int main ( int argc, char **argv )
 
 	//TTree*					cluster_tree;
     TH1F                    *ext_trigs;
+    TH1F                    *trig_diff_hist;
     TH1F *entries_v_channel[n_kpix][n_buckets];
+    TH1F *entries_v_strip[n_kpix/2][n_buckets];
+    TH1F *entries_v_time[n_kpix][n_buckets];
+
+    TH1F *entries_v_channel_timed[n_kpix][n_buckets];
+    TH1F *entries_v_strip_timed[n_kpix/2][n_buckets];
+    TH1F *entries_v_time_timed[n_kpix][n_buckets];
 	
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
@@ -397,12 +404,35 @@ int main ( int argc, char **argv )
 
     tmp.str("");
     tmp << "external_trigger_time";
-    ext_trigs = new TH1F(tmp.str().c_str(), "ext trigger time; #T (BCC); Nr. of Entries", 8192, 0, 8192);
+    ext_trigs = new TH1F(tmp.str().c_str(), "ext trigger time; T (BCC); Nr. of Entries", 8192, 0, 8192);
+
+    tmp.str("");
+    tmp << "trig_diff";
+    trig_diff_hist = new TH1F(tmp.str().c_str(), "trig_diff; #Delta T (BCC); Nr. of Entries", 2001, -1000, 1000);
 
     for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
     {
         if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
         {
+            rFile->cd(); //producing subfolder for kpix same as above for the event subfolder structure
+            FolderName.str("");
+            FolderName << "Sensor_" << sensor;
+            rFile->mkdir(FolderName.str().c_str());
+            TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
+            sensor_folder->cd();
+
+            for (bucket = 0; bucket < n_buckets; bucket++){
+                tmp.str("");
+                tmp << "entries_v_strip_s" << sensor << "_b" << bucket;
+                cout << kpix << " " << bucket << endl;
+                entries_v_strip[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_strip; channel; Nr. of Entries", 1840, 0, 1839);
+
+                tmp.str("");
+                tmp << "entries_v_strip_timed_k" << kpix << "_b" << bucket;
+                cout << kpix << " " << bucket << endl;
+                entries_v_strip_timed[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_strip_timed; channel; Nr. of Entries", 1840, 0, 1839);
+
+            }
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
                 kpix = (sensor*2)+k;
@@ -413,7 +443,26 @@ int main ( int argc, char **argv )
                         tmp.str("");
                         tmp << "entries_v_channel_k" << kpix << "_b" << bucket;
                         cout << kpix << " " << bucket << endl;
-                        entries_v_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries v channel; channel; Nr. of Entries", 1024, 0, 1024);
+                        entries_v_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_channel; channel; Nr. of Entries", 1024, 0, 1024);
+
+
+
+                        tmp.str("");
+                        tmp << "entries_v_time_k" << kpix << "_b" << bucket;
+                        cout << kpix << " " << bucket << endl;
+                        entries_v_time[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_time; time (BCC); Nr. of Entries", 8192, 0, 8191);
+
+                        tmp.str("");
+                        tmp << "entries_v_channel_timed_k" << kpix << "_b" << bucket;
+                        cout << kpix << " " << bucket << endl;
+                        entries_v_channel_timed[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_channel_timed; channel; Nr. of Entries", 1024, 0, 1024);
+
+
+
+                        tmp.str("");
+                        tmp << "entries_v_time_timed_k" << kpix << "_b" << bucket;
+                        cout << kpix << " " << bucket << endl;
+                        entries_v_time_timed[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_time_timed; time (BCC); Nr. of Entries", 8192, 0, 8191);
 
                     }
 
@@ -502,8 +551,8 @@ int main ( int argc, char **argv )
 				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
+                ext_trigs->Fill(time);
 				runtime = sample->getSampleRuntime64(frameruntime);
-				
 				if (frameruntime==0)
 					cerr<< "Warning: frameruntime is ZEROs!"<< endl;
 				
@@ -523,15 +572,26 @@ int main ( int argc, char **argv )
 				else not_empty = 1; //checkmark that event is not empty
 
 				//cout << tstamp << endl;
-				if (bucket == 0)
-				{
-                    if (calibs.at(index).first != 0 && calibs.at(index).second > 0.85) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
-					{
+//				if (bucket == 0)
+//				{
+//                    if (calibs.at(index).first != 0 && calibs.at(index).second > 0.85) //ensuring we ignore 0 MAD channels and channels with bad 0 slopes
+//					{
                         //cout <<"DEBUG3.2 " << kpix << " " <<  channel << " " << bucket << endl;
-                        entries_v_channel[kpix][bucket]->Fill(channel);
+
+                double trig_diff = smallest_time_diff(time_ext, tstamp);
+                trig_diff_hist->Fill(trig_diff);
+                        entries_v_channel[kpix][bucket]->Fill(channel,weight);
+                        entries_v_strip[sensor][bucket]->Fill(strip,weight);
+                        entries_v_time[kpix][bucket]->Fill(tstamp);
+                        if (trig_diff > 1 && trig_diff < 4){
+                            entries_v_channel_timed[kpix][bucket]->Fill(channel,weight);
+                            entries_v_strip_timed[sensor][bucket]->Fill(strip,weight);
+                            entries_v_time_timed[kpix][bucket]->Fill(tstamp);
+                        }
+
 						
-					}
-				}
+//					}
+//				}
 			}
         }
 
@@ -540,7 +600,7 @@ int main ( int argc, char **argv )
 		currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
 		if ( currPct != lastPct ) 
 		{
-			cout << "\rReading File for cluster analysis: " << currPct << " %      " << flush;
+            cout << "\rReading File for analysis: " << currPct << " %      " << flush;
 			lastPct = currPct;
 		}
 		

@@ -6,6 +6,7 @@
 #include <math.h> /* fabs */
 #include <iostream>
 #include <bitset>
+#include <string>
 
 //using namespace std;
 
@@ -17,6 +18,9 @@ double yParameterSensor(double, int);
 double xParameterSensor(double, int);
 double smallest_time_diff(std::vector<double>, int);
 int sensor2layer(int);
+std::string bin(uint, std::string);
+char xor_c(char, char);
+std::string binarytoGray(std::string);
 
 
 template <typename T>

@@ -19,6 +19,27 @@ uint keyhash(uint kpix, uint channel, uint bucket, uint time){
     return bucket+std::pow(2,2)*kpix+std::pow(2,7)*channel+std::pow(2,17)*time;
 }
 
+std::string bin(uint n, std::string output)
+{
+    /* step 1 */
+    if (n > 1)
+        output = output+bin(n/2, output);
+
+    /* step 2 */
+    output = output+ std::to_string(n % 2);
+    return output;
+}
+char xor_c(char a, char b) { return (a == b) ? '0' : '1'; }
+
+std::string binarytoGray(std::string binary){
+    std::string gray = "";
+
+    gray += binary[0];
+    for (int i = 1; i < binary.length(); i++){
+        gray  += xor_c(binary[i-1], binary[i]);
+    }
+    return gray;
+}
 
 double yParameter(double strip, int kpix)
 {
@@ -156,7 +177,7 @@ double smallest_time_diff( vector<double> ext_list, int int_value)
     for (uint k = 0; k<ext_list.size(); ++k)
     {
         double delta_t = int_value-ext_list[k];
-        if (fabs(trigger_diff) > fabs(delta_t) && delta_t > 0)
+        if (fabs(trigger_diff) > fabs(delta_t))
         {
             trigger_diff = delta_t;
         }
