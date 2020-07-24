@@ -10,6 +10,8 @@ from operator import add
 import sys
 from decimal import Decimal
 from pyroot_functions import saveFile
+from pyroot_functions import myROOTStyle
+from array import array
 
 ROOT.gROOT.SetBatch(True)
 
@@ -847,15 +849,6 @@ parser.add_argument(
 	help='if given as an option, set z axis to logarithmic.'
 )
 parser.add_argument(
-	'--color',
-	dest='color',
-	#default=[ 861, 1, 418,  810, 402,  908, 435, 880,60, 632, 840, 614],
-	#default=["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], #blue ->orange->blue gradual change
-	default=1,#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], #gradual changing blue
-	#default=["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"], 4times blue 4 times orange gradual change
-	help='list of colors to be used'
-)
-parser.add_argument(
 	'--xtitle',
 	dest='xtitle',
 	help='choose the name of the x axis title'
@@ -941,228 +934,104 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# setting root style
+if __name__ == '__main__':
+	mystyle = ROOT.TStyle("mystyle", "My Style")
+	mystyle, myMarker, myMarkerSize = myROOTStyle(args.nobox)
 
-mystyle = ROOT.TStyle("mystyle", "My Style")
+	mystyle.cd()
+	ROOT.gROOT.ForceStyle()
+	ROOT.gStyle.ls()
+	# finish setting root style
 
+	#legend_location = [0.65,0.65,0.98,0.85] # x_left, y_bottom, x_right, y_top
+	legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 
-mystyle.SetPaintTextFormat("5.3f");
-
-
-#set the background color to white
-mystyle.SetFillColor(0)
-mystyle.SetFrameFillColor(0)
-mystyle.SetCanvasColor(0)
-mystyle.SetPadColor(0)
-mystyle.SetTitleFillColor(0)
-mystyle.SetStatColor(0)
-
-#dont put a colored frame around the plots
-mystyle.SetFrameBorderMode(0)
-mystyle.SetCanvasBorderMode(0)
-mystyle.SetPadBorderMode(0)
-mystyle.SetLegendBorderSize(0)
-##set legend text size etc.
-mystyle.SetLegendTextSize(0.04)
-#
-##use the primary color palette
-mystyle.SetPalette(112)#112)
-#
-##set the default line color for a histogram to be black
-#mystyle.SetHistLineColor(1)
-#
-
-#
-##make the axis labels black
-#mystyle.SetLabelColor(1,"xyz")
-#
-##set the default title color to be black
-#mystyle.SetTitleColor(1)
-mystyle.SetOptTitle(0)
-#
-##set the margins
-mystyle.SetPadBottomMargin(0.16)
-mystyle.SetPadTopMargin(0.05)
-mystyle.SetPadRightMargin(0.15)
-mystyle.SetPadLeftMargin(0.16)
-#
-##set axis label and title text sizes
-mystyle.SetLabelFont(62,"xyz")
-mystyle.SetLabelSize(0.04,"xyz")
-mystyle.SetLabelOffset(0.003,"yz")
-mystyle.SetLabelOffset(0.00,"x")
-mystyle.SetTitleFont(62,"xyz")
-mystyle.SetTitleSize(0.056,"xyz")
-mystyle.SetTitleOffset(1.1,"y")
-mystyle.SetTitleOffset(0.8,"z")
-mystyle.SetTitleOffset(0.75,"x")
-mystyle.SetStatFont(62)
-mystyle.SetStatFontSize(0.05)
+	if args.nofit:
+		print ''
+		print 'IMPORTANT: Please take note that NOFIT is just a very dirty hack'
+		print ''
+	##-----------------
+	##produce empty root file and filename lists.
 
 
-ROOT.TGaxis.SetMaxDigits(4)
-
-#mystyle.SetTitleBorderSize(0)
-#mystyle.SetStatBorderSize(0)
-#mystyle.SetTextFont(42)
 
 
-#
-##set line widths
-mystyle.SetFrameLineWidth(2)
-mystyle.SetFuncWidth(2)
-##set the default line color for a fit function to be red
-mystyle.SetFuncColor(2)
-mystyle.SetHistLineWidth(2)
-#
-##set the number of divisions to show
-#mystyle.SetNdivisions(506, "xy")
-#
-##turn off xy grids
-#mystyle.SetPadGridX(0)
-#mystyle.SetPadGridY(0)
-#
-##set the tick mark style
-#mystyle.SetPadTickX(1)
-#mystyle.SetPadTickY(1)
-#
-##turn off stats
-#mystyle.SetOptStat(0) ##removes stat box
-
-#mystyle.SetOptStat(args.statBox)
-#mystyle.SetOptFit(args.fitBox)
-mystyle.SetOptStat(1111)
-mystyle.SetOptFit(111)
-#mystyle.SetOptStat(0000001) #only name
-#
-##marker settings
-mystyle.SetMarkerStyle(8)
-mystyle.SetMarkerSize(2.5)
-mystyle.SetLineWidth(3)
-
-#done
-#mystyle.cd()
-#ROOT.gROOT.ForceStyle()
-#ROOT.gStyle.ls()
-
-#default_colors=[["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-#["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-#["#0d0887", "#5302a3","#8b0aa5","#b83289","#db5c68","#f48849","#febd2a","#f0f921"]]
-
-myMarker = [20, 21, 22, 23, 33, 29, 20, 21, 22, 23, 33, 30] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
-myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2, 2.0, 2.0, 2.5, 2.5, 3.2, 3.2]
-myMarkerSize = [x*1.2 for x in myMarkerSize] #Scaling up the sizes
-if ('everything' in args.name2):
-	args.name2 = args.name
-
-#print args.refuse
-
-teststring = 'ab_cds'
-
-if any(name in teststring for name in args.name) and all(refuse not in teststring for refuse in args.refuse):
-	print 'accepted'
-else:
-	print teststring
-
-#legend_location = [0.65,0.65,0.98,0.85] # x_left, y_bottom, x_right, y_top
-legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
-
-if args.nofit:
-	print ''
-	print 'IMPORTANT: Please take note that NOFIT is just a very dirty hack'
-	print ''
-##-----------------	
-##produce empty root file and filename lists.
-
-if (args.nobox):
-	if ('stack' in args.draw_option):
-		print 'ERROR: nobox does not work with stack/nostack'
-		sys.exit(1)
-	else:
-		print 'Not printing stats box after all'
-		mystyle.SetOptStat(0)
-		mystyle.SetOptFit(0)
-
-# finish setting root style
-mystyle.cd()
-ROOT.gROOT.ForceStyle()
-ROOT.gStyle.ls()
-
-root_file_list = []
-filename_list = []
-##-----------------
-##loop through all given files and add them to the list. then loop through the keys for every file..
-for root_file in args.file_in:
-	root_file_list.append(ROOT.TFile(root_file))
+	root_file_list = []
+	filename_list = []
+	##-----------------
+	##loop through all given files and add them to the list. then loop through the keys for every file..
+	for root_file in args.file_in:
+		root_file_list.append(ROOT.TFile(root_file))
 	
-	if (args.olddaq):
-		filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
-	elif (args.other):
-		if 'for-lycoris' in root_file:
-			nameStart = root_file.rfind('/run-') + 9
-			nameEnd = root_file.rfind('root')
-			print nameStart
-			print nameEnd
-			print 'Output name is: ', root_file[nameStart:nameEnd]
-			filename_list.append(root_file[nameStart:nameEnd])
+		if (args.olddaq):
+			filename_list.append(root_file[root_file.find('/2019_')+1:root_file.rfind('.bin')+1])
+		elif (args.other):
+			if 'for-lycoris' in root_file:
+				nameStart = root_file.rfind('/run-') + 9
+				nameEnd = root_file.rfind('root')
+				print nameStart
+				print nameEnd
+				print 'Output name is: ', root_file[nameStart:nameEnd]
+				filename_list.append(root_file[nameStart:nameEnd])
+			else:
+				filename_list.append(root_file[0:root_file.rfind('root')])
 		else:
-			filename_list.append(root_file[0:root_file.rfind('root')])
+			if '/Run_' in root_file:
+				filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
+			elif '/Calibration_' in root_file:
+				filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
+	print filename_list
+	#object_list = []
+	for x in root_file_list:
+		key_root = x.GetListOfKeys()
+		loopdir(key_root)
+		#object_list= object_list + (loopdir_new(key_root, args.name))
+	if ('elab' in args.folder):
+		folder_loc = '/home/lycoris-dev/Documents/elab201904/'
+	elif ('tb' in args.folder):
+		folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
+	elif ('summer' in args.folder):
+		folder_loc = '/home/lycoris-dev/Documents/humidity/'
+	elif ('thesis' in args.folder):
+		folder_loc = '/home/lycoris-dev/Documents/thesis/'
+	##-----------------
+	##general output
+	#print args.color
+
+	#print 'DEEEEEEBUUUUUUUG: ', object_list
+
+	print 'Looking for histograms/graphs'
+	print '----------------------'
+	print 'Name contains ', args.name
+	print 'Channel [9999 = everything] ',args.channel
+	print 'Strip [9999 = everything] ',args.strip
+	print 'Bucket [9999 = everything; 4 = only total] ',args.bucket
+	print 'KPiX [9999 = everything] ',args.kpix
+	print 'Refusing the following ', args.refuse
+	if (args.name2 is not args.name):
+		print 'Name also contains ', args.name2
+
+
+	print 'Number of histograms found is: ', len(hist_list)
+	print hist_list
+	print 'Number of graphs found is: ', len(graph_list)
+	print graph_list
+	if (args.ylog and args.yaxisrange[0] is 0):
+		print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
+	##------------------
+	##start of the plotting.
+
+	if (len(hist_list) is not 0):
+		hist_plotter()
+	elif (len(graph_list) is not 0):
+		graph_plotter()
 	else:
-		if '/Run_' in root_file:
-			filename_list.append(root_file[root_file.find('/Run_')+1:root_file.rfind('.dat')+1])
-		elif '/Calibration_' in root_file:
-			filename_list.append(root_file[root_file.find('/Calibration_')+1:root_file.rfind('.dat')+1])
-print filename_list
-#object_list = []
-for x in root_file_list:
-	key_root = x.GetListOfKeys()
-	loopdir(key_root)
-	#object_list= object_list + (loopdir_new(key_root, args.name))
-if ('elab' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/elab201904/'
-elif ('tb' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
-elif ('summer' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/humidity/'
-elif ('thesis' in args.folder):
-	folder_loc = '/home/lycoris-dev/Documents/thesis/'
-##-----------------	
-##general output
-#print args.color
-
-#print 'DEEEEEEBUUUUUUUG: ', object_list 
-
-print 'Looking for histograms/graphs'
-print '----------------------'
-print 'Name contains ', args.name
-print 'Channel [9999 = everything] ',args.channel
-print 'Strip [9999 = everything] ',args.strip
-print 'Bucket [9999 = everything; 4 = only total] ',args.bucket
-print 'KPiX [9999 = everything] ',args.kpix
-print 'Refusing the following ', args.refuse
-if (args.name2 is not args.name):
-	print 'Name also contains ', args.name2
-
-
-print 'Number of histograms found is: ', len(hist_list)
-print hist_list	
-print 'Number of graphs found is: ', len(graph_list)
-print graph_list	
-if (args.ylog and args.yaxisrange[0] is 0):
-	print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
-##------------------
-##start of the plotting.
-
-if (len(hist_list) is not 0):
-	hist_plotter()
-elif (len(graph_list) is not 0):
-	graph_plotter()
-else:
-	print 'There are NO valid histograms/graphs in the current selection'
-	print ''
-	print ''
-for x in root_file_list:
-	ROOT.gROOT.GetListOfFiles().Remove(x)
+		print 'There are NO valid histograms/graphs in the current selection'
+		print ''
+		print ''
+	for x in root_file_list:
+		ROOT.gROOT.GetListOfFiles().Remove(x)
 
 
 

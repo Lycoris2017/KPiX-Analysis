@@ -21,7 +21,6 @@ graph_list = []
 
 
 
-
 def arrangeStats(hists, statBoxW, statBoxH, name):
 	i=0
 	for h in hists:
@@ -179,6 +178,15 @@ mystyle = ROOT.TStyle("mystyle", "My Style")
 
 mystyle.SetPaintTextFormat("5.3f");
 
+red[9]   =  0./255., 25./255., 50./255., 79./255., 110./255., 145./255., 181./255., 201./255., 254./255.};
+green[9] = { 0./255., 16./255., 30./255., 46./255.,  63./255.,  82./255., 101./255., 124./255., 179./255.};
+blue[9]  = { 0./255., 12./255., 21./255., 29./255.,  39./255.,  49./255.,  61./255.,  74./255., 103./255.};
+#red   = [ 26./255., 51./255.,  43./255.,  33./255.,  28./255.,  255./255.]#,  74./255., 144./255., 246./255.]
+#green = [  9./255., 24./255.,  55./255.,  87./255., 118./255., 255./255.]#, 180./255., 200./255., 222./255.]
+#blue  = [ 30./255., 96./255., 112./255., 114./255., 112./255., 255./255.]#,  72./255.,  35./255.,   0./255.]
+stops = [0.0, 0.1, 0.2, 0.3, 0.4, 1.0 ,0.6 ,0.7 ,0.8]
+Idx = ROOT.TColor.CreateGradientColorTable(9, stops, red, green, blue, 255);
+
 #set the background color to white
 mystyle.SetFillColor(0)
 mystyle.SetFrameFillColor(0)
@@ -194,7 +202,7 @@ mystyle.SetPadBorderMode(0)
 mystyle.SetLegendBorderSize(0)
 #
 ##use the primary color palette
-##mystyle.SetPalette(1,0)
+mystyle.SetPalette(Idx)
 #
 ##set the default line color for a histogram to be black
 #mystyle.SetHistLineColor(1)
@@ -281,11 +289,15 @@ mystyle.SetLineWidth(2)
 legend_location = [0.15,0.65,0.35,0.85] # x_left, y_bottom, x_right, y_top
 
 
-default_colors=[["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
-[],
-]
+#default_colors=[["#08306b", "#8c2d04",	"#08519c", "#d94801",	"#2171b5", "#f16913",	"#4292c6", "#fd8d3c","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
+#[],
+#]
+
+myMarker = [20, 21, 22, 23, 33, 29, 20, 21, 22, 23, 33, 30] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
+myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2, 2.0, 2.0, 2.5, 2.5, 3.2, 3.2]
+myMarkerSize = [x*1.2 for x in myMarkerSize] #Scaling up the sizes
 
 ##-----------------	
 ##produce empty root file and filename lists.
@@ -356,11 +368,8 @@ if (9999 in args.xaxisrange):
 else:
 	xaxisrange = args.xaxisrange
 
-if ((len(hist_list) > len(default_colors[args.color]) or len(graph_list) > len(default_colors[args.color]))) and ("same" in args.draw_option):
-	print 'You do not have enough colors ', len(default_colors[args.color]), 'for the number of histograms you have ', len(hist_list)
-	sys.exit(1)
 if (len(object_list) is not 0):
-	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, outName, xaxisrange, yaxisrange, default_colors[args.color], args.legend, args.order, args.ylog)
+	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, outName, xaxisrange, yaxisrange, args.legend, args.order, args.ylog)
 else:
 	print 'There are NO valid histograms/graphs in the current selection'
 	print ''
