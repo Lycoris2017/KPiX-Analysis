@@ -43,7 +43,7 @@ def tree_to_hist(tree, conditions, variables, bin_range, name, norm=True):
 		myh.Scale(scaling)
 	return myh
 
-def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, rangeY, legendName, order, ylog):
+def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, rangeY, legendName, order, ylog, MarkerStyle):
 	print "Number of objects = ", len(keys)
 	myHistograms = []
 	for keyCounter, key_object in enumerate(keys):
@@ -55,7 +55,7 @@ def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, 
 			c1.cd()
 			myh = tree_to_hist(inputTree, conditions, variables, bin_range, name)
 			myHistograms.append(myh)
-	drawSame(myHistograms, drawOption, rangeX, rangeY, legendName, order, ylog)
+	drawSame(myHistograms, drawOption, rangeX, rangeY, legendName, MarkerStyle, order, ylog)
 #	for histCounter, hist in enumerate(myHistograms):
 #		if ("same" in drawOption):
 #		myh.Draw(drawOption)
@@ -66,12 +66,12 @@ def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, 
 #		outname = name+".png"
 #		c1.SaveAs(outname)
 
-def drawSame(hists, drawOption, rangeX, rangeY, legendName, order=None, ylog=False):
+def drawSame(hists, drawOption, rangeX, rangeY, legendName,  MarkerStyle, order=None, ylog=False):
 	c1 = ROOT.TCanvas( 'Canvas', 'Canvas', 2000, 1500 )
 	c1.cd()
 	statBoxW = 0.1
 	statBoxH = 0.05*len(hists)
-	drawOption = drawOption+"PCM PCL" #to use palette colors
+	drawOption = drawOption+"PLC PMC" #to use palette colors
 	print "Legendnames ", legendName
 	legend = ROOT.TLegend(0.7, 0.93-statBoxH, 0.7+statBoxW, 0.93)
 	new_hist_list = []
@@ -92,7 +92,8 @@ def drawSame(hists, drawOption, rangeX, rangeY, legendName, order=None, ylog=Fal
 		x_axis = h.GetXaxis()
 		y_axis = h.GetYaxis()
 		legEntry = legend.AddEntry(h, new_legendlist[counter])
-
+		h.SetMarkerStyle(MarkerStyle[0][counter])
+		h.SetMarkerSize(MarkerStyle[1][counter])
 		h.Draw(drawOption)
 		legend.Draw()
 	if ylog:

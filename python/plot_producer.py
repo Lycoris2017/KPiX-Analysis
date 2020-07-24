@@ -570,7 +570,7 @@ def graph_plotter():
 	if ('same' in args.draw_option):
 		##------------------
 		##initialize a canvas, a stack histogram and further variables.
-		drawing_option = args.draw_option.replace('same', 'A') 
+		drawing_option = args.draw_option.replace('same', 'A')+"PLC PMC"
 		if (args.output_name):
 			c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		else:
