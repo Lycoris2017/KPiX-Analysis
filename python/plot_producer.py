@@ -126,10 +126,10 @@ def hist_plotter():
 			f = args.draw_option.find('stack')
 			fend = f+5 ## End of stack
 			l = len(args.draw_option)
-			drawing_option = args.draw_option[0:f]+args.draw_option[fend:l] ##cutting out 'stack' from the string of drawing options
+			drawing_option = args.draw_option[0:f]+args.draw_option[fend:l]+"PLC PMC" ##cutting out 'stack' from the string of drawing options
 			print "Using draw options: ", drawing_option
 		else:
-			drawing_option = args.draw_option #exchange the same with a NOSTACK as I am using THStack
+			drawing_option = args.draw_option+"PLC PMC" #exchange the same with a NOSTACK as I am using THStack
 			print "Using draw options: ", drawing_option
 		c1 = ROOT.TCanvas( args.output_name, 'Test', args.aratio[0], args.aratio[1] )
 		c1.cd()
@@ -281,6 +281,7 @@ def hist_plotter():
 		drawing_option = args.draw_option+"PLC PMC"
 		c1 = ROOT.TCanvas( args.output_name, 'Canvas', args.aratio[0], args.aratio[1] )
 		c1.cd()
+		#c1.SetGrid(1)
 		#c1.SetFillColor(0)
 		statBoxW = 0.1
 		statBoxH = 0.05*len(hist_list)
@@ -291,8 +292,8 @@ def hist_plotter():
 		y_title = None
 		x_low = None
 		x_high = None
-		y_low = None
-		y_high = None
+		yMin = None
+		yMax = None
 		new_hist_list = []
 		new_legendlist = []
 		legendname = []
@@ -344,9 +345,24 @@ def hist_plotter():
 				print 'Number of normed Entries in range = ', obj.Integral()
 				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
 
-			if 9999 not in args.yaxisrange:
-				y_low = args.yaxisrange[0]
-				y_high = args.yaxisrange[1]
+			if args.yaxisrange:
+				yMin = args.yaxisrange[0]
+				yMax = args.yaxisrange[1]
+			else:
+				if (yMax is None):
+					yMax = obj.GetMaximum()
+				elif(yMax < yRangeScale*obj.GetMaximum()):
+					yMax =  yRangeScale*obj.GetMaximum()
+				if (args.ylog):
+					if (yMin is None):
+						yMin = 1.0/(yRangeScale*obj.GetEntries())
+					elif (yMin > 1.0/(yRangeScale*obj.GetEntries())):
+						yMin = 1.0/(yRangeScale*obj.GetEntries())
+				else:
+					if (yMin is None):
+						yMin = (1./yRangeScale)*obj.GetMinimum()
+					elif (yMin >  (1./yRangeScale)*obj.GetMinimum()):
+						yMin =  (1.0/yRangeScale)*obj.GetMinimum()
 			#print x_low, x_high
 			#x_axis.SetRangeUser(x_low, x_high)
 			#obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
@@ -375,9 +391,7 @@ def hist_plotter():
 			else:
 				xaxis.SetRangeUser(x_low, x_high)
 			yaxis = obj.GetYaxis()
-			if 9999 not in args.yaxisrange:
-				yaxis.SetRangeUser(y_low, y_high) 
-				print 'test'
+			yaxis.SetRangeUser(yMin, yMax)
 			yaxis.SetTitle(y_title)
 #			ROOT.TGaxis.SetMaxDigits(3)
 			##------------------
@@ -432,6 +446,7 @@ def hist_plotter():
 	else:
 		counter = 0
 		file_counter = 0
+		drawing_option = args.draw_option+"PLC PMC"
 		for histogram in hist_list:
 			##------------------
 			##loop through the histograms, get all parameters and adjust the xrange
@@ -476,28 +491,14 @@ def hist_plotter():
 				x_axis.SetRangeUser(x_low, x_high)
 				print 'Number of normed Entries in range = ', obj.Integral()
 				print 'Number of unweighted Entries in range = ', '%.2E' % Decimal(obj.Integral() * obj.GetEntries())
-			if 9999 in args.yaxisrange:
-				if (y_low is None):
-					y_low = obj.FindFirstBinAbove(0,2)-10
-				elif (y_low > obj.FindFirstBinAbove(0,2)-10):
-					y_low = obj.FindFirstBinAbove(0,2)-10
-				if (y_high is None):
-					y_high = obj.FindLastBinAbove(0,2)+10
-				elif (y_high < obj.FindLastBinAbove(0,2)+10):
-					y_high = obj.FindLastBinAbove(0,2)+10
-				if (y_high > obj.GetNbinsY()):  #avoids overflow bin
-					y_high = obj.GetNbinsY()
-				if (y_low <= 0): #avoids underflow bin
-					y_low = 1
-				y_axis.SetRange(y_low, y_high)
-			else:
+			if  args.yaxisrange:
 				y_low = args.yaxisrange[0]
 				y_high = args.yaxisrange[1]
 				y_axis.SetRangeUser(y_low, y_high)
-			if 9999 not in args.zaxisrange:
-				z_low = args.zaxisrange[0]
-				z_high = args.zaxisrange[1]
-				z_axis.SetRangeUser(z_low, z_high)
+#			if  args.zaxisrange:
+#				z_low = args.zaxisrange[0]
+#				z_high = args.zaxisrange[1]
+#				z_axis.SetRangeUser(z_low, z_high)
 
 			##obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
@@ -525,7 +526,7 @@ def hist_plotter():
 				print args.fit
 				f1 = ROOT.TF1("f1", str(args.fit[0]), float(args.fit[1]), float(args.fit[2]))
 				obj.Fit("f1", str(args.fit[0]), "", float(args.fit[1]), float(args.fit[2]) )
-			obj.Draw(args.draw_option)
+			obj.Draw(drawing_option)
 
 #			if args.upperXaxis:
 #				print "adding an upper x axis"
@@ -819,7 +820,6 @@ parser.add_argument(
 parser.add_argument(
 	'--yrange',
 	dest='yaxisrange',
-	default=[9999],
 	nargs='*',
 	type=float,
 	help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float'
@@ -988,13 +988,13 @@ if __name__ == '__main__':
 		loopdir(key_root)
 		#object_list= object_list + (loopdir_new(key_root, args.name))
 	if ('elab' in args.folder):
-		folder_loc = '/home/lycoris-dev/Documents/elab201904/'
+		folder_loc = '/scratch/plots/elab201904/'
 	elif ('tb' in args.folder):
-		folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
+		folder_loc = '/scratch/plots/testbeam202003/'
 	elif ('summer' in args.folder):
-		folder_loc = '/home/lycoris-dev/Documents/humidity/'
+		folder_loc = '/scratch/plots/humidity/'
 	elif ('thesis' in args.folder):
-		folder_loc = '/home/lycoris-dev/Documents/thesis/'
+		folder_loc = '/scratch/plots/thesis/'
 	##-----------------
 	##general output
 	#print args.color
@@ -1021,7 +1021,7 @@ if __name__ == '__main__':
 		print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
 	##------------------
 	##start of the plotting.
-
+	yRangeScale = 1.5
 	if (len(hist_list) is not 0):
 		hist_plotter()
 	elif (len(graph_list) is not 0):

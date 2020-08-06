@@ -19,18 +19,21 @@ def loopdir_new(keys, all_names):  # loop through all subdirectories of the root
 				key_object.Print()
 	return object_list
 
-def tree_to_hist(tree, conditions, variables, bin_range, name, norm=True):
+def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=True):
 	print "Number of variables ", len(variables)
 	print "Binrange ", bin_range
 	if (len(variables) == 1):
-		histlabels = name+";"+variables[0]+";Nr. of Entries"
-		myh = ROOT.TH1F(name, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]))
-		draw = variables[0]+">>"+name
+
+		histName = name+"_"+str(keyCounter)
+		histlabels = histName+";"+variables[0]+";Entries"
+		myh = ROOT.TH1F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]))
+		draw = variables[0]+">>"+histName
 		print draw
 	elif (len(variables) == 2):
-		histlabels = name+";"+variables[1]+";"+variables[0]
-		myh = ROOT.TH2F(name, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]), int(bin_range[3]), float(bin_range[4]), float(bin_range[5]))
-		draw = variables[0]+":"+variables[1]+">>"+name
+		histName = name+"_"+str(keyCounter)
+		histlabels = histName+";"+variables[1]+";"+variables[0]
+		myh = ROOT.TH2F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]), int(bin_range[3]), float(bin_range[4]), float(bin_range[5]))
+		draw = variables[0]+":"+variables[1]+">>"+histName
 		print "Histogram labels ", histlabels
 		print draw
 	else:
@@ -43,7 +46,7 @@ def tree_to_hist(tree, conditions, variables, bin_range, name, norm=True):
 		myh.Scale(scaling)
 	return myh
 
-def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, rangeY, legendName, order, ylog, MarkerStyle):
+def plot_tree(keys, conditions, variables, bin_range, name):
 	print "Number of objects = ", len(keys)
 	myHistograms = []
 	for keyCounter, key_object in enumerate(keys):
@@ -51,31 +54,25 @@ def plot_tree(keys, conditions, variables, bin_range, drawOption, name, rangeX, 
 			inputTree = key_object.ReadObj()
 			print "Tree Branches ", inputTree.Print()
 			#outhist = ROOT.TH1F("myh", "myh;layers;entries", 6,10,16)
-			c1 = ROOT.TCanvas( str(keyCounter), str(keyCounter), 2000, 1500 )
-			c1.cd()
-			myh = tree_to_hist(inputTree, conditions, variables, bin_range, name)
+			myh = tree_to_hist(inputTree, conditions, variables, bin_range, name, keyCounter)
 			myHistograms.append(myh)
-	drawSame(myHistograms, drawOption, rangeX, rangeY, legendName, MarkerStyle, order, ylog)
-#	for histCounter, hist in enumerate(myHistograms):
-#		if ("same" in drawOption):
-#		myh.Draw(drawOption)
-#		myh.GetXaxis().SetRangeUser(rangeX[0], rangeX[1])
-#		if (9999 not in rangeY):
-#			myh.GetYaxis().SetRangeUser(rangeY[0], rangeY[1])
-#		c1.Update()
-#		outname = name+".png"
-#		c1.SaveAs(outname)
+	return myHistograms
 
-def drawSame(hists, drawOption, rangeX, rangeY, legendName,  MarkerStyle, order=None, ylog=False):
+def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc='right', order=None):
 	c1 = ROOT.TCanvas( 'Canvas', 'Canvas', 2000, 1500 )
 	c1.cd()
-	statBoxW = 0.1
+	statBoxW = 0.2
 	statBoxH = 0.05*len(hists)
 	drawOption = drawOption+"PLC PMC" #to use palette colors
-	print "Legendnames ", legendName
-	legend = ROOT.TLegend(0.7, 0.93-statBoxH, 0.7+statBoxW, 0.93)
-	new_hist_list = []
+	if legendName is not None:
+		print "Legendnames ", legendName
+		if ('right' in legendLoc):
+			legend = ROOT.TLegend(0.7, 0.93-statBoxH, 0.7+statBoxW, 0.93)
+		elif ('left' in legendLoc):
+			legend = ROOT.TLegend(0.2, 0.93-statBoxH, 0.2+statBoxW, 0.93)
 	new_legendlist = []
+	new_hist_list = []
+
 	legendname = []
 	if order:
 		for i in order:
@@ -91,30 +88,32 @@ def drawSame(hists, drawOption, rangeX, rangeY, legendName,  MarkerStyle, order=
 		print 'RMS = ', '%.2E' % Decimal(h.GetRMS())
 		x_axis = h.GetXaxis()
 		y_axis = h.GetYaxis()
-		legEntry = legend.AddEntry(h, new_legendlist[counter])
+		if new_legendlist is not None:
+			legEntry = legend.AddEntry(h, new_legendlist[counter])
 		h.SetMarkerStyle(MarkerStyle[0][counter])
 		h.SetMarkerSize(MarkerStyle[1][counter])
 		h.Draw(drawOption)
-		legend.Draw()
+		if legendName is not None:
+			legend.Draw()
 	if ylog:
 		c1.SetLogy()
 	c1.Modified()
 	c1.Update()
-	saveFile(c1, ["test"], 0, '/home/lycoris-dev/Documents/testbeam202003/', 'test')
+	saveFile(c1, [""], 0, '/scratch/plots/testbeam202003/', str(name))
 
 def saveFile(c1, filename_list, counter, folder_loc, outName):
 	if (len(filename_list) == 1):
 		run_name = filename_list[0][:-1]
 	else:
 		run_name = filename_list[counter][:-1]
-	saveName = folder_loc+run_name+'_'+outName
+	saveName = folder_loc+run_name+outName
 	print 'Creating '+saveName
 	c1.SaveAs(saveName+'.svg')
 	c1.SaveAs(saveName+'.eps')
 	c1.SaveAs(saveName+'.png')
 	c1.SaveAs(saveName+'.C')
 
-def myROOTStyle(nobox=False):
+def myROOTStyle(nobox=True):
 	mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
@@ -204,6 +203,8 @@ def myROOTStyle(nobox=False):
 	#mystyle.SetPadGridX(0)
 	#mystyle.SetPadGridY(0)
 	#
+
+
 	##set the tick mark style
 	#mystyle.SetPadTickX(1)
 	#mystyle.SetPadTickY(1)

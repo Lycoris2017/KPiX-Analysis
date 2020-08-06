@@ -33,38 +33,38 @@ outHistFile = ROOT.TFile.Open(outfile, "RECREATE")
 outHistFile.cd()
 residual_hist = []
 
-residual_hist.append(ROOT.TH1F("residual_l10", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l11", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l12", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l13", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l14", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l15", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l10", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l11", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l12", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l13", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l14", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l15", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
 
 residual_hist2 = []
 
-residual_hist2.append(ROOT.TH1F("residual2_l10", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l11", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l12", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l13", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l14", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l15", "residual; distance (mm); #Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l10", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l11", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l12", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l13", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l14", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l15", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
 
 
 
-fitpos_mod_readout_pitch = ROOT.TH1F("fitpos_mod_readout_pitch", "fitpos_mod_readout_pitch; distance (mm); #Entries ", 50, 0, 50e-3)
-fitpos_mod_readout_pitch_bump = ROOT.TH1F("fitpos_mod_readout_pitch_bump", "fitpos_mod_readout_pitch_bump; distance (mm); #Entries ", 50, 0, 50e-3)
+fitpos_mod_readout_pitch = ROOT.TH1F("fitpos_mod_readout_pitch", "fitpos_mod_readout_pitch; distance (mm); Entries ", 50, 0, 50e-3)
+fitpos_mod_readout_pitch_bump = ROOT.TH1F("fitpos_mod_readout_pitch_bump", "fitpos_mod_readout_pitch_bump; distance (mm); Entries ", 50, 0, 50e-3)
 
 size_fitpos_correlation = ROOT.TH2F("size_fitpos", "size_fitpos; size; distance (mm); Number of Entries ", 5, 0.5, 5.5, 51, 0, 51e-3)
 size_fitpos_correlation_bump = ROOT.TH2F("size_fitpos_bump", "size_fitpos_bump; size; distance (mm); Number of Entries ", 5, 0.5, 5.5, 51, 0, 51e-3)
 
-charge_all = ROOT.TH1F("charge_all", "charge_all; Charge (fC); #Entries ", 151, 0, 15)
-charge_readout = ROOT.TH1F("charge_readout", "charge_readout; Charge (fC); #Entries ", 151, 0, 15)
-charge_floating = ROOT.TH1F("charge_floating", "charge_floating; Charge (fC); #Entries ", 151, 0, 15)
-charge_transition = ROOT.TH1F("charge_transition", "charge_transition; Charge (fC); #Entries ", 151, 0, 15)
+charge_all = ROOT.TH1F("charge_all", "charge_all; Charge (fC); Entries ", 151, 0, 15)
+charge_readout = ROOT.TH1F("charge_readout", "charge_readout; Charge (fC); Entries ", 151, 0, 15)
+charge_floating = ROOT.TH1F("charge_floating", "charge_floating; Charge (fC); Entries ", 151, 0, 15)
+charge_transition = ROOT.TH1F("charge_transition", "charge_transition; Charge (fC); Entries ", 151, 0, 15)
 
-charge_size1 = ROOT.TH1F("charge_size1", "charge_size1; Charge (fC); #Entries ", 151, 0, 15)
-charge_size2 = ROOT.TH1F("charge_size2", "charge_size2; Charge (fC); #Entries ", 151, 0, 15)
-charge_size3p = ROOT.TH1F("charge_size3+", "charge_size3+; Charge (fC); #Entries ", 151, 0, 15)
+charge_size1 = ROOT.TH1F("charge_size1", "charge_size1; Charge (fC); Entries ", 151, 0, 15)
+charge_size2 = ROOT.TH1F("charge_size2", "charge_size2; Charge (fC); Entries ", 151, 0, 15)
+charge_size3p = ROOT.TH1F("charge_size3+", "charge_size3+; Charge (fC); Entries ", 151, 0, 15)
 
 count = 0
 

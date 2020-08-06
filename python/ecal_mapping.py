@@ -144,14 +144,6 @@ def map_plot_ecal(channel_kpix, mapping, sensor_row, sensor_column, color, list_
 def log_tick_formatter(val, pos=None):
     return "{:.2e}".format(10**val)
     
-    
-def loopdir(keys):  # loop through all subdirectories of the root file and add all histograms that fulfill the below given criteria to a list
-	for key_object in keys:
-		if ('TDirectory' in key_object.GetClassName()):
-			loopdir(key_object.ReadObj().GetListOfKeys())
-		else:
-			if (('hist_s' in key_object.GetName()) and ('_b' in key_object.GetName()) and ('_k'+args.kpix in key_object.GetName()) and ('time' not in key_object.GetName())):
-				hist_list.append(key_object)
 
 
 parser = argparse.ArgumentParser()
@@ -163,6 +155,8 @@ parser.add_argument('--calib', dest='calib', help='True if calibration file')
 parser.add_argument('-t', '--timed', dest='timed', help='Choose whether or not to take time stamped plots')
 args = parser.parse_args()
 
+
+if __name__ == '__main__':
 
 channel_kpix = range(1024)
 column = []

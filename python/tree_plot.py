@@ -9,9 +9,7 @@ import argcomplete
 from operator import add
 import sys
 from decimal import Decimal
-from pyroot_functions import loopdir_new
-from pyroot_functions import plot_tree
-from pyroot_functions import myROOTStyle
+import pyroot_functions as pf
 
 ROOT.gROOT.SetBatch(True)
 
@@ -94,7 +92,6 @@ parser.add_argument(
 parser.add_argument(
 	'--xrange',
 	dest='xaxisrange',
-	default=[9999],
 	nargs='*',
 	type=float,
 	help='set a xrange for the plot to used with xmin xmax as the two arguments | type=float'
@@ -102,7 +99,6 @@ parser.add_argument(
 parser.add_argument(
 	'--yrange',
 	dest='yaxisrange',
-	default=[9999],
 	nargs='*',
 	type=float,
 	help='set a yrange for the plot to used with ymin ymax as the two arguments | type=float'
@@ -118,12 +114,14 @@ parser.add_argument(
 parser.add_argument(
 	'--legend',
 	dest='legend',
+	default=None,
 	nargs='*',
 	help='list of names to be used as legend titles instead of the default filename+histogram name'
 )
 parser.add_argument(
 	'--ylog',
 	dest='ylog',
+	default=False,
 	action='store_true',
 	help='if given as an option, set y axis to logarithmic. Remember to set the yrange to start above 0!'
 )
@@ -158,6 +156,7 @@ parser.add_argument(
 parser.add_argument(
 	'--nobox',
 	dest='nobox',
+	default=False,
 	action='store_true',
 	help='suppresses tstatbox from being added. Does not work with stack/nostack option'
 )
@@ -175,7 +174,7 @@ if (len(args.variables) == 0 or len(args.variables) > 2):
 	sys.exit()
 
 mystyle = ROOT.TStyle("mystyle", "My Style")
-mystyle, myMarker, myMarkerSize = myROOTStyle(args.nobox)
+mystyle, myMarker, myMarkerSize = pf.myROOTStyle(args.nobox)
 myMarkerStyle = [myMarker, myMarkerSize]
 
 mystyle.cd()
@@ -203,9 +202,9 @@ object_list = []
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	#object_list = object_list + (loopdir_new(key_root, args.name))
-	object_list.append((loopdir_new(key_root, args.name)[0]))
+	object_list.append((pf.loopdir_new(key_root, args.name)[0]))
 	
-folder_loc = '/home/lycoris-dev/Documents/testbeam202003/'
+folder_loc = '/scratch/plots/testbeam202003/'
 ##-----------------	
 ##general output
 #print args.color
@@ -215,34 +214,77 @@ print '----------------------'
 print 'Name contains ', args.name
 print 'Number of objects found is: ', len(object_list)
 print object_list	
-if (args.ylog and args.yaxisrange[0] is 0):
+if (args.ylog):
 	print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
 ##------------------
 ##start of the plotting.
+if args.conditions:
+	conditionsName = args.conditions.replace("<", "L")
+	conditionsName = args.conditions.replace(">", "G")
 if (args.output_name):
-	outName  = args.output_name
+	if args.conditions:
+		outName  = args.output_name+"_Cond_"+conditionsName
+	else:
+		outName  = args.output_name
 else:
 	stringStart = args.file_in[0].find('/testbeam')
-	outName = '/home/lycoris-dev/Documents'+args.file_in[0][stringStart:-5]
+	outName = 'Histogram'#'/scratch/plots/testbeam202003/'+args.file_in[0][stringStart:-5]
 	for i in args.variables:
-		outName = outName+"_"+i
+		if args.conditions:
+			outName = outName+"_"+i+"_Cond_"+conditionsName
+		else:
+			outName = outName+"_"+i
+print "Output name ", outName
 bin_range = args.bin_range
 variables = args.variables
 draw_option = args.draw_option
-if (9999 in args.yaxisrange and len(bin_range) > 3):
-	yaxisrange = [float(bin_range[4]), float(bin_range[5])]
-else:
-	yaxisrange = args.yaxisrange
-if (9999 in args.xaxisrange):
-	xaxisrange = [float(bin_range[1]), float(bin_range[2])]
-else:
-	xaxisrange = args.xaxisrange
-
+yMax = None
+yMin = None
 if (len(object_list) is not 0):
-	plot_tree(object_list, args.conditions, variables ,bin_range, draw_option, outName, xaxisrange, yaxisrange, args.legend, args.order, args.ylog, myMarkerStyle)
+	myHistograms = pf.plot_tree(object_list, args.conditions, variables ,bin_range, outName, )
 else:
 	print 'There are NO valid histograms/graphs in the current selection'
 	print ''
 	print ''
+print myHistograms
+yRangeScale = 1.5
+
+if (args.xtitle):
+	for i in myHistograms:
+		i.GetXaxis().SetTitle(args.xtitle)
+if (args.ytitle):
+	for i in myHistograms:
+		i.GetYaxis().SetTitle(args.ytitle)
+if (args.yaxisrange):
+	for i in myHistograms:
+		i.GetYaxis().SetRangeUser(args.yaxisrange[0], args.yaxisrange[1])
+else:
+	for i in myHistograms:
+		if (yMax is None):
+			yMax = i.GetMaximum()
+		elif(yMax < yRangeScale*i.GetMaximum()):
+			yMax =  yRangeScale*i.GetMaximum()
+		if (args.ylog):
+			if (yMin is None):
+				yMin = 1.0/(yRangeScale*i.GetEntries())
+			elif (yMin > 1.0/(yRangeScale*i.GetEntries())):
+				yMin = 1.0/(yRangeScale*i.GetEntries())
+		else:
+			if (yMin is None):
+				yMin = (1./yRangeScale)*i.GetMinimum()
+			elif (yMin >  (1./yRangeScale)*i.GetMinimum()):
+				yMin =  (1.0/yRangeScale)*i.GetMinimum()
+	print "Minimum y value ",yMin
+	print "Maximum y value ",yMax
+	if len(args.variables) == 1:
+		for i in myHistograms:
+			i.GetYaxis().SetRangeUser(yMin, yMax)
+if (args.xaxisrange):
+	for i in myHistograms:
+		i.GetXaxis().SetRangeUser(args.xaxisrange[0], args.xaxisrange[1])
+
+if (args.xaxisrange):
+	xaxisrange = args.xaxisrange
+pf.drawSame(myHistograms, draw_option, args.legend, myMarkerStyle, outName, args.ylog, args.order)
 for x in root_file_list:
 	ROOT.gROOT.GetListOfFiles().Remove(x)
