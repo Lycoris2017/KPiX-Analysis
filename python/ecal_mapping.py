@@ -8,8 +8,6 @@ import matplotlib.lines as mlines
 import matplotlib.ticker as mticker
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-import ROOT
-from ROOT import TFile, gDirectory, TDirectory
 import argparse
 import argcomplete
 from operator import add
@@ -93,50 +91,41 @@ def ECAL_map(column, row, num_of_x, ymin, ymax):
 			row.extend(numberlist(count*np.cos(np.pi/3), num_of_x))
 	
 
-def map_text(ax, channel_kpix, mapping, row, column):
+def map_text(ax, channel_kpix, mapping, row, column): # writes the kpix channel numbers into the plot
 	pixel = 0
 	for i in channel_kpix:
-		if (mapping_sensor_to_kpix[pixel] < 10):
-			ax.text(row[i]-0.10,column[i], mapping[pixel], fontsize=3)
+		if (mapping_sensor_to_kpix[pixel] < 10): #make sure the text is centered that is why we shift it further left the larger the text is.
+			ax.text(row[i]-0.08,column[i], mapping[pixel], fontsize=3, color='white')
 		elif (mapping_sensor_to_kpix[pixel] < 100):
-			ax.text(row[i]-0.13,column[i], mapping[pixel], fontsize=3)
+			ax.text(row[i]-0.16,column[i], mapping[pixel], fontsize=3, color='white')
 		elif (mapping_sensor_to_kpix[pixel] < 1000):
-			ax.text(row[i]-0.18,column[i], mapping[pixel], fontsize=3)
+			ax.text(row[i]-0.22,column[i], mapping[pixel], fontsize=3, color='white')
 		elif (mapping_sensor_to_kpix[pixel] >= 1000):
-			ax.text(row[i]-0.24,column[i], mapping[pixel], fontsize=3)
+			ax.text(row[i]-0.30,column[i], mapping[pixel], fontsize=3, color='white')
 		pixel = pixel +1
 	return ax
 
 
-def map_plot_ecal(channel_kpix, mapping, sensor_row, sensor_column, color, list_of_channel_values, bucket_name, bucket_nr, color_values, type_name, color_type):
-		fig = plt.figure()
-		ax = fig.add_subplot(111) 
+def map_plot_ecal(channel_kpix, mapping, sensor_row, sensor_column, color, list_of_channel_values, color_values, type_name, color_type): #produces the colored plot
+		fig = plt.figure() #generate a new figure
+		ax = fig.add_subplot(111)  #generate a new plot
+
 		map_text(ax, channel_kpix, mapping, row, column)
-		plt.xlim(-1, 24)
-		plt.ylim(-24, 16)
-		plt.axis('off')
+		plt.xlim(-1, 20) #set x axis limit
+		plt.ylim(-20, 15) #set y axis limit
+		#plt.axis('off') # do not show x and y axis
 		if ('log' in color_type):
-			plsctr = plt.scatter(sensor_row, sensor_column, c=list_of_channel_values[bucket_nr], s = 100, marker='H', cmap='viridis', norm=mpl.colors.SymLogNorm(linthresh = color_values[1], vmin=color_values[0], vmax=color_values[-1]))
+			plsctr = plt.scatter(sensor_row, sensor_column, c=list_of_channel_values, s = 70, marker='H', cmap='viridis', norm=mpl.colors.SymLogNorm(linthresh = color_values[1], vmin=color_values[0], vmax=color_values[-1]))
 		elif ('log' not in color_type):
-			plsctr = plt.scatter(sensor_row, sensor_column,  c=list_of_channel_values[bucket_nr], s = 100, marker='H', cmap='viridis', vmin=color_values[0], vmax=color_values[-1])
+			plsctr = plt.scatter(sensor_row, sensor_column,  c=list_of_channel_values, s = 70, marker='H', cmap='viridis', vmin=color_values[0], vmax=color_values[-1])
 		if args.file_out:
-			if ('mean' in type_name):
-				Filename=args.file_out  + '_mean_' + args.kpix + '_' +  bucket_name + '_ecal_map.png'
-			elif ('rms' in type_name):
-				Filename = args.file_out +'_RMS_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-			elif ('slope' in type_name):
-				Filename = args.file_out +'_slope_' +  args.kpix + '_' +  bucket_name +'_ecal_map.png'
-			elif ('entry' in type_name):
-				Filename = args.file_out +'_entries_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-		elif ('mean' in type_name):
-			Filename = args.file_in +'_mean_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-		elif ('rms' in type_name):
-			Filename = args.file_in +'_RMS_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-		elif ('slope' in type_name):
-			Filename = args.file_in +'_slope_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-		elif ('entry' in type_name):
-			Filename = args.file_in +'_entries_' +  args.kpix + '_' +  bucket_name + '_ecal_map.png'
-		plt.colorbar(plsctr)
+			Filename=args.file_out + '_ecal_map.png'
+		elif not args.file_in:
+			Filename = 'ecal_map.png'
+		else:
+			Filename = args.file_in + '_ecal_map.png'
+		cbar = plt.colorbar(plsctr)
+		cbar.set_label(args.zaxistitle, rotation=270)
 		print "File is saved in " +  Filename
 		plt.savefig(Filename, dpi = 300)
 		plt.close()	
@@ -147,123 +136,62 @@ def log_tick_formatter(val, pos=None):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('file_in', help='name of the input file')                
-parser.add_argument('-k', '--kpix', dest='kpix', type = str, help='Choose the KPiX connection slot on the DAQ board')
-#parser.add_argument('-f', '--file_in', dest='file_in', help="Input filename")
+parser.add_argument('-f', '--file', dest='file_in', help='name of the input file')
 parser.add_argument('-o', '--file_out', dest='file_out', help="Output filename")
-parser.add_argument('--calib', dest='calib', help='True if calibration file')
-parser.add_argument('-t', '--timed', dest='timed', help='Choose whether or not to take time stamped plots')
+parser.add_argument('-m', '--max', dest='maximum_value', default = 20, help="maximum value on the colored z axis")
+parser.add_argument('-z', '--z_axis_title', dest='zaxistitle', default = "Z", help="title of the z axis")
+
 args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    channel_kpix = range(1024)
+    column = []
+    row = []
 
-channel_kpix = range(1024)
-column = []
-row = []
+    ymax = 0
+    ymin = -6
 
-ymax = 0
-ymin = -6
-
-#file_map_kpix_to_sensor = '/afs/desy.de/user/k/kraemeru/public/gui_sort.txt'
-#file_map_sensor_to_kpix = '/afs/desy.de/user/k/kraemeru/public/gui_hama.txt'
-file_map_kpix_to_sensor_ecal = 'python/gui_sort.txt'
-file_map_sensor_to_kpix_ecal = 'python/gui_hama.txt'
-
-bad = []
-noise = []
-bad_fit = []
-
-mapping_kpix_to_sensor = []
-mapping_sensor_to_kpix = []
+    #file_map_kpix_to_sensor = '/afs/desy.de/user/k/kraemeru/public/gui_sort.txt'
+    #file_map_sensor_to_kpix = '/afs/desy.de/user/k/kraemeru/public/gui_hama.txt'
+    file_map_kpix_to_sensor_ecal = 'python/gui_sort.txt' #specify location of the mapping gui_sort adjust to your file path
+    file_map_sensor_to_kpix_ecal = 'python/gui_hama.txt' #specify location of the mapping gui_hama adjust to your file path
 
 
+    mapping_kpix_to_sensor = []
+    mapping_sensor_to_kpix = []
+
+    #mapping
+    with open(file_map_kpix_to_sensor_ecal) as mapfile:
+        for line in mapfile:
+            linesplit = str(line).split( )
+            mapping_kpix_to_sensor.append(int(linesplit[0])-1)
+    with open(file_map_sensor_to_kpix_ecal) as mapfile:
+        for line in mapfile:
+            linesplit = str(line).split( )
+            mapping_sensor_to_kpix.append(int(linesplit[1]))
 
 
-adcmean_kpix = np.zeros((4,1024))
-adcmean_sensor = np.zeros((4,1024))
-
-adcRMS_kpix = np.zeros((4,1024))
-adcRMS_sensor = np.zeros((4,1024))
-
-adchannel_kpix = np.zeros((4,1024))
-
-channel_slope_kpix = np.zeros((4,1024))
-channel_slope_sensor = np.zeros((4,1024))
-
-num_of_entries_kpix = np.zeros((4,1024))
-num_of_entries_sensor = np.zeros((4,1024))
+    entries_kpix = np.zeros(1024)
+    entries_sensor = np.zeros(1024)
 
 
-if ((not args.file_in) or ('root' not in args.file_in)):
-	print "Please specify a root file as a first argument"
-	quit()
-
-	
-root_file = ROOT.TFile(args.file_in)
-bucket = ['b0', 'b1', 'b2', 'b3']
-
-
-key_root = root_file.GetListOfKeys()
-loopdir(key_root)
-
-# Read the file and get the mean histogram value and the corresponding channel number
-total = 0
-maximum_value = 0
-for histogram in hist_list:
-	obj = histogram.ReadObj()
-	num_of_entries_kpix
-	str1_start = obj.GetName().find('_c') + 2
-	str1_end = obj.GetName().find('_c') +6
-	str2_start = obj.GetName().find('_b')+2
-	str2_end = obj.GetName().find('_b')+3
-	channel_nr = int(obj.GetName()[str1_start:str1_end])
-	bucket_nr = int(obj.GetName()[str2_start:str2_end])
-	entries = 0
-	for c in xrange(8192):
-		entries = entries + obj.GetBinContent(c)
-	num_of_entries_kpix[bucket_nr][channel_nr] = entries
-	if (entries > maximum_value):
-		maximum_value = entries
-	total = total + obj.GetEntries()
-print "Registered events = ", total
-
-#print num_of_entries_kpix
-
-#mapping
-with open(file_map_kpix_to_sensor_ecal) as mapfile:
-	for line in mapfile:
-		linesplit = str(line).split( )
-		mapping_kpix_to_sensor.append(int(linesplit[0])-1)
-with open(file_map_sensor_to_kpix_ecal) as mapfile:
-	for line in mapfile:
-		linesplit = str(line).split( )
-		mapping_sensor_to_kpix.append(int(linesplit[1]))
-	
-			
+    if not args.file_in: #if no input file was given
+        print "Please specify a text file as argument using random normal distributions as test"
+        entries_kpix = np.random.normal(10,6,1024)
+    else: #if an input file was given
+        # Read the file and get value and the corresponding channel number in KPiX address
+        print 'test'
+        #quit()
 
 
-for i in channel_kpix:
-	for b in xrange(len(bucket)):
-		adcmean_sensor[b][i] = adcmean_kpix[b][mapping_sensor_to_kpix[i]]
-		adcRMS_sensor[b][i] = adcRMS_kpix[b][mapping_sensor_to_kpix[i]]
-		num_of_entries_sensor[b][i] = num_of_entries_kpix[b][mapping_sensor_to_kpix[i]]
-		if (args.calib == True):
-			channel_slope_sensor[b][i] = channel_slope_kpix[b][mapping_sensor_to_kpix[i]]
-	
 
-#print num_of_entries_kpix[0][499]
-#print num_of_entries_sensor[0][0]
-pixel_count = []
-x = 0
-num_of_x = 0
-## PRODUCING AN EXTERNAL FUNCTION FOR MAPPING and subsequent plotting
-ECAL_map(column, row, num_of_x, ymin, ymax)  ## PRoducing the scatter map for the ECAL sensor, row and column coordinates
-color_entry = [0.0, maximum_value] 
-bucket_nr = 0
-for b in bucket: #entries map
-	map_plot_ecal(channel_kpix, mapping_sensor_to_kpix, row, column, color_entry, num_of_entries_sensor, b, bucket_nr, color_entry, 'entry', 'norm')
-	bucket_nr = bucket_nr + 1
+    for i in range(len(entries_kpix)):
+        entries_sensor[i] = entries_kpix[mapping_sensor_to_kpix[i]]
+    x = 0
+    num_of_x = 0
+    ECAL_map(column, row, num_of_x, ymin, ymax)  ## PRoducing the scatter map for the ECAL sensor, row and column coordinates
+    color_entry = [0.0, args.maximum_value]
+    map_plot_ecal(channel_kpix, mapping_sensor_to_kpix, row, column, color_entry, entries_sensor, color_entry, 'entry', 'norm')
 
 
-	
