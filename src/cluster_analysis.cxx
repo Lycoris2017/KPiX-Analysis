@@ -288,7 +288,7 @@ int main ( int argc, char **argv )
 	double 					MaximumSoN[n_kpix/2][1840] = {0};
 	//int						pedestal_check = 0;
 	
-	int maxAcquisitions = 100000;
+	int maxAcquisitions = 1000;
 
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;
@@ -1092,12 +1092,7 @@ int main ( int argc, char **argv )
     extData = new TTree("extData", "extData");
     extData->Branch("runtimeDiff", &diffTime);
     extData->Branch("TrigNumber", &TriggerNumber);
-    extData->Branch("runtime", &prev_runtime);
-
-    double grY[grCount];
-    double grX[grCount];
-    double grXErr[grCount];
-    double grYErr[grCount];
+    extData->Branch("runtime", &runtime, "runtime/l");
     grCount = 0;
     //cout << "DEBUG 3" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
@@ -1145,13 +1140,7 @@ int main ( int argc, char **argv )
 				if (prev_runtime != 0){
 					diffTime = runtime - prev_runtime;
 					TriggerNumber = grCount;
-
-					grY[grCount] = diffTime;
-					grX[grCount] = grCount;
-					grYErr[grCount] = 0;
-					grXErr[grCount] = 0;
-					grCount++;
-					cout << "Runtime diff to prev " << runtime - prev_runtime << endl;
+				//cout << "Runtime diff to prev " << runtime - prev_runtime << endl;
 					extData->Fill();
 
 				}
@@ -1413,11 +1402,6 @@ int main ( int argc, char **argv )
 		}
 		
 	}
-	runTimeDiff = new TGraphErrors(grCount, grX, grY, grXErr, grYErr);
-	runTimeDiff->Draw("Ap");
-	runTimeDiff->GetXaxis()->SetTitle("TriggerNumber");
-	runTimeDiff->GetYaxis()->SetTitle("t#_{diff}");
-	runTimeDiff->Write("runTimeDiff");
 
 	//// Noise mask generation. ONLY USE WHEN NO MASK IS PUT IN!
 //	noise_file.open("include/testbeam201907_noise_mask.h");

@@ -234,7 +234,7 @@ int main ( int argc, char **argv )
 		}
 	}
 	
-   int maxAcquisitions = 100000;
+   int maxAcquisitions = 1000;
 
 	
 	//////////////////////////////////////////
