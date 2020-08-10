@@ -115,7 +115,8 @@ def map_plot_ecal(channel_kpix, mapping, sensor_row, sensor_column, color, list_
 		map_text(ax, channel_kpix, mapping, row, column)
 		plt.xlim(-1, 20) #set x axis limit
 		plt.ylim(-20, 15) #set y axis limit
-		#plt.axis('off') # do not show x and y axis
+		if args.no_axis:
+			plt.axis('off') # do not show x and y axis
 		if ('log' in color_type):
 			plsctr = plt.scatter(sensor_row, sensor_column, c=list_of_channel_values, s = 70, marker='H', cmap='viridis', norm=mpl.colors.SymLogNorm(linthresh = color_values[1], vmin=color_values[0], vmax=color_values[-1]))
 		elif ('log' not in color_type):
@@ -142,6 +143,7 @@ parser.add_argument('-f', '--file', dest='file_in', help='name of the input file
 parser.add_argument('-o', '--file_out', dest='file_out', help="Output filename")
 parser.add_argument('-m', '--max', dest='maximum_value', default = 20, help="maximum value on the colored z axis")
 parser.add_argument('-z', '--z_axis_title', dest='zaxistitle', default = "Z", help="title of the z axis")
+parser.add_argument('-n', '--no_axis', dest='no_axis', action='store_true', help="called when x and y axis should not be drawn")
 
 args = parser.parse_args()
 
