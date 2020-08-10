@@ -182,7 +182,7 @@ if __name__ == '__main__':
         print("Please specify a text file as argument using random normal distributions as test")
         entries_kpix = np.random.normal(10,6,1024)
     else: #if an input file was given
-        file = pd.read_csv(args.file_in, header=None, nrows=rows)  # some of the files have a weird entry in row 4096 that I do not care about that is why I tell him to only read 2014 rows
+        file = pd.read_csv(args.file_in, header=None, nrows=1024)  # some of the files have a weird entry in row 4096 that I do not care about that is why I tell him to only read 2014 rows
         file_entries = file.to_numpy()
         for i in file_entries:
             entries_kpix[int(i[0])] = i[1] # I assign to the channel specified by the first column the value in the second column. This is done so in case one of your files does not have channel 0 in row 0 it does not screw up.
