@@ -1217,7 +1217,7 @@ for (kpix=0; kpix<24; kpix++)
 									grCalibDAC->Draw("Ap");
 									grCalibDAC->GetXaxis()->SetTitle("Charge [DAC]");
 									grCalibDAC->GetYaxis()->SetTitle("ADC");
-                                                                        grCalibDAC->Fit("pol1","wq"); // FOR SOME REASON HERE IT DOES WORK
+									grCalibDAC->Fit("pol1","wq"); // FOR SOME REASON HERE IT DOES WORK
 									grCalibDAC->GetFunction("pol1")->SetLineWidth(1);
 									
 									

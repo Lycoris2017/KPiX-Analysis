@@ -711,8 +711,8 @@ def graph_plotter():
 			if (args.output_name):
 				canvasName = args.output_name
 			else:
-				canvasName = histogram.GetName()
-			saveFile(c1, filename_list, counter, folder_loc, canvasName)
+				canvasName = graph.GetName()
+			c1.SaveAs(canvasName+'.png')
 			c1.Close()
 			counter= counter+1
 			#for i in xrange(obj.FindFirstBinAbove(0),obj.FindLastBinAbove(0),1):

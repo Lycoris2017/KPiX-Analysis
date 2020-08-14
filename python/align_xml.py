@@ -3,6 +3,7 @@
 import re
 import argparse
 import xml.etree.ElementTree as ET
+import numpy as np
 
 
 parser = argparse.ArgumentParser()
@@ -34,22 +35,61 @@ if __name__ == '__main__':
 	dy = {}
 	dz = {}
 	drot = {}
+	dy[12]=0
+	dy[13]=0
+
+	dz[10]=0
+	dz[11]=0
+	dz[12]=0
+	dz[13]=0
+	dz[14]=0
+	dz[15]=0
+
+	drot[10]=0
+	drot[11]=0
+	drot[12]=0
+	drot[13]=0
+	drot[14]=0
+	drot[15]=0
 	with open(args.millepede) as milleFile:
 		for line in milleFile:
 			if 'Parameter' in line:
 				continue
 			fields = line.split( )
 			layer = int(fields[0])
-			if layer%10 == 1:
-				dx[int(layer/10)] = float(fields[1])
-			elif layer%10 == 2:
-				dy[int(layer/10)] = float(fields[1])
-			elif layer%10 == 3:
-				dz[int(layer/10)] = float(fields[1])
-			elif layer%10 == 6:
-				drot[int(layer/10)] = float(fields[1])
-	dy[12]=0
-	dy[13]=0
+
+			if '-1.0000' not in fields[2] and float(fields[1]) != 0.:
+
+				if layer%10 == 1:
+					if 2*float(fields[4]) >= abs(float(fields[1])):
+						dx[int(layer/10)] = 0
+					else:
+						dx[int(layer/10)] = float(fields[1])
+				elif layer%10 == 2:
+					if 2*float(fields[4]) >= abs(float(fields[1])):
+						dy[int(layer/10)] = 0
+					else:
+						dy[int(layer/10)] = float(fields[1])
+				elif layer%10 == 3:
+					if 2*float(fields[4]) >= abs(float(fields[1])):
+						dz[int(layer/10)] = 0
+					else:
+						dz[int(layer/10)] = float(fields[1])
+				elif layer%10 == 6:
+					if 2*float(fields[4]) >= abs(float(fields[1])):
+						drot[int(layer/10)] = 0
+					else:
+						drot[int(layer/10)] = float(fields[1])*(180./1000 /np.pi) #millepede.res is in mrad and gear file is in degrees
+			else:
+				if layer%10 == 1:
+					dx[int(layer/10)] = 0
+				if layer%10 == 2:
+					dy[int(layer/10)] = 0
+				if layer%10 == 3:
+					dz[int(layer/10)] = 0
+				if layer%10 == 6:
+					drot[int(layer/10)] = 0
+
 	print(dx,dy,dz)
 
 	outFile = args.xml[:-4]+"_new.xml"
@@ -82,10 +122,10 @@ if __name__ == '__main__':
 										level5.set('positionY', str(y))
 									if 'z' in args.align:
 										z = z-dz[layer]
-										level5.set('positionZ', z)
+										level5.set('positionZ', str(z))
 									if 'rot' in args.align:
 										rot = rot-drot[layer]
-										level5.set('rotationXY', rot)
+										level5.set('rotationXY', str(rot))
 	tree.write(outFile)
 	print(outFile)
 #	with open(inFile) as input:
