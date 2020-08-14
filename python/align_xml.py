@@ -35,6 +35,7 @@ if __name__ == '__main__':
 	dy = {}
 	dz = {}
 	drot = {}
+	#setting some parameters to 0 because they do not appear in the millepede.res file
 	dy[12]=0
 	dy[13]=0
 
@@ -51,6 +52,7 @@ if __name__ == '__main__':
 	drot[13]=0
 	drot[14]=0
 	drot[15]=0
+	#opening the millepede file
 	with open(args.millepede) as milleFile:
 		for line in milleFile:
 			if 'Parameter' in line:
@@ -58,13 +60,13 @@ if __name__ == '__main__':
 			fields = line.split( )
 			layer = int(fields[0])
 
-			if '-1.0000' not in fields[2] and float(fields[1]) != 0.:
+			if '-1.0000' not in fields[2] and float(fields[1]) != 0.: #if the change is 0 or the parameter is static then fields[4] is empty so I just move on to the next line since there is nothing to be done
 
 				if layer%10 == 1:
-					if 2*float(fields[4]) >= abs(float(fields[1])):
+					if 2*float(fields[4]) >= abs(float(fields[1])): #if the error on the parameter is similar to the actual value (similar in this case being a factor 2 smaller) then do not perform a change
 						dx[int(layer/10)] = 0
 					else:
-						dx[int(layer/10)] = float(fields[1])
+						dx[int(layer/10)] = float(fields[1]) #otherwise read in the value
 				elif layer%10 == 2:
 					if 2*float(fields[4]) >= abs(float(fields[1])):
 						dy[int(layer/10)] = 0
@@ -80,7 +82,7 @@ if __name__ == '__main__':
 						drot[int(layer/10)] = 0
 					else:
 						drot[int(layer/10)] = float(fields[1])*(180./1000 /np.pi) #millepede.res is in mrad and gear file is in degrees
-			else:
+			else: # since I need every dictionary to have an entry I just set them to 0 if no changes are to be made.
 				if layer%10 == 1:
 					dx[int(layer/10)] = 0
 				if layer%10 == 2:
@@ -97,7 +99,7 @@ if __name__ == '__main__':
 	tree = ET.parse(xmlFile)
 	root = tree.getroot()
 	print(root.tag)
-	for level1 in root:
+	for level1 in root: #start of a massive amount of for loops simply to loop down to the ladder level in the xml
 		if ('detectors' in level1.tag):
 			for level2 in level1:
 				for level3 in level2:
@@ -115,7 +117,7 @@ if __name__ == '__main__':
 									rot = float(level5.get('rotationXY'))
 									if 'x' in args.align:
 										x = x-dx[layer]
-										level5.set('positionX', str(x))
+										level5.set('positionX', str(x)) #setting the new value to the corrected value
 									if 'y' in args.align:
 										print(layer)
 										y = y-dy[layer]
