@@ -180,7 +180,8 @@ for q in xrange(1,len(charge)):
     if (int(corr[q]) >= 1):
         layer[0]=int(plane[q])
         ccharge[0]=float(charge[q])
-        noise[0]=float(charge[q])/float(sig[q])
+        if float(sig[q]) != 0:
+            noise[0]=float(charge[q])/float(sig[q])
         significance[0]=float(sig[q])
         yPos[0]=float(y[q])
         csize[0]=int(size[q])

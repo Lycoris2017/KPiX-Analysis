@@ -63,25 +63,25 @@ if __name__ == '__main__':
 			if '-1.0000' not in fields[2] and float(fields[1]) != 0.: #if the change is 0 or the parameter is static then fields[4] is empty so I just move on to the next line since there is nothing to be done
 
 				if layer%10 == 1:
-					if 2*float(fields[4]) >= abs(float(fields[1])): #if the error on the parameter is similar to the actual value (similar in this case being a factor 2 smaller) then do not perform a change
+					if 1.1*float(fields[4]) >= abs(float(fields[1])): #if the error on the parameter is similar to the actual value (similar in this case being less than a factor 1.1 smaller) then do not perform a change
 						dx[int(layer/10)] = 0
 					else:
 						dx[int(layer/10)] = float(fields[1]) #otherwise read in the value
 				elif layer%10 == 2:
-					if 2*float(fields[4]) >= abs(float(fields[1])):
+					if 1.1*float(fields[4]) >= abs(float(fields[1])):
 						dy[int(layer/10)] = 0
 					else:
 						dy[int(layer/10)] = float(fields[1])
 				elif layer%10 == 3:
-					if 2*float(fields[4]) >= abs(float(fields[1])):
+					if 1.1*float(fields[4]) >= abs(float(fields[1])):
 						dz[int(layer/10)] = 0
 					else:
 						dz[int(layer/10)] = float(fields[1])
 				elif layer%10 == 6:
-					if 2*float(fields[4]) >= abs(float(fields[1])):
+					if 1.1*float(fields[4]) >= abs(float(fields[1])):
 						drot[int(layer/10)] = 0
 					else:
-						drot[int(layer/10)] = float(fields[1])*(180./1000 /np.pi) #millepede.res is in mrad and gear file is in degrees
+						drot[int(layer/10)] = float(fields[1])*(180. /np.pi) #millepede.res is in rad and gear file is in degrees
 			else: # since I need every dictionary to have an entry I just set them to 0 if no changes are to be made.
 				if layer%10 == 1:
 					dx[int(layer/10)] = 0
@@ -93,8 +93,16 @@ if __name__ == '__main__':
 					drot[int(layer/10)] = 0
 
 	print(dx,dy,dz)
-
-	outFile = args.xml[:-4]+"_new.xml"
+	if (all(value == 0 for value in dx.values()) and all(value == 0 for value in dy.values()) and all(value == 0 for value in dz.values()) and all(value == 0 for value in drot.values())):
+		print("No corrections being applied!")
+		sys.exit(2)
+	ending = args.xml.find("_step")
+	if (ending == -1):
+		outFile = args.xml[:-4]+"_step1.xml"
+	else:
+		number = int(args.xml[ending+5:-4])
+		number = number+1
+		outFile = args.xml[:ending]+"_step"+str(number)+".xml"
 	fout = open(outFile, 'w')
 	tree = ET.parse(xmlFile)
 	root = tree.getroot()
@@ -130,29 +138,4 @@ if __name__ == '__main__':
 										level5.set('rotationXY', str(rot))
 	tree.write(outFile)
 	print(outFile)
-#	with open(inFile) as input:
-#		line = input.readline()
-#		lineNum = 0
-#		while line:
-#			#newline = [x.strip(' ') for x in line]
-#			#print line
-#			#print newline
-#			lineNum += 1
-#			fields =  re.split('=| |\n', line)
-#			newfields = filter(None, fields)
-#			Num=0
-#			fout.write('0 %s 0.0 \r\n' %newfields[0] )
-#			for Num, x in enumerate(newfields):
-#				if (Num%4 == 3 and Num >= 7): #Starting at field 7 every fourth field is the y position
-#					y=yParameterSensor(float(x), int((Num-7)/4))
-##					print y
-##					print (Num-8)/2
-#					#print x
-#					#print Num
-#					layer = sensor2layer(int((Num-7)/4))
-#					charge = float(newfields[Num+1])
-#					#print charge
-#					fout.write("%i 0. %f 0. %f %i %f %i \r\n" % (layer, y, 15, 2, charge, 0))
-#				fout.write(' ')
-#			line = input.readline()
 

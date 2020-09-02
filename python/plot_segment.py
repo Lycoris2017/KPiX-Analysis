@@ -50,6 +50,33 @@ hist_yColl = ROOT.TH1F("y(coll)", "y(coll); y(mm); #Entries ", 1840, -46, 46)
 hist_yColl_v_dy = ROOT.TH2F("yColl_v_dy", "yColl_v_dy; yColl (mm); dy (rad); Nr. of Entries", 1840,-46,46, 201, -0.02, 0.02)
 
 hist_x_v_tracks = ROOT.TH2F("x_v_tracks", "x_v_tracks; x (mm); Nr. of tracks; Nr. of Entries",  1840,-46,46, 9,0.5,9.5)
+
+
+#x0=array('f', [0])
+#y0=array('f', [0])
+#z1=array('f', [0])
+#z2=array('f', [0])
+#dx=array('f', [0])
+#dy=array('f', [0])
+#z1=array('f', [0])
+#z2=array('f', [0])
+#ccharge=array('f', [0])
+#significance=array('f', [0])
+#noise=array('f', [0])
+#csize=array('i', [0])
+#yPos=array('f', [0])
+#onTrack=array('i', [0])
+
+#corrClusterTree = ROOT.TTree("segments", "segments");
+#corrClusterTree.Branch("x0", x0, 'x0/I');
+#corrClusterTree.Branch("y0", ccharge, 'charge/F');
+#corrClusterTree.Branch("significance", significance, 'significance/F');
+#corrClusterTree.Branch("noise", noise, 'noise/F');
+#corrClusterTree.Branch("csize", csize, 'csize/I');
+#corrClusterTree.Branch("yPos", yPos, 'yPos/F');
+#corrClusterTree.Branch("onTrack", onTrack, 'onTrack/I');
+
+
 count = 0
 matchCounter = 0
 tracks = 0

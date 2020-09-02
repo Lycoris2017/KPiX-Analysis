@@ -502,8 +502,8 @@ def hist_plotter():
 
 			##obj.SetLineColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			#obj.SetMarkerColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
-			obj.SetMarkerStyle(myMarker[counter])
-			obj.SetMarkerSize(myMarkerSize[counter])
+			obj.SetMarkerStyle(myMarker[counter%len(myMarker)])
+			obj.SetMarkerSize(myMarkerSize[counter%len(myMarkerSize)])
 			#if (args.fill):
 				#obj.SetFillColor(ROOT.TColor.GetColor(default_colors[args.color][counter]))
 			

@@ -493,7 +493,7 @@ int main ( int argc, char **argv ) {
 	{
 		tmp.str("");
 		tmp << "calib_fluctuate_k" << kpix;
-		calib_fluctuate[kpix] = new TH1F(tmp.str().c_str(), "calib_fluctuate; readCharge [ADC]; #entries", 8192, -0.5, 8191.5);
+		calib_fluctuate[kpix] = new TH1F(tmp.str().c_str(), "calib_fluctuate; readCharge [ADC]; Nr. of Entries", 8192, -0.5, 8191.5);
 		
 		tmp.str("");
 		tmp << "calib_fluctuate_2D_k" << kpix;
@@ -730,15 +730,15 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
                 tmp << "pedestals_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				pedestals_ADC[kpix][bucket] = new TH1F(tmp.str().c_str(), "pedestals distribution; Charge [ADC]; #entries", 9000, 0, 9000);
+                pedestals_ADC[kpix][bucket] = new TH1F(tmp.str().c_str(), "pedestals distribution; Charge [ADC]; Nr. of Entries", 9000, 0, 9000);
 				
 				tmp.str("");
                 tmp << "pedestals_fc_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				pedestals_fc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals distribution; Charge [fC]; #entries", 1000, -100, 100);
+                pedestals_fc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals distribution; Charge [fC]; Nr. of Entries", 1000, -100, 100);
 				
 				tmp.str("");
                 tmp << "pedestals_fc_0_127_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				pedestals_fc_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals distribution channels 0 to 127; Charge [fC]; #entries", 1000, -100, 100);
+                pedestals_fc_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Pedestals distribution channels 0 to 127; Charge [fC]; Nr. of Entries", 1000, -100, 100);
 				
 				tmp.str("");
                 tmp << "pedestalsRMS_fc_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
@@ -762,7 +762,7 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
                 tmp << "pearson_correlation_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				pearson_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_correlation; coefficient; #entries", 300, -1.5, 1.5);
+                pearson_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_correlation; coefficient; Nr. of Entries", 300, -1.5, 1.5);
 				tmp.str("");
                 tmp << "pearson_vs_channel_k" << setw(2) << setfill('0') << kpix <<  "_b" << bucket;
 				pearson_vs_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_vs_channel; channel; pearson correlation", 1024, -0.5, 1023.5);
@@ -770,39 +770,39 @@ int main ( int argc, char **argv ) {
 				
 				tmp.str("");
                 tmp << "slope_k" << setw(2) << setfill('0') << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; #entries", 200, -5, 35);
+                slope_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope [ADC/fC]; Nr. of Entries", 200, -5, 35);
 
                                 tmp.str("");
                                 tmp << "slope_err_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-                                slope_err_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope Error [fC]; #entries", 200, -5, 35);
+                                slope_err_hist[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution; Slope Error [fC]; Nr. of Entries", 200, -5, 35);
 				
 				tmp.str("");
                 tmp << "slope_0RMS_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_hist_0RMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution of 0 RMS pedestal channels; Slope [ADC/fC]; #entries", 200, -5, 35);
+                slope_hist_0RMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution of 0 RMS pedestal channels; Slope [ADC/fC]; Nr. of Entries", 200, -5, 35);
 				
 				tmp.str("");
                 tmp << "slope_conn_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_hist_conn[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution connected to sensor; Slope [ADC/fC]; #entries", 200, -5, 35);
+                slope_hist_conn[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution connected to sensor; Slope [ADC/fC]; Nr. of Entries", 200, -5, 35);
 				
 				tmp.str("");
                 tmp << "slope_disc_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_hist_disc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution disconnected from sensor; Slope [ADC/fC]; #entries", 200, -5, 35);
+                slope_hist_disc[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution disconnected from sensor; Slope [ADC/fC]; Nr. of Entries", 200, -5, 35);
 				
 				tmp.str("");
                 tmp << "slope_0_127_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_hist_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution channels 0 to 127; Slope [ADC/fC]; #entries", 200, -5, 35);
+                slope_hist_0_127[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope distribution channels 0 to 127; Slope [ADC/fC]; Nr. of Entries", 200, -5, 35);
 				
 				tmp.str("");
                 tmp << "slope_residual_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-                                slope_residual[kpix][bucket] = new TH1F(tmp.str().c_str(), "Mean_Slope_residual; Mean_Slope_residual[ADC]; #entries", 500, -0.5, 99.5);
+                                slope_residual[kpix][bucket] = new TH1F(tmp.str().c_str(), "Mean_Slope_residual; Mean_Slope_residual[ADC]; Nr. of Entries", 500, -0.5, 99.5);
 				
 				tmp.str("");
                 tmp << "slopeRMS_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slopeRMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope RMS; Slope [ADC/fC]; #entries", 1000, 0, 20);
+                slopeRMS[kpix][bucket] = new TH1F(tmp.str().c_str(), "Slope RMS; Slope [ADC/fC]; Nr. of Entries", 1000, 0, 20);
 
 				tmp.str("");
                 tmp << "slope_fit_at_zero_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-				slope_fit_at_zero[kpix][bucket] = new TH1F(tmp.str().c_str(), "slope_fit_at_zero; Offset (ADC); #entries", 8192, 0, 8191);
+                slope_fit_at_zero[kpix][bucket] = new TH1F(tmp.str().c_str(), "slope_fit_at_zero; Offset (ADC); Nr. of Entries", 8192, 0, 8191);
 				
 				tmp.str("");
                 tmp << "slope_vs_channel_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
@@ -822,22 +822,22 @@ int main ( int argc, char **argv ) {
 
                                 tmp.str("");
                                 tmp << "MissinCalDac_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-                                MissingCalDac[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; CalDac;#Entries", 256, -0.5, 255.5);
+                                MissingCalDac[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; CalDac;Nr. of Entries", 256, -0.5, 255.5);
 
                                 tmp.str("");
                                 tmp << "MissinCalDacChannel_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
-                                MissingCalDacChannel[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; Channel;#Entries", 1024, -0.5, 1023.5);
+                                MissingCalDacChannel[kpix][bucket] = new TH1F(tmp.str().c_str(), "MissingCalDac; Channel;Nr. of Entries", 1024, -0.5, 1023.5);
 				
 				tmp.str("");
                 tmp << "slope_mapped_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
 				tmp_units.str("");
-				tmp_units << "slope_mapped; kpix_x; kpix_y; slope";
+				tmp_units << "slope_mapped; kpix_x; kpix_y; slope(ADC/fC)";
 				slope_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
 				
 				tmp.str("");
                 tmp << "RMSADC_mapped_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
 				tmp_units.str("");
-				tmp_units << "RMSADC_mapped; kpix_x; kpix_y; RMSfC";
+				tmp_units << "RMSADC_mapped; kpix_x; kpix_y; RMSfC (ADC)";
 				RMSADC_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 32, -0.5, 31.5, 32, -0.5, 31.5);
 
 				tmp.str("");
@@ -1199,7 +1199,7 @@ for (kpix=0; kpix<24; kpix++)
 	    
 									grCalib = new TGraphErrors(grCount,grX,grY,grXErr,grYErr);
 									grCalib->Draw("Ap");
-									grCalib->GetXaxis()->SetTitle("Charge [fC]");
+									grCalib->GetXaxis()->SetTitle("Charge (fC)");
 									grCalib->GetYaxis()->SetTitle("ADC");
                                                                         grCalib->Fit("pol1","wq");   // FIT DOES NOT WORK WHEN OPTION E IS GIVEN
 									
@@ -1224,7 +1224,7 @@ for (kpix=0; kpix<24; kpix++)
 									// Create name and write
 									tmp.str("");
 									tmp << "calib_" << serial << "c" << channel;
-									tmp << "_k" << dec << kpix;
+									tmp << "_k" <<  setw(2) << setfill('0') << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
 									
@@ -1233,7 +1233,7 @@ for (kpix=0; kpix<24; kpix++)
 									
 									tmp.str("");
 									tmp << "calib_DAC" << serial << "_c" <<  channel;
-									tmp << "_k" << dec << kpix;
+									tmp << "_k" << setw(2) << setfill('0') << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
 									
@@ -1256,7 +1256,7 @@ for (kpix=0; kpix<24; kpix++)
 									// Create name and write
 									tmp.str("");
 									tmp << "resid_" << serial << "c" <<  channel;
-									tmp << "_k" << dec << kpix;
+									tmp << "_k" << setw(2) << setfill('0') << kpix;
 									tmp << "_b" << dec << bucket;
 									tmp << "_r" << dec << range;
 									

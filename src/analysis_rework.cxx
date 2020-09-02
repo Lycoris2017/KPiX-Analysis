@@ -192,13 +192,17 @@ int main ( int argc, char **argv )
 
 	//TTree*					cluster_tree;
     TH1F                    *ext_trigs;
+    TH1F                    *ext_trigs_cycle;
     TH1F                    *trig_diff_hist;
     TH1F *entries_v_channel[n_kpix][n_buckets];
+    TH2F *entries_mapped[n_kpix][n_buckets];
     TH1F *entries_v_strip[n_kpix/2][n_buckets];
+    TH1F *entries_v_position[n_kpix/2][n_buckets];
     TH1F *entries_v_time[n_kpix][n_buckets];
 
     TH1F *entries_v_channel_timed[n_kpix][n_buckets];
     TH1F *entries_v_strip_timed[n_kpix/2][n_buckets];
+    TH1F *entries_v_position_timed[n_kpix/2][n_buckets];
     TH1F *entries_v_time_timed[n_kpix][n_buckets];
 	
 	// Stringstream initialization for histogram naming
@@ -246,7 +250,7 @@ int main ( int argc, char **argv )
 	kpix2strip_left = kpix_left();
 	kpix2strip_right = kpix_right();
 	
-	pixel					pixel_kpix[n_channels];
+	pixel	pixel_kpix[n_channels];
 	pixel_mapping(pixel_kpix);
 	
 	unordered_map<uint, uint> sensor2layer;
@@ -407,6 +411,11 @@ int main ( int argc, char **argv )
     ext_trigs = new TH1F(tmp.str().c_str(), "ext trigger time; T (BCC); Nr. of Entries", 8192, 0, 8192);
 
     tmp.str("");
+    tmp << "external_triggers_per_cycle";
+    ext_trigs_cycle = new TH1F(tmp.str().c_str(), "ext triggers; Nr. of Trigger per cycle; Nr. of Entries", 50, -0.5, 49.5);
+
+
+    tmp.str("");
     tmp << "trig_diff";
     trig_diff_hist = new TH1F(tmp.str().c_str(), "trig_diff; #Delta T (BCC); Nr. of Entries", 2001, -1000, 1000);
 
@@ -425,13 +434,22 @@ int main ( int argc, char **argv )
                 tmp.str("");
                 tmp << "entries_v_strip_s" << sensor << "_b" << bucket;
                 cout << kpix << " " << bucket << endl;
-                entries_v_strip[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_strip; channel; Nr. of Entries", 1840, 0, 1839);
+                entries_v_strip[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_strip; Strip; Nr. of Entries", 1840, 0, 1839);
 
                 tmp.str("");
-                tmp << "entries_v_strip_timed_k" << kpix << "_b" << bucket;
+                tmp << "entries_v_position_s" << sensor << "_b" << bucket;
+                cout << kpix << " " << bucket << endl;
+                entries_v_position[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position; Position (um); Nr. of Entries", 1840, -46000, 46000);
+
+                tmp.str("");
+                tmp << "entries_v_strip_timed_s" << sensor << "_b" << bucket;
                 cout << kpix << " " << bucket << endl;
                 entries_v_strip_timed[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_strip_timed; channel; Nr. of Entries", 1840, 0, 1839);
 
+                tmp.str("");
+                tmp << "entries_v_position_timed_s" << sensor << "_b" << bucket;
+                cout << kpix << " " << bucket << endl;
+                entries_v_position_timed[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position_timed; Position (um); Nr. of Entries", 1840, -46000, 46000);
             }
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
@@ -463,6 +481,10 @@ int main ( int argc, char **argv )
                         tmp << "entries_v_time_timed_k" << kpix << "_b" << bucket;
                         cout << kpix << " " << bucket << endl;
                         entries_v_time_timed[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_time_timed; time (BCC); Nr. of Entries", 8192, 0, 8191);
+
+                        tmp.str("");
+                        tmp << "entries_mapped_k" << kpix << "_b" << bucket;
+                        entries_mapped[kpix][bucket] = new TH2F(tmp.str().c_str(), "entries_mapped; kpix_x; kpix_y; Nr. of Entries", 32, -0.5, 31.5, 32, -0.5, 31.5);
 
                     }
 
@@ -539,6 +561,8 @@ int main ( int argc, char **argv )
 			subCount = sample->getSubCount();
             index = keybit(kpix, channel, bucket);
             //cout <<"DEBUG3.1 " << kpix << " " <<  channel << endl;
+            int kpix_x = channel/32;
+            int kpix_y = channel%32;
 			//channel to strip assignment.
 			int strip = 9999;
 			if (kpix%2 == 0) strip = kpix2strip_left.at(channel);// if left kpix
@@ -580,13 +604,23 @@ int main ( int argc, char **argv )
 
                 double trig_diff = smallest_time_diff(time_ext, tstamp);
                 trig_diff_hist->Fill(trig_diff);
+//                if (fabs(trig_diff) > 10){
+//                    cout << "trig diff"   << trig_diff << endl;
+//                    cout << "tstamp " << tstamp << endl;
+//                    for (auto const& i : time_ext){
+//                        cout << i << endl;
+//                    }
+//                }
                         entries_v_channel[kpix][bucket]->Fill(channel,weight);
+                        entries_mapped[kpix][bucket]->Fill(kpix_x, kpix_y);
                         entries_v_strip[sensor][bucket]->Fill(strip,weight);
                         entries_v_time[kpix][bucket]->Fill(tstamp);
-                        if (trig_diff > 1 && trig_diff < 4){
+                        entries_v_position[sensor][bucket]->Fill(yParameterSensor(strip, sensor));
+                        if (trig_diff >= 2 && trig_diff < 4){
                             entries_v_channel_timed[kpix][bucket]->Fill(channel,weight);
                             entries_v_strip_timed[sensor][bucket]->Fill(strip,weight);
                             entries_v_time_timed[kpix][bucket]->Fill(tstamp);
+                            entries_v_position_timed[sensor][bucket]->Fill(yParameterSensor(strip, sensor));
                         }
 
 						
@@ -594,6 +628,7 @@ int main ( int argc, char **argv )
 //				}
 			}
         }
+        ext_trigs_cycle->Fill(trig_counter);
 
 	////   Show progress
 		filePos  = dataRead.pos();

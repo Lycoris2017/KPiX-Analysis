@@ -288,7 +288,7 @@ int main ( int argc, char **argv )
 	double 					MaximumSoN[n_kpix/2][1840] = {0};
 	//int						pedestal_check = 0;
 	
-	int maxAcquisitions = 1000;
+	int maxAcquisitions = 100000;
 
 	unordered_map<uint, uint> kpix2strip_left;
 	unordered_map<uint, uint> kpix2strip_right;

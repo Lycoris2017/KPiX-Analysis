@@ -97,8 +97,8 @@ double smallest_time_diff( vector<double> ext_list, int int_value)
     double trigger_diff = 8200.0;
     for (uint k = 0; k<ext_list.size(); ++k)
     {
-        double delta_t = int_value-ext_list[k];
-        if (fabs(trigger_diff) > fabs(delta_t) && delta_t > 0)
+        double delta_t = int_value-ext_list.at(k);
+        if (fabs(trigger_diff) > fabs(delta_t))// && delta_t > 0)
         {
             trigger_diff = delta_t;
         }

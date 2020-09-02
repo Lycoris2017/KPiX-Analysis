@@ -58,18 +58,21 @@ def plot_tree(keys, conditions, variables, bin_range, name):
 			myHistograms.append(myh)
 	return myHistograms
 
-def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc='right', order=None):
+def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc, order=None):
 	c1 = ROOT.TCanvas( 'Canvas', 'Canvas', 2000, 1500 )
 	c1.cd()
-	statBoxW = 0.2
+	statBoxW = 0.1
 	statBoxH = 0.05*len(hists)
+
+	if ("L" in drawOption):
+		lines = True
+	else:
+		lines = False
 	drawOption = drawOption+"PLC PMC" #to use palette colors
 	if legendName is not None:
 		print "Legendnames ", legendName
-		if ('right' in legendLoc):
-			legend = ROOT.TLegend(0.7, 0.93-statBoxH, 0.7+statBoxW, 0.93)
-		elif ('left' in legendLoc):
-			legend = ROOT.TLegend(0.2, 0.93-statBoxH, 0.2+statBoxW, 0.93)
+		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
+		legend.SetFillStyle(0)
 	new_legendlist = []
 	new_hist_list = []
 
@@ -83,23 +86,89 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc=
 		new_legendlist = legendName
 
 	for counter, h in enumerate(new_hist_list):
-		print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
-		print 'Mean value = ', '%.2E' % Decimal(h.GetMean())
-		print 'RMS = ', '%.2E' % Decimal(h.GetRMS())
+		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
+		print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
+		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())
+		if("Graph" not in h.GetName()):
+			print 'Integral =', '%.3E' % Decimal(h.Integral())
+			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
 		x_axis = h.GetXaxis()
 		y_axis = h.GetYaxis()
 		if new_legendlist is not None:
 			legEntry = legend.AddEntry(h, new_legendlist[counter])
-		h.SetMarkerStyle(MarkerStyle[0][counter])
-		h.SetMarkerSize(MarkerStyle[1][counter])
+		h.SetMarkerStyle(MarkerStyle[0][counter%6])
+		h.SetMarkerSize(MarkerStyle[1][counter%6])
 		h.Draw(drawOption)
+		if (lines):
+			h.Draw("L same")
 		if legendName is not None:
 			legend.Draw()
 	if ylog:
 		c1.SetLogy()
 	c1.Modified()
 	c1.Update()
-	saveFile(c1, [""], 0, '/scratch/plots/testbeam202003/', str(name))
+	saveFile(c1, [""], 0, '/scratch/plots/thesis/', str(name))
+
+
+def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc='right', order=None):
+	c1 = ROOT.TCanvas( 'Canvas', 'Canvas', 2000, 1500 )
+	c1.cd()
+	statBoxW = 0.1
+	statBoxH = 0.05*len(hists)
+	if ("L" in drawOption):
+		lines = True
+	else:
+		lines = False
+	if len(hists) > 1:
+		drawOption = drawOption+"PLC PMC" #to use palette colors
+	if legendName is not None:
+		print "Legendnames ", legendName
+		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
+		legend.SetFillStyle(0)
+	new_legendlist = []
+	new_hist_list = []
+	multi_graph = ROOT.TMultiGraph()
+	legendname = []
+	if order:
+		for i in order:
+			new_hist_list.append(hists[i])
+			new_legendlist.append(legendName[i])
+	else:
+		new_hist_list = hists
+		new_legendlist = legendName
+	cols = ROOT.TColor.GetPalette()
+	for counter, h in enumerate(new_hist_list):
+		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
+		multi_graph.GetYaxis().SetTitle(h.GetYaxis().GetTitle())
+		multi_graph.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
+		print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
+		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())
+		if("Graph" not in h.GetName()):
+			print 'Integral =', '%.3E' % Decimal(h.Integral())
+			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
+		x_axis = h.GetXaxis()
+		y_axis = h.GetYaxis()
+		if new_legendlist is not None:
+			legEntry = legend.AddEntry(h, new_legendlist[counter])
+		h.SetMarkerStyle(MarkerStyle[0][counter%6])
+		h.SetMarkerSize(MarkerStyle[1][counter%6])
+		multi_graph.Add(h,"PA")
+		h.GetFunction('pol1').SetLineColor(cols[counter])
+	if ylog:
+		c1.SetLogy()
+	multi_graph.Draw(drawOption)
+	c1.Modified()
+	c1.Update()
+	for gr in multi_graph:
+		markerColor = gr.GetMarkerColor()
+		gr.GetFunction('pol1').SetLineColor(markerColor)
+		gr.GetFunction('pol1').SetLineStyle(9)
+	if legendName is not None:
+		legend.Draw()
+	c1.Modified()
+	c1.Update()
+	saveFile(c1, [""], 0, '/scratch/plots/thesis/', str(name))
+
 
 def saveFile(c1, filename_list, counter, folder_loc, outName):
 	if (len(filename_list) == 1):
@@ -113,7 +182,7 @@ def saveFile(c1, filename_list, counter, folder_loc, outName):
 	c1.SaveAs(saveName+'.png')
 	c1.SaveAs(saveName+'.C')
 
-def myROOTStyle(nobox=True):
+def myROOTStyle(markerScale, nobox=True):
 	mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
@@ -143,6 +212,7 @@ def myROOTStyle(nobox=True):
 	mystyle.SetCanvasBorderMode(0)
 	mystyle.SetPadBorderMode(0)
 	mystyle.SetLegendBorderSize(0)
+	mystyle.SetLegendFillColor(0)
 	##set legend text size etc.
 	mystyle.SetLegendTextSize(0.04)
 	#
@@ -162,10 +232,12 @@ def myROOTStyle(nobox=True):
 	mystyle.SetOptTitle(0)
 	#
 	##set the margins
-	mystyle.SetPadBottomMargin(0.16)
+	mystyle.SetPadBottomMargin(0.11)
+	#mystyle.SetPadBottomMargin(0.06)
 	mystyle.SetPadTopMargin(0.05)
 	mystyle.SetPadRightMargin(0.15)
-	mystyle.SetPadLeftMargin(0.16)
+	mystyle.SetPadLeftMargin(0.13)
+	#mystyle.SetPadLeftMargin(0.06)
 	#
 	##set axis label and title text sizes
 	mystyle.SetLabelFont(62,"xyz")
@@ -227,14 +299,12 @@ def myROOTStyle(nobox=True):
 	#["#08306b",	"#08519c", 	"#2171b5", 	"#4292c6", "#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
 	#["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
 	#["#0d0887", "#5302a3","#8b0aa5","#b83289","#db5c68","#f48849","#febd2a","#f0f921"]]
-
 	if (nobox):
-		print 'Not printing stats box!'
+		print "Not printing stats box"
 		mystyle.SetOptStat(0)
 		mystyle.SetOptFit(0)
-
-	myMarker = [20, 21, 22, 23, 33, 29, 20, 21, 22, 23, 33, 30] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
-	myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2, 2.0, 2.0, 2.5, 2.5, 3.2, 3.2]
-	myMarkerSize = [x*1.2 for x in myMarkerSize] #Scaling up the sizes
+	myMarker = [20, 21, 22, 23, 33, 29] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
+	myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2]
+	myMarkerSize = [x*markerScale for x in myMarkerSize] #Scaling up the sizes
 
 	return mystyle, myMarker, myMarkerSize
