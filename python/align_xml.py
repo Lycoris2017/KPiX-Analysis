@@ -4,7 +4,7 @@ import re
 import argparse
 import xml.etree.ElementTree as ET
 import numpy as np
-
+import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -63,22 +63,22 @@ if __name__ == '__main__':
 			if '-1.0000' not in fields[2] and float(fields[1]) != 0.: #if the change is 0 or the parameter is static then fields[4] is empty so I just move on to the next line since there is nothing to be done
 
 				if layer%10 == 1:
-					if 1.1*float(fields[4]) >= abs(float(fields[1])): #if the error on the parameter is similar to the actual value (similar in this case being less than a factor 1.1 smaller) then do not perform a change
+					if 1.05*float(fields[4]) >= abs(float(fields[1])): #if the error on the parameter is similar to the actual value (similar in this case being less than a factor 1.1 smaller) then do not perform a change
 						dx[int(layer/10)] = 0
 					else:
 						dx[int(layer/10)] = float(fields[1]) #otherwise read in the value
 				elif layer%10 == 2:
-					if 1.1*float(fields[4]) >= abs(float(fields[1])):
+					if 1.05*float(fields[4]) >= abs(float(fields[1])):
 						dy[int(layer/10)] = 0
 					else:
 						dy[int(layer/10)] = float(fields[1])
 				elif layer%10 == 3:
-					if 1.1*float(fields[4]) >= abs(float(fields[1])):
+					if 1.05*float(fields[4]) >= abs(float(fields[1])):
 						dz[int(layer/10)] = 0
 					else:
 						dz[int(layer/10)] = float(fields[1])
 				elif layer%10 == 6:
-					if 1.1*float(fields[4]) >= abs(float(fields[1])):
+					if 1.05*float(fields[4]) >= abs(float(fields[1])):
 						drot[int(layer/10)] = 0
 					else:
 						drot[int(layer/10)] = float(fields[1])*(180. /np.pi) #millepede.res is in rad and gear file is in degrees

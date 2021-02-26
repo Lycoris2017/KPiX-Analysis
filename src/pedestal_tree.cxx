@@ -173,20 +173,20 @@ int main ( int argc, char **argv )
 	uint                   currPct;
 	bool                   bucketFound[n_kpix][n_channels][n_buckets] = {false};  // variable that gives true if bucket has an entry (32 possible number of KPiX, n_channels channels per KPiX, 4 buckets per channel)
 	bool                   channelFound[n_kpix][n_channels] = {false}; // variable that gives true if a channel has entries
-	bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
+    bool                   kpixFound[n_kpix] = {false}; // variable that gives true if a kpix at the index n (0<=n<32) was found
 	uint                   range;
 	uint                   value;
 	uint                   kpix;
 	uint                   channel;
 	uint                   bucket;
-	double                  tstamp;
+    double                  tstamp;
     uint 					subCount;
     double 					bunchClk;
 	string                 serial;
 	KpixSample::SampleType type;
-	TTree*					pedestal;
+    TTree*					pedestal;
 	
-	TH1F*					MAD0_v_channel;
+    TH1F*					MAD0_v_channel;
     TH1F*					pedestalADC;
     TH1F*					ext_trigs;
 	// Stringstream initialization for histogram naming
@@ -265,7 +265,7 @@ int main ( int argc, char **argv )
 	
 	
 	// Open root file
-	double pedestal_median, pedestal_MAD;
+	double pedestal_median, pedestal_MAD, pedestal_mean;
     int kpix_num, channel_num, bucket_num;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
@@ -276,9 +276,9 @@ int main ( int argc, char **argv )
 	pedestal->Branch("channel_num", &channel_num, "channel_num/I");
 	pedestal->Branch("bucket_num", &bucket_num, "bucket_num/I");
 	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
-		
+	pedestal->Branch("pedestal_mean", &pedestal_mean, "pedestal_mean/D");	
 	
-	MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; #Entries", 1024, -0.5, 1023.5);
+    MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; #Entries", 1024, -0.5, 1023.5);
 
     pedestalADC = new TH1F("pedestalADC", "pedestalADC; ADC; #Entries", 8191, -0.5, 8190.5);
 
@@ -287,7 +287,7 @@ int main ( int argc, char **argv )
 
 
 	
-	//double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
+    //double weight = 1.0/acqCount; //normalization weight  #entries*weight = #entries/acq.cycle
 	double weight = 1.0;//acqProcessed;
 	
 	//////////////////////////////////////////
@@ -311,7 +311,7 @@ int main ( int argc, char **argv )
 	
 	cycle_num = 0;
 	ofstream myfile;
-	vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
+    vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
 
     while ( dataRead.next(&event) && event.eventNumber() <= maxAcquisitions)
 	{
@@ -364,10 +364,10 @@ int main ( int argc, char **argv )
 							"KPIX " << kpix << " CHANNEL " << channel << " BUCKET " << bucket << endl;
 							exit(-1); // probably best to bail out
 						}
-					}
+                    }
 					if (bucket == 0 && kpix == 0 && channel == 666)
 						pedestalADC->Fill(value);
-					pedestal_results[kpix][channel][bucket]->push_back(charge);
+                    pedestal_results[kpix][channel][bucket]->push_back(charge);
 					//cout << pedestal_results[kpix][channel][bucket]->at(0) << endl;
 				}
 				//if ( type == 1 )
@@ -408,7 +408,7 @@ int main ( int argc, char **argv )
 							//cout << "Pedestal for k" << kpix << " c" << channel << " b" << bucket << endl ;
 							pedestal_median = median(pedestal_results[kpix][channel][bucket]);
 							//cout << "DEBUG 1.01 " << endl;
-							
+							pedestal_mean = mean(pedestal_results[kpix][channel][bucket]);
 							//cout << pedestal_median << endl;
 							pedestal_MAD = MAD(pedestal_results[kpix][channel][bucket]);
 							channel_num = channel;
@@ -417,7 +417,7 @@ int main ( int argc, char **argv )
 							//cout << "DEBUG 1.1 " << endl;
 							//cout << "Median is " << pedestal_median << endl;
 							pedestal->Fill();
-							//cout << "DEBUG 2 " << endl;
+                            //cout << "DEBUG 2 " << endl;
 							if (pedestal_MAD == 0)
 							{
 								MAD0_v_channel->Fill(channel);
@@ -442,7 +442,7 @@ int main ( int argc, char **argv )
 						if (bucketFound[kpix][channel][bucket] == true)
 						{
 							delete pedestal_results[kpix][channel][bucket];
-						}
+                        }
 					}
 				}
 			}

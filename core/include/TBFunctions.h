@@ -69,4 +69,25 @@ double MAD(std::vector<T>* v){
 	}
 }
 
+template <typename T>
+double mean(std::vector<T>* vec){
+  if (vec  == nullptr ){
+      //cout << "Found a nullpointer" << endl;
+    return 0;
+  }
+  else{
+    if (vec->empty())  return 0;
+    else{
+      double sum = 0;
+      int length = 0;
+      for (auto const  value:(*vec)){
+	  sum += value;
+	  length += 1;
+      }
+      return double(sum/length);
+    }
+  }
+}
+
+
 #endif

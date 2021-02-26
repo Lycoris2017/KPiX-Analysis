@@ -193,12 +193,14 @@ int main ( int argc, char **argv )
 	//TTree*					cluster_tree;
     TH1F                    *ext_trigs;
     TH1F                    *ext_trigs_cycle;
-    TH1F                    *trig_diff_hist;
+    TH1D                    *trig_diff_hist;
+    TH1F                    *trig_diff_mod8_hist;
     TH1F *entries_v_channel[n_kpix][n_buckets];
     TH2F *entries_mapped[n_kpix][n_buckets];
     TH1F *entries_v_strip[n_kpix/2][n_buckets];
     TH1F *entries_v_position[n_kpix/2][n_buckets];
     TH1F *entries_v_time[n_kpix][n_buckets];
+    TH1F *entries_v_time_mod8[n_kpix][n_buckets];
 
     TH1F *entries_v_channel_timed[n_kpix][n_buckets];
     TH1F *entries_v_strip_timed[n_kpix/2][n_buckets];
@@ -416,8 +418,12 @@ int main ( int argc, char **argv )
 
 
     tmp.str("");
-    tmp << "trig_diff";
-    trig_diff_hist = new TH1F(tmp.str().c_str(), "trig_diff; #Delta T (BCC); Nr. of Entries", 2001, -1000, 1000);
+    tmp << "trig_diff_all";
+    trig_diff_hist = new TH1D(tmp.str().c_str(), "trig_diff; #Delta T (BCC); Nr. of Entries", 2001, -1000, 1000);
+
+    tmp.str("");
+    tmp << "trig_diff_mod8";
+    trig_diff_mod8_hist = new TH1F(tmp.str().c_str(), "trig_diff; #Delta T (BCC); Nr. of Entries", 2001, -1000, 1000);
 
     for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
     {
@@ -439,7 +445,7 @@ int main ( int argc, char **argv )
                 tmp.str("");
                 tmp << "entries_v_position_s" << sensor << "_b" << bucket;
                 cout << kpix << " " << bucket << endl;
-                entries_v_position[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position; Position (um); Nr. of Entries", 1840, -46000, 46000);
+                entries_v_position[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position; Position (mm); No. of Entries", 1840, -46, 46);
 
                 tmp.str("");
                 tmp << "entries_v_strip_timed_s" << sensor << "_b" << bucket;
@@ -449,7 +455,7 @@ int main ( int argc, char **argv )
                 tmp.str("");
                 tmp << "entries_v_position_timed_s" << sensor << "_b" << bucket;
                 cout << kpix << " " << bucket << endl;
-                entries_v_position_timed[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position_timed; Position (um); Nr. of Entries", 1840, -46000, 46000);
+                entries_v_position_timed[sensor][bucket] = new TH1F(tmp.str().c_str(), "entries_v_position_timed; Position (mm); No. of Entries", 1840, -46, 46);
             }
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
@@ -469,6 +475,11 @@ int main ( int argc, char **argv )
                         tmp << "entries_v_time_k" << kpix << "_b" << bucket;
                         cout << kpix << " " << bucket << endl;
                         entries_v_time[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_time; time (BCC); Nr. of Entries", 8192, 0, 8191);
+
+                        tmp.str("");
+                        tmp << "entries_v_time_mod8_k" << kpix << "_b" << bucket;
+                        cout << kpix << " " << bucket << endl;
+                        entries_v_time_mod8[kpix][bucket] = new TH1F(tmp.str().c_str(), "entries_v_time_mod8; time (BCC); Nr. of Entries", 8, 0, 8);
 
                         tmp.str("");
                         tmp << "entries_v_channel_timed_k" << kpix << "_b" << bucket;
@@ -604,6 +615,8 @@ int main ( int argc, char **argv )
 
                 double trig_diff = smallest_time_diff(time_ext, tstamp);
                 trig_diff_hist->Fill(trig_diff);
+
+                trig_diff_mod8_hist->Fill(fmod(trig_diff,8));
 //                if (fabs(trig_diff) > 10){
 //                    cout << "trig diff"   << trig_diff << endl;
 //                    cout << "tstamp " << tstamp << endl;
@@ -615,12 +628,13 @@ int main ( int argc, char **argv )
                         entries_mapped[kpix][bucket]->Fill(kpix_x, kpix_y);
                         entries_v_strip[sensor][bucket]->Fill(strip,weight);
                         entries_v_time[kpix][bucket]->Fill(tstamp);
-                        entries_v_position[sensor][bucket]->Fill(yParameterSensor(strip, sensor));
+                        entries_v_time_mod8[kpix][bucket]->Fill(fmod(tstamp,8));
+                        entries_v_position[sensor][bucket]->Fill(yParameterSensor(strip, sensor)/1000, weight);
                         if (trig_diff >= 2 && trig_diff < 4){
                             entries_v_channel_timed[kpix][bucket]->Fill(channel,weight);
                             entries_v_strip_timed[sensor][bucket]->Fill(strip,weight);
                             entries_v_time_timed[kpix][bucket]->Fill(tstamp);
-                            entries_v_position_timed[sensor][bucket]->Fill(yParameterSensor(strip, sensor));
+                            entries_v_position_timed[sensor][bucket]->Fill(yParameterSensor(strip, sensor)/1000, weight);
                         }
 
 						

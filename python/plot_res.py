@@ -28,26 +28,26 @@ if len(sys.argv) < 2:
 	print parser.print_help()
 	sys.exit(1)
 print ''
-outfile = args.file_in[:-4]+'.root'
+outfile = args.file_in[:-4]+'_redone.root'
 outHistFile = ROOT.TFile.Open(outfile, "RECREATE")
 outHistFile.cd()
 residual_hist = []
 
-residual_hist.append(ROOT.TH1F("residual_l10", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l11", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l12", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l13", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l14", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist.append(ROOT.TH1F("residual_l15", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist.append(ROOT.TH1F("residual_l10", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist.append(ROOT.TH1F("residual_l11", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist.append(ROOT.TH1F("residual_l12", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist.append(ROOT.TH1F("residual_l13", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist.append(ROOT.TH1F("residual_l14", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist.append(ROOT.TH1F("residual_l15", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
 
 residual_hist2 = []
 
-residual_hist2.append(ROOT.TH1F("residual2_l10", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l11", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l12", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l13", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l14", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
-residual_hist2.append(ROOT.TH1F("residual2_l15", "residual; distance (mm); Entries ", 101, -50e-3, 50e-3))
+residual_hist2.append(ROOT.TH1F("residual2_l10", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist2.append(ROOT.TH1F("residual2_l11", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist2.append(ROOT.TH1F("residual2_l12", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist2.append(ROOT.TH1F("residual2_l13", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist2.append(ROOT.TH1F("residual2_l14", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
+residual_hist2.append(ROOT.TH1F("residual2_l15", "residual; Distance (#mum); No. of Entries ", 101, -50, 50))
 
 
 
@@ -75,8 +75,8 @@ with open(args.file_in) as inFile:
 		#print line
 		splitline = line.split( )
 		layer = int(splitline[1])
-		res1 = float(splitline[5])
-		res2 = float(splitline[20])
+		res1 = float(splitline[5])*1000
+		res2 = float(splitline[20])*1000
 		csize = int(splitline[4])
 		charge = float(splitline[19])
 		posMod50 = float(splitline[21])
@@ -129,9 +129,9 @@ with open(args.file_in) as inFile:
 #c1 = ROOT.TCanvas( 'test', 'Test', 1600, 900 )
 #c1.cd()
 for i in residual_hist:
-	i.Fit("gaus")
+	fitGaus =  i.Fit("gaus", "RE", "", -10, 10)
 for i in residual_hist2:
-	i.Fit("gaus")
+	fitGaus =  i.Fit("gaus", "RE", "", -12, 12)
 outHistFile.Write()
 #charge_hist.Draw("hist e")
 #c1.Modified()

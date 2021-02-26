@@ -78,23 +78,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
-	'-c', '--conditions',
-	dest='conditions',
-	default='',
-	help='specify the root ttree conditions such as only ploy with y > 0 etc.'
-)
-
-parser.add_argument(
-	'-v', '--variables',
-	dest='variables',
-	nargs='*',
-	help='specify which ttree variable should be plotted'
-)
-
-parser.add_argument(
 	'-o', '--output',
 	dest='output_name',
 	help='specifies the name and type of the output file (e.g. test.png, comparison.root etc...'
+)
+parser.add_argument(
+	'-a', '--addendum',
+	dest='addendum',
+	help='add following part to automatically generated outputname'
 )
 parser.add_argument(
 	'--xrange',
@@ -113,7 +104,6 @@ parser.add_argument(
 parser.add_argument(
 	'--zrange',
 	dest='zaxisrange',
-	default=[9999],
 	nargs='*',
 	type=float,
 	help='set a zrange for the plot to used with ymin ymax as the two arguments | type=float'
@@ -126,18 +116,12 @@ parser.add_argument(
 	help='list of names to be used as legend titles instead of the default filename+histogram name'
 )
 parser.add_argument(
-	'--norm',
-	dest='normalized',
-	default=False,
-	action='store_true',
-	help='histogram normalization based on entries'
-)
-parser.add_argument(
-	'--divide',
-	dest='divide',
-	default=False,
-	action='store_true',
-	help='histogram division based on entries relative to the first histogram'
+	'--legendLoc',
+	dest='legendLoc',
+	default=[0.6,0.92],
+	nargs='*',
+	type=float,
+	help='xlocation of the legend)'
 )
 parser.add_argument(
 	'--ylog',
@@ -169,10 +153,9 @@ parser.add_argument(
 	help='choose the name of the y axis title'
 )
 parser.add_argument(
-	'-b', '--binRange',
-	dest='bin_range',
-	nargs='*',
-	help='set the number of bins'
+	'--ztitle',
+	dest='ztitle',
+	help='choose the name of the z axis title'
 )
 parser.add_argument(
 	'--nobox',
@@ -182,11 +165,26 @@ parser.add_argument(
 	help='suppresses tstatbox from being added. Does not work with stack/nostack option'
 )
 parser.add_argument(
-	'--order',
-	dest='order',
-	nargs='+',
-	type=int,
-	help='choose the order of plotting with same (to ensure no histograms overlap)'
+	'--sbox',
+	dest='sbox',
+	default=0,
+        type=int,
+	help='suppresses tstatbox from being added. Does not work with stack/nostack option'
+)
+parser.add_argument(
+	'--bSize',
+	dest='bSize',
+        nargs='*',
+	default=[0.1,0.3],
+        type=float,
+	help='for whatever reason the statbox width and height scales the font size...'
+)
+parser.add_argument(
+	'--fbox',
+	dest='fbox',
+	default=0,
+        type=int,
+	help='suppresses tfitbox from being added. Does not work with stack/nostack option'
 )
 parser.add_argument(
 	'--ms',
@@ -196,21 +194,45 @@ parser.add_argument(
 	help='marker scaling factor'
 )
 parser.add_argument(
-	'--legendLoc',
-	dest='legendLoc',
-	default=[0.6,0.93],
-	nargs='*',
-	type=float,
-	help='xlocation of the legend)'
+	'--order',
+	dest='order',
+	nargs='+',
+	type=int,
+	help='choose the order of plotting with same (to ensure no histograms overlap)'
+)
+parser.add_argument(
+	'-r', '--rebin',
+	dest='rebin',
+	default=1,
+	type = int,
+	help='add number to rebin the histograms | type=int'
+)
+parser.add_argument(
+	'-s', '--scale',
+	dest='scale',
+	default=1.0,
+	type = float,
+	help='histogram rescaling factor | type=float'
+)
+parser.add_argument(
+	'--norm',
+	dest='normalized',
+	default=False,
+	action='store_true',
+	help='histogram normalization based on entries'
+)
+parser.add_argument(
+	'--nofit',
+	dest='nofit',
+	default=False,
+	action='store_true',
+	help='histogram does not draw fit of the histogram'
 )
 args = parser.parse_args()
 
-if (len(args.variables) == 0 or len(args.variables) > 2):
-	print "Please enter 1 or 2 variables not more and not less"
-	sys.exit()
 
 mystyle = ROOT.TStyle("mystyle", "My Style")
-mystyle, myMarker, myMarkerSize = pf.myROOTStyle(args.markerScale, args.nobox)
+mystyle, myMarker, myMarkerSize = pf.myROOTStyle(args.markerScale, args.sbox, args.fbox, args.bSize,  args.legendLoc,  args.nobox)
 myMarkerStyle = [myMarker, myMarkerSize]
 
 mystyle.cd()
@@ -238,7 +260,7 @@ object_list = []
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	#object_list = object_list + (loopdir_new(key_root, args.name))
-	object_list.append((pf.loopdir_new(key_root, args.name, args.refuse)[0]))
+	object_list.append((pf.loopdir_new(key_root, args.name, args.refuse)))
 	
 folder_loc = '/scratch/plots/testbeam202003/'
 ##-----------------	
@@ -254,81 +276,102 @@ if (args.ylog):
 	print 'Setting y axis to log, only works if the range was specified to start at y_min > 0'
 ##------------------
 ##start of the plotting.
-if args.conditions:
-	conditionsName = args.conditions.replace("<", "L")
-	conditionsName = args.conditions.replace(">", "G")
-if (args.output_name):
-	if args.conditions:
-		outName  = args.output_name#+"_Cond_"+conditionsName
-	else:
-		outName  = args.output_name
-else:
-	stringStart = args.file_in[0].find('/testbeam')
-	outName = 'Histogram'#'/scratch/plots/testbeam202003/'+args.file_in[0][stringStart:-5]
-	for i in args.variables:
-		if args.conditions:
-			outName = outName#+"_"+i+"_Cond_"+conditionsName
-		else:
-			outName = outName#+"_"+i
-print "Output name ", outName
-bin_range = args.bin_range
-variables = args.variables
+
 draw_option = args.draw_option
 yMax = None
 yMin = None
+myHistograms = []
 if (len(object_list) is not 0):
-	myHistograms = pf.plot_tree(object_list, args.conditions, variables ,bin_range, outName )
+	for i in object_list:
+		for j in i:
+			myHistograms.append(j.ReadObj())
 else:
-        sys.exit("ERROR: No valid Histograms or Graphs found")
+	print 'There are NO valid histograms/graphs in the current selection'
+	print ''
+	print ''
 print myHistograms
-newHistograms = []
-if (args.normalized):
-	for i in myHistograms:
-		i.Scale(1./i.GetEntries())
-if (args.divide):
-        for i in myHistograms[1:]:
-                h3 = i.Clone("h3")
-                h3.Divide(i, myHistograms[0])
-                print "DEEEEEEEEEEEEEEEBUG", h3.GetMean()
-                newHistograms.append(h3)
-        myHistograms = newHistograms
-yRangeScale = 1.5
+if (len(myHistograms) is 0):
+        sys.exit("ERROR: No valid Histograms or Graphs found")
+yRangeScale = 1.2
+if (args.output_name):
+	outName  = args.output_name
+else:
+	stringStart = args.file_in[0].find('/Calibration')
+	if stringStart == -1:
+		stringStart = args.file_in[0].find('/Run')
+	if stringStart == -1:
+		stringStart = args.file_in[0].find('/run_')
+	if stringStart == -1:
+		stringStart = args.file_in[0].find('/res_')
+	outName = 'plot'#'/scratch/plots/testbeam202003/'+args.file_in[0][stringStart:-5]
+	outName = outName+"_"+args.file_in[0][stringStart+1:]+"_"+args.name[0]
+	if (args.addendum):
+		outName = outName+"_"+args.addendum
+print "Output name ", outName
 if (args.xtitle):
 	for i in myHistograms:
 		i.GetXaxis().SetTitle(args.xtitle)
 if (args.ytitle):
 	for i in myHistograms:
 		i.GetYaxis().SetTitle(args.ytitle)
+if (args.ztitle):
+	for i in myHistograms:
+		i.GetZaxis().SetTitle(args.ztitle)
+graphs = False
+if (args.rebin is not 1):
+	for i in myHistograms:
+		i.Rebin(args.rebin)
+if (args.scale is not 1.0):
+	for i in myHistograms:
+		i.Scale(args.scale)
+elif (args.normalized):
+	for i in myHistograms:
+		i.Scale(1./i.GetEntries())
 if (args.yaxisrange):
 	for i in myHistograms:
 		i.GetYaxis().SetRangeUser(args.yaxisrange[0], args.yaxisrange[1])
 else:
 	for i in myHistograms:
-		if (yMax is None):
-			yMax = i.GetMaximum()
-		elif(yMax < yRangeScale*i.GetMaximum()):
-			yMax =  yRangeScale*i.GetMaximum()
-		if (args.ylog):
-			if (yMin is None):
-				yMin = 1.0/(yRangeScale*i.GetEntries())
-			elif (yMin > 1.0/(yRangeScale*i.GetEntries())):
-				yMin = 1.0/(yRangeScale*i.GetEntries())
+		if("Graph" not in i.GetName()):
+			if (yMax is None):
+				yMax = yRangeScale*i.GetMaximum()
+			elif(yMax < yRangeScale*i.GetMaximum()):
+				yMax =  yRangeScale*i.GetMaximum()
+			if (args.ylog):
+				if (yMin is None):
+					yMin = 1.0/(yRangeScale*i.GetEntries())
+				elif (yMin > 1.0/(yRangeScale*i.GetEntries())):
+					yMin = 1.0/(yRangeScale*i.GetEntries())
+			else:
+				if (yMin is None):
+					yMin = (1./yRangeScale)*i.GetMinimum()
+				elif (yMin >  (1./yRangeScale)*i.GetMinimum()):
+					yMin =  (1.0/yRangeScale)*i.GetMinimum()
 		else:
-			if (yMin is None):
-				yMin = (1./yRangeScale)*i.GetMinimum()
-			elif (yMin >  (1./yRangeScale)*i.GetMinimum()):
-				yMin =  (1.0/yRangeScale)*i.GetMinimum()
+			xMin = ROOT.TMath.MinElement(i.GetN(),i.GetX())/1.01
+			yMin = ROOT.TMath.MinElement(i.GetN(),i.GetY())/1.01
+			xMax = ROOT.TMath.MaxElement(i.GetN(),i.GetX())*1.01
+			yMax = ROOT.TMath.MaxElement(i.GetN(),i.GetY())*1.01
+			graphs = True
 	print "Minimum y value ",yMin
 	print "Maximum y value ",yMax
-	if len(args.variables) == 1:
-		for i in myHistograms:
-			i.GetYaxis().SetRangeUser(yMin, yMax)
+	for i in myHistograms:
+		i.GetYaxis().SetRangeUser(yMin, yMax)
 if (args.xaxisrange):
 	for i in myHistograms:
 		i.GetXaxis().SetRangeUser(args.xaxisrange[0], args.xaxisrange[1])
-
-if (args.xaxisrange):
-	xaxisrange = args.xaxisrange
-pf.drawSame(myHistograms, draw_option, args.legend, myMarkerStyle, outName, args.ylog, args.legendLoc, args.order)
+if (args.zaxisrange):
+	for i in myHistograms:
+		i.GetZaxis().SetRangeUser(args.zaxisrange[0], args.zaxisrange[1])
+#for i in myHistograms:
+#        gaussFit = ROOT.TF1("gaussfit", "gaus", 710, 730)
+#        i.Fit(gaussFit,"ER")
+if (graphs):
+        if (args.nofit):
+                for i in myHistograms:
+                        i.GetFunction("pol1").SetBit(ROOT.TF1.kNotDraw)
+	pf.drawGraph(myHistograms, draw_option, args.legend, myMarkerStyle, outName, args.ylog, args.legendLoc, args.order)
+else:
+	pf.drawSame(myHistograms, draw_option, args.legend, myMarkerStyle, outName, args.ylog, args.legendLoc, args.order)
 for x in root_file_list:
 	ROOT.gROOT.GetListOfFiles().Remove(x)

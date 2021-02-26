@@ -3,39 +3,46 @@
 
 import ROOT
 import sys
+import numpy as np
 from decimal import Decimal
 from array import array
 
-def loopdir_new(keys, all_names):  # loop through all subdirectories of the root file and add all fitting object to a list
+def loopdir_new(keys, all_names, refuse_names):  # loop through all subdirectories of the root file and add all fitting object to a list
 	object_list = []
 	for key_object in keys:
 		if ('TDirectory' in key_object.GetClassName()):
-			object_list= object_list+loopdir_new(key_object.ReadObj().GetListOfKeys(), all_names)
+			object_list= object_list+loopdir_new(key_object.ReadObj().GetListOfKeys(), all_names, refuse_names)
 		else:
 			if ('everything' in all_names):
 				object_list.append(key_object)
-			elif (all(name in key_object.GetName() for name in all_names)):
-				object_list.append(key_object)
-				key_object.Print()
+                        else:
+                                if (None in refuse_names):
+                                        if (all(name in key_object.GetName() for name in all_names)):
+                                                object_list.append(key_object)
+				                key_object.Print()
+			        elif (all(name in key_object.GetName() for name in all_names) and  all(name not in key_object.GetName() for name in refuse_names)):
+				        object_list.append(key_object)
+				        key_object.Print()
 	return object_list
 
-def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=True):
+def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=False):
 	print "Number of variables ", len(variables)
 	print "Binrange ", bin_range
 	if (len(variables) == 1):
-
-		histName = name+"_"+str(keyCounter)
+		histName = name#+"_"+str(keyCounter)
 		histlabels = histName+";"+variables[0]+";Entries"
 		myh = ROOT.TH1F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]))
 		draw = variables[0]+">>"+histName
-		print draw
+                print "DEEEEEEBUG", histName
+                print draw
 	elif (len(variables) == 2):
-		histName = name+"_"+str(keyCounter)
+		histName = name#+"_"+str(keyCounter)
 		histlabels = histName+";"+variables[1]+";"+variables[0]
 		myh = ROOT.TH2F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]), int(bin_range[3]), float(bin_range[4]), float(bin_range[5]))
 		draw = variables[0]+":"+variables[1]+">>"+histName
 		print "Histogram labels ", histlabels
 		print draw
+                print "DEEEEEEBUG", histName
 	else:
 		print "Someone or something fucked up in the variables"
 		sys.exit()
@@ -62,7 +69,8 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 	c1 = ROOT.TCanvas( 'Canvas', 'Canvas', 2000, 1500 )
 	c1.cd()
 	statBoxW = 0.1
-	statBoxH = 0.05*len(hists)
+	nColumns = 1.
+	statBoxH = 0.05*len(hists)/nColumns
 
 	if ("L" in drawOption):
 		lines = True
@@ -72,6 +80,7 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 	if legendName is not None:
 		print "Legendnames ", legendName
 		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
+		legend.SetNColumns(int(nColumns))
 		legend.SetFillStyle(0)
 	new_legendlist = []
 	new_hist_list = []
@@ -84,11 +93,19 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 	else:
 		new_hist_list = hists
 		new_legendlist = legendName
-
+        
 	for counter, h in enumerate(new_hist_list):
 		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
-		print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
+                print "DEEEEEEEEEEEEEEEEEBUG", h
+                print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
 		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())
+		print 'Mean Error value = ', '%.3E' % Decimal(h.GetMeanError())
+		print 'RMS Error = ', '%.3E' % Decimal(h.GetRMSError())
+                q = np.array([0.])
+                prob = np.array([0.5])
+		median = h.GetQuantiles(1, q, prob)
+	        print "Median value = ", q
+                print ""
 		if("Graph" not in h.GetName()):
 			print 'Integral =', '%.3E' % Decimal(h.Integral())
 			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
@@ -98,9 +115,14 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 			legEntry = legend.AddEntry(h, new_legendlist[counter])
 		h.SetMarkerStyle(MarkerStyle[0][counter%6])
 		h.SetMarkerSize(MarkerStyle[1][counter%6])
+		h.SetLineWidth(4)
+                fit=h.GetFunction("gaus")
+                fit.SetLineWidth(5)
 		h.Draw(drawOption)
 		if (lines):
-			h.Draw("L same")
+			print "Drawing with connecting lines"
+			h.Draw("l hist same")
+
 		if legendName is not None:
 			legend.Draw()
 	if ylog:
@@ -120,7 +142,7 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 	else:
 		lines = False
 	if len(hists) > 1:
-		drawOption = drawOption+"PLC PMC" #to use palette colors
+		drawOption = drawOption+" PLC PMC" #to use palette colors
 	if legendName is not None:
 		print "Legendnames ", legendName
 		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
@@ -142,7 +164,7 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 		multi_graph.GetYaxis().SetTitle(h.GetYaxis().GetTitle())
 		multi_graph.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
 		print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
-		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())
+		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())					
 		if("Graph" not in h.GetName()):
 			print 'Integral =', '%.3E' % Decimal(h.Integral())
 			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
@@ -152,10 +174,10 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 			legEntry = legend.AddEntry(h, new_legendlist[counter])
 		h.SetMarkerStyle(MarkerStyle[0][counter%6])
 		h.SetMarkerSize(MarkerStyle[1][counter%6])
-		multi_graph.Add(h,"PA")
-		h.GetFunction('pol1').SetLineColor(cols[counter])
+		multi_graph.Add(h,"AP")
 	if ylog:
 		c1.SetLogy()
+	print "DEEBUG", drawOption
 	multi_graph.Draw(drawOption)
 	c1.Modified()
 	c1.Update()
@@ -163,10 +185,12 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 		markerColor = gr.GetMarkerColor()
 		gr.GetFunction('pol1').SetLineColor(markerColor)
 		gr.GetFunction('pol1').SetLineStyle(9)
+		gr.GetFunction('pol1').SetLineWidth(3)
 	if legendName is not None:
 		legend.Draw()
 	c1.Modified()
 	c1.Update()
+
 	saveFile(c1, [""], 0, '/scratch/plots/thesis/', str(name))
 
 
@@ -175,18 +199,16 @@ def saveFile(c1, filename_list, counter, folder_loc, outName):
 		run_name = filename_list[0][:-1]
 	else:
 		run_name = filename_list[counter][:-1]
-	saveName = folder_loc+run_name+outName
-	print 'Creating '+saveName
-	c1.SaveAs(saveName+'.svg')
-	c1.SaveAs(saveName+'.eps')
-	c1.SaveAs(saveName+'.png')
-	c1.SaveAs(saveName+'.C')
+	c1.SaveAs(folder_loc+"svg/"+run_name+outName+'.svg')
+	c1.SaveAs(folder_loc+"eps/"+run_name+outName+'.eps')
+	c1.SaveAs(folder_loc+"png/"+run_name+outName+'.png')
+	c1.SaveAs(folder_loc+"C/"+run_name+outName+'.C')
 
-def myROOTStyle(markerScale, nobox=True):
+def myROOTStyle(markerScale, sbox, fbox, bSize, legendLoc=[0.4,0.9], nobox=True):
 	mystyle = ROOT.TStyle("mystyle", "My Style")
 
 
-	mystyle.SetPaintTextFormat("5.3f");
+	mystyle.SetPaintTextFormat("5.2f");
 	## My adapted viridis (removed the yellow)
 	red   = [ 26./255., 51./255.,  43./255.,  33./255.,  28./255.,  35./255.,  74./255., 144./255.]#, 246./255.]
 	green = [  9./255., 24./255.,  55./255.,  87./255., 118./255., 150./255., 180./255., 200./255.]#, 222./255.]
@@ -250,13 +272,14 @@ def myROOTStyle(markerScale, nobox=True):
 	mystyle.SetTitleOffset(0.8,"z")
 	mystyle.SetTitleOffset(0.75,"x")
 	mystyle.SetStatFont(62)
-	mystyle.SetStatFontSize(0.05)
+        mystyle.SetStatFormat("5.3f")
+	
 
 
 	ROOT.TGaxis.SetMaxDigits(4)
 
 	#mystyle.SetTitleBorderSize(0)
-	#mystyle.SetStatBorderSize(0)
+	mystyle.SetStatBorderSize(0)
 	#mystyle.SetTextFont(42)
 
 
@@ -282,12 +305,16 @@ def myROOTStyle(markerScale, nobox=True):
 	#mystyle.SetPadTickY(1)
 	#
 	##turn off stats
-	#mystyle.SetOptStat(0) ##removes stat box
-
-	#mystyle.SetOptStat(args.statBox)
-	#mystyle.SetOptFit(args.fitBox)
-	mystyle.SetOptStat(1111)
-	mystyle.SetOptFit(111)
+	mystyle.SetOptStat(sbox) ##removes stat box
+	mystyle.SetOptFit(fbox)
+	#mystyle.SetOptStat(1110)
+	#mystyle.SetStatY(0.9)
+	#mystyle.SetStatX(0.8)
+	mystyle.SetStatY(legendLoc[1])
+	mystyle.SetStatX(legendLoc[0])
+	mystyle.SetStatH(bSize[1])
+	mystyle.SetStatW(bSize[0])#was 0.3
+	#mystyle.SetOptFit(0)
 	#mystyle.SetOptStat(0000001) #only name
 	#
 	##marker settings

@@ -102,53 +102,53 @@ with open(args.file_in) as inFile:
 		#print line
 		fields = line.split( )
 		hits = int(fields[0])
-#		x = float(fields[1])
-#		_x.append(x)
-#		y = float(fields[2])
-#		z1 = float(fields[3])
-#		z2 = float(fields[4])
-#		dx = float(fields[5])
-#		dy = float(fields[6])
-#		SbyN = float(fields[14])
-#		timeT = float(fields[13])
-#		hitsT = int(fields[12])
-#		timeK = float(fields[11])
-#		hitsK = float(fields[10])
+		x = float(fields[1])
+		_x.append(x)
+		y = float(fields[2])
+		z1 = float(fields[3])
+		z2 = float(fields[4])
+		dx = float(fields[5])
+		dy = float(fields[6])
+		SbyN = float(fields[14])
+		timeT = float(fields[13])
+		hitsT = int(fields[12])
+		timeK = float(fields[11])
+		hitsK = float(fields[10])
 
-#		hist_x.Fill(x)
-#		hist_y.Fill(y)
-#		hist_z1.Fill(z1)
-#		hist_z2.Fill(z2)
-#		hist_dx.Fill(dx)
-#		hist_dy.Fill(dy)
+		hist_x.Fill(x)
+		hist_y.Fill(y)
+		hist_z1.Fill(z1)
+		hist_z2.Fill(z2)
+		hist_dx.Fill(dx)
+		hist_dy.Fill(dy)
 		hist_HitsOnTrack.Fill(hits)
-#		hist_SbyN.Fill(SbyN)
-#		hist_KPiX_hits.Fill(hitsK)
-#		hist_Timepix_hits.Fill(hitsT)
-#		#hist_timepixTime.Fill(timeT)
-#		#hist_kpixTime.Fill(timeK)
-#		hist_XY_all.Fill(x,y)
+		hist_SbyN.Fill(SbyN)
+		hist_KPiX_hits.Fill(hitsK)
+		hist_Timepix_hits.Fill(hitsT)
+		#hist_timepixTime.Fill(timeT)
+		#hist_kpixTime.Fill(timeK)
+		hist_XY_all.Fill(x,y)
 
-#		timeDiff = timeK-timeT
-#		if hitsK > 0 and hitsT > 0:
-#			hist_timeDiff.Fill(timeDiff)
-#			timeK_cycles = timeK % 80E6
-#			hist_XY_tpx.Fill(x,y)
-#			#print timeK_cycles
-#			hist_KTime_v_TTime.Fill(timeK%80E6, timeT%80E6)
-#			if abs(timeDiff) < 500:
-#				hist_KPiX_hits_select1.Fill(hitsK)
-#				for i in fields[15:]:
-#					if int(i) >= 10 and int(i) < 20:
-#						hist_hits_layer.Fill(int(i))
+		timeDiff = timeK-timeT
+		if hitsK > 0 and hitsT > 0:
+			hist_timeDiff.Fill(timeDiff)
+			timeK_cycles = timeK % 80E6
+			hist_XY_tpx.Fill(x,y)
+			#print timeK_cycles
+			hist_KTime_v_TTime.Fill(timeK%80E6, timeT%80E6)
+			if abs(timeDiff) < 500:
+				hist_KPiX_hits_select1.Fill(hitsK)
+				for i in fields[15:]:
+					if int(i) >= 10 and int(i) < 20:
+						hist_hits_layer.Fill(int(i))
 
-#		if hits >= 7:
-#			matchCounter +=1
-#NrOfTracks = hist_KPiX_hits_select1.GetEntries()
-#hist_hits_layer.Scale(1./NrOfTracks)
+		if hits >= 7:
+			matchCounter +=1
+NrOfTracks = hist_KPiX_hits_select1.GetEntries()
+hist_hits_layer.Scale(1./NrOfTracks)
 #c1 = ROOT.TCanvas( 'test', 'Test', 1600, 900 )
 #c1.cd()
-#print matchCounter
+print matchCounter
 outHistFile.Write()
 #charge_hist.Draw("hist e")
 #c1.Modified()

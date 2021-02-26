@@ -25,6 +25,7 @@
 #include <TF1.h>
 #include <TTree.h>
 #include <TROOT.h>
+#include <TProfile.h>
 #include <TPolyLine3D.h>
 #include <TCanvas.h>
 #include <TMultiGraph.h>
@@ -195,6 +196,7 @@ int main ( int argc, char **argv )
     TTree*					extData;
 	
     TH1F					*QTrue[n_kpix][4];
+    TProfile				*ADC_v_Time[n_kpix];
     TH1F					*SoNTrue[n_kpix];
     TH1F					*QTrue_channel[n_kpix][n_channels][4];
 		
@@ -228,9 +230,11 @@ int main ( int argc, char **argv )
 	TH1F					*noise_distribution[n_kpix];
 	TH1F					*noise_distribution_strips_only[n_kpix];
 	TH1F					*noise_distribution_sensor[n_kpix/2];
-	TH1F					*noise_v_position[n_kpix/2];
-    TH1F					*noise_v_strip[n_kpix/2];
-    TH1F					*noise_v_channel[n_kpix];
+    TProfile				*noise_v_position[n_kpix/2];
+    TProfile				*noise_v_strip[n_kpix/2];
+    TProfile				*slope_v_strip[n_kpix/2];
+    TProfile				*noise_v_channel[n_kpix];
+    TH2F					*noise_v_slope[n_kpix/2];
 
     TH1F                    *kpix_temp[n_kpix];
     TH2F                    *kpix_temp_v_runNumber[n_kpix];
@@ -240,9 +244,13 @@ int main ( int argc, char **argv )
 //    TH1F					*noise_v_row[n_kpix];
 
 	
-	TH1F					*noise_v_time[n_kpix/2];
+    TProfile					*noise_v_time[n_kpix/2];
+    TProfile                *noise_v_bits_high[n_kpix/2];
+    TProfile                *noise_v_Graybits_high[n_kpix/2];
+    TProfile                *noise_v_high_graybit[n_kpix/2];
 
     TH1F                    *common_mode_kpix[n_kpix];
+    TProfile                *common_mode_v_event_kpix[n_kpix];
 	
 	TGraphErrors			*runTimeDiff;
 
@@ -627,8 +635,8 @@ int main ( int argc, char **argv )
                     tmp.str("");
                     tmp << "cluster_correlation_seed_sens0" << sensor << "_to_sens" << s << "_b0";
                     tmp_units.str("");
-                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-                    cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (mm); Sensor " << s << " | Position (mm)";
+                    cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46.0005, 45.9995, 230,-46.000, 46.000);
 
                     tmp.str("");
                     tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
@@ -663,7 +671,7 @@ int main ( int argc, char **argv )
 
             tmp.str("");
             tmp << "cluster_position_y_seed_sens" << sensor << "_b0";
-            cluster_position_y[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; #mum; Entries", 1840,-46000, 46000);
+            cluster_position_y[sensor][0] = new TH1F(tmp.str().c_str(), "cluster position y0; mm; No. of Clusters", 1840,-46.000, 46.000);
             tmp.str("");
             tmp << "cluster_charge_seed_sens" << sensor << "_b0";
             cluster_charge[sensor][0] = new TH1F(tmp.str().c_str(), "cluster charge0; Charge (fC); Entries", 500,-0.5, 19.5);
@@ -714,7 +722,7 @@ int main ( int argc, char **argv )
 
             tmp.str("");
             tmp << "cluster_position_y_CUTS_sens" << sensor << "_b0";
-            cluster_position_y[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; #mum; Entries", 1840,-46000, 46000);
+            cluster_position_y[sensor][2] = new TH1F(tmp.str().c_str(), "cluster position y2; mm; No. of Entries", 1840,-46.000, 46.000);
             tmp.str("");
             tmp << "cluster_charge_CUTS_sens" << sensor << "_b0";
             cluster_charge[sensor][2] = new TH1F(tmp.str().c_str(), "cluster charge2; Charge (fC); Entries", 500,-0.5, 19.5);
@@ -740,11 +748,20 @@ int main ( int argc, char **argv )
 
             tmp.str("");
             tmp << "noise_v_position_s" << sensor << "_b0";
-            noise_v_position[sensor]  = new TH1F(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-46000, 46000);
+            noise_v_position[sensor]  = new TProfile(tmp.str().c_str(), "Noise; #mum; Noise (fC)", 1840,-46000, 46000);
 
             tmp.str("");
             tmp << "noise_v_strip_s" << sensor << "_b0";
-            noise_v_strip[sensor]  = new TH1F(tmp.str().c_str(), "Noise; strip number; Noise (fC)", 1840,-0.5, 1839.5);
+            noise_v_strip[sensor]  = new TProfile(tmp.str().c_str(), "Noise; strip number; Noise (fC)", 1840,-0.5, 1839.5);
+            
+            tmp.str("");
+            tmp << "slope_v_strip_s" << sensor << "_b0";
+            slope_v_strip[sensor]  = new TProfile(tmp.str().c_str(), "Calib Slope; strip number; slope (ADC/fC)", 1840,-0.5, 1839.5);
+            
+            
+            tmp.str("");
+            tmp << "noise_v_slope_s" << sensor << "_b0";
+            noise_v_slope[sensor]  = new TH2F(tmp.str().c_str(), "Noise_v_slope; noise (fC); slope (ADC/fC)", 50,0,10, 200, -5, 35);
 
             tmp.str("");
             tmp << "noise_distribution_s" << sensor << "_b0";
@@ -754,7 +771,25 @@ int main ( int argc, char **argv )
             tmp << "noise_v_time_s" << sensor << "_b0";
             tmp_units.str("");
             tmp_units << "noise_v_time; Time (BCC); Noise (fC) ";
-            noise_v_time[sensor]  = new TH1F(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
+            noise_v_time[sensor]  = new TProfile(tmp.str().c_str(), tmp_units.str().c_str(), 8192, 0, 8191);
+
+            tmp.str("");
+            tmp << "noise_v_bits_high_s" << sensor << "_b0";
+            tmp_units.str("");
+            tmp_units << "noise_v_bits_high; High Bits; Noise (fC) ";
+            noise_v_bits_high[sensor]  = new TProfile(tmp.str().c_str(), tmp_units.str().c_str(), 14, -0.5, 13.5);
+
+            tmp.str("");
+            tmp << "noise_v_Graybits_high_s" << sensor << "_b0";
+            tmp_units.str("");
+            tmp_units << "noise_v_Graybits_high; High Gray Bits; Noise (fC) ";
+            noise_v_Graybits_high[sensor]  = new TProfile(tmp.str().c_str(), tmp_units.str().c_str(), 14, -0.5, 13.5);
+
+            tmp.str("");
+            tmp << "noise_v_high_graybit_s" << sensor << "_b0";
+            tmp_units.str("");
+            tmp_units << "noise_v_high_graybit; Gray Bit High; Noise (fC) ";
+            noise_v_high_graybit[sensor]  = new TProfile(tmp.str().c_str(), tmp_units.str().c_str(), 14, -0.5, 13.5);
 
             for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
@@ -787,6 +822,9 @@ int main ( int argc, char **argv )
                     tmp << "SoNTrue_k" << kpix << "_b0";
                     SoNTrue[kpix] = new TH1F(tmp.str().c_str(), "True S/N; S/N; Entries", 4*response_bins, 4*response_xmin, 4*response_xmax);
 
+                    tmp.str("");
+                    tmp << "ADC_v_Time" << kpix << "_b0";
+                    ADC_v_Time[kpix] = new TProfile(tmp.str().c_str(), "ADC_v_Time; Time (BCC); Charge (fC)", 8192, 0, 8191);
 
 
                     tmp.str("");
@@ -800,7 +838,7 @@ int main ( int argc, char **argv )
 
                     tmp.str("");
                     tmp << "noise_v_channel_k" << kpix << "_b0";
-                    noise_v_channel[kpix]  = new TH1F(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
+                    noise_v_channel[kpix]  = new TProfile(tmp.str().c_str(), "Noise; channel; Noise (fC)", 1024,0, 1023);
 
                     tmp.str("");
                     tmp << "noise_on_kpix_k" << kpix << "_b0";
@@ -827,6 +865,10 @@ int main ( int argc, char **argv )
                     tmp.str("");
                     tmp << "common_mode_k" << kpix << "_b0";
                     common_mode_kpix[kpix] = new TH1F(tmp.str().c_str(), "common mode; Common Mode(fC);   Entries", 240,-12, 12);
+
+                    tmp.str("");
+                    tmp << "common_mode_v_event_k" << kpix << "_b0";
+                    common_mode_v_event_kpix[kpix] = new TProfile(tmp.str().c_str(), "common mode; EvetNumber;   Common Mode(fC)", 10000, 0, 10000);
 					
                     tmp.str("");
                     tmp << "kpix_temp_k" << kpix;
@@ -839,26 +881,32 @@ int main ( int argc, char **argv )
 					for (int channel = 0; channel < 1024; channel++){
 						if (channelFound) {
 							FolderName.str("");
-							FolderName << "Channel_" << channel;
+                            int strip = 9999;
+                            if (kpix%2 == 0) strip = kpix2strip_left.at(channel);// if left kpix
+                            else strip  = kpix2strip_right.at(channel); // if right kpix
+                            FolderName << "Channel_" << channel << "_Strip_" << strip;
                             kpix_folder->mkdir(FolderName.str().c_str());
                             TDirectory *channel_folder = kpix_folder->GetDirectory(FolderName.str().c_str());
                             rFile->cd(channel_folder->GetPath());
 							
 							tmp.str("");
-							tmp << "Q_true_k" << kpix << "_c" << channel << "_b0";
+                            tmp << "Q_true_k" << kpix << "_c" << channel << "_s" << strip << "_b0";
                             QTrue_channel[kpix][channel][0] = new TH1F(tmp.str().c_str(), "True charge; Charge (fC); Entries", response_bins, response_xmin, response_xmax);
 
                             tmp.str("");
-                            tmp << "Q_ADC_k" << kpix << "_c" << channel << "_b0";
+                            tmp << "Q_ADC_k" << kpix << "_c" << channel << "_s" << strip << "_b0";
                             QTrue_channel[kpix][channel][1] = new TH1F(tmp.str().c_str(), "ADC charge; Charge (fC); Entries", 8192, 0, 8192);
 
                             tmp.str("");
-                            tmp << "Q_Ped_sub_k" << kpix << "_c" << channel << "_b0";
+                            tmp << "Q_Ped_sub_k" << kpix << "_c" << channel << "_s" << strip << "_b0";
                             QTrue_channel[kpix][channel][2] = new TH1F(tmp.str().c_str(), "ped sub ADC charge; Charge (fC); Entries", 8192, -4096, 4096);
 
                             tmp.str("");
-                            tmp << "Q_fC_k" << kpix << "_c" << channel << "_b0";
+                            tmp << "Q_fC_k" << kpix << "_c" << channel << "_s" << strip << "_b0";
                             QTrue_channel[kpix][channel][3] = new TH1F(tmp.str().c_str(), "ped sub fC charge; Charge (fC); Entries", response_bins, response_xmin, response_xmax);
+
+
+
 						}
 					}
                 }
@@ -962,12 +1010,16 @@ int main ( int argc, char **argv )
                         trig_diff[kpix]->Fill(time_diff_triggers);
                         QTrue_channel[kpix][channel][1]->Fill(value, weight);
                         QTrue_channel[kpix][channel][2]->Fill(charge_ped_corrected, weight);
+                        ADC_v_Time[kpix]->Fill(tstamp, value);
 						//cout << "DEBUG 1" << endl;
                         double corrected_charge_value_median = charge_ped_corrected/calibs.at(index).first;
                         QTrue_channel[kpix][channel][3]->Fill(corrected_charge_value_median, weight);
                         double true_charge = corrected_charge_value_median - common_modes_median[kpix].at(event.eventNumber());
                         QTrue_channel[kpix][channel][0]->Fill(true_charge, weight);
-                        if (channel == 0) common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()), weight);
+                        if (channel == 0){
+                            common_mode_v_event_kpix[kpix]->Fill(event.eventNumber(),common_modes_median[kpix].at(event.eventNumber()));
+                            common_mode_kpix[kpix]->Fill(common_modes_median[kpix].at(event.eventNumber()), weight);
+                        }
 						if (corrected_charge_vec_time[kpix][int(tstamp)] == NULL)
 						{
 							corrected_charge_vec_time[kpix][int(tstamp)] = new std::vector<double>;
@@ -1036,8 +1088,10 @@ int main ( int argc, char **argv )
 						{
 							noise_distribution_strips_only[k]->Fill(noise[k][c]);
 							noise_distribution_sensor[sensor]->Fill(noise[k][c]);
+							noise_v_slope[sensor]->Fill(noise[k][c], calibs.at(index).first);
 							noise_v_position[sensor]->Fill(y, noise[k][c]);
                             noise_v_strip[sensor]->Fill(strip, noise[k][c]);
+                            slope_v_strip[sensor]->Fill(strip, calibs.at(index).first);
 						}
 						noise_v_channel[k]->SetBinContent(c+1, noise[k][c]);
 						noise_on_kpix[k]->SetBinContent((c+1)/32, (c+1)%32, noise[k][c]);
@@ -1051,7 +1105,35 @@ int main ( int argc, char **argv )
 			for (unsigned int t = 0; t < n_BCC ; ++t)
 			{
                 double time_noise =  1.4826*MAD(corrected_charge_vec_time[k][t]);
-                noise_v_time[sensor]->SetBinContent(t+1, time_noise);
+                noise_v_time[sensor]->Fill(t, time_noise);
+                string TimeBin = "";
+                TimeBin = bin(t, TimeBin);
+                uint bitsHigh = 0;
+                for (char const &c : TimeBin) {
+                    if (c == '1'){
+//                        cout << "Test 1" << endl;
+                        bitsHigh++;
+                    }
+//                    if (c == '0'){
+////                        cout << "Test 0" << endl;
+//                    }
+                }
+//                std::string TimeGray = binarytoGray(TimeBin);
+//                bitsHigh =
+                noise_v_bits_high[sensor]->Fill(bitsHigh, time_noise, 1);
+                uint graybitsHigh = 0;
+                string TimeGray = binarytoGray(TimeBin);
+                uint bitnum = 0;
+                for (char const &c : TimeGray){
+                    if (c == '1'){
+                        graybitsHigh++;
+                        noise_v_high_graybit[sensor]->Fill(bitnum, time_noise, 1);
+
+                    }
+                    bitnum++;
+                }
+                noise_v_Graybits_high[sensor]->Fill(graybitsHigh, time_noise, 1);
+
                 marcel_file << setw(3) << sensor  << ","
                             << setw(5) << t << ","
                             << setw(5) << time_noise
@@ -1245,7 +1327,7 @@ int main ( int argc, char **argv )
                             clustr Cluster = NomNom.getCluster();
 							if (num_of_clusters == 0)
 							{
-								cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+								cluster_position_y[sensor][0]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor)/1000, weight);
 								cluster_charge[sensor][0]->Fill(NomNom.getClusterCharge(), weight);
 								cluster_size[sensor][0]->Fill(NomNom.getClusterElementssize(), weight);
 								cluster_significance[sensor][0]->Fill(NomNom.getClusterSignificance(), weight);
@@ -1256,7 +1338,7 @@ int main ( int argc, char **argv )
 								//cout << "Size: " << NomNom.getClusterElementssize() << endl;
 							}
 
-							cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+							cluster_position_y[sensor][1]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor)/1000, weight);
 
 							cluster_size[sensor][1]->Fill(NomNom.getClusterElementssize(), weight);
 							cluster_significance[sensor][1]->Fill(NomNom.getClusterSignificance(), weight);
@@ -1295,7 +1377,7 @@ int main ( int argc, char **argv )
 
                             if (NomNom.getClusterSignificance2() >= 4.0)
 							{
-								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor), weight);
+								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor)/1000, weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
 								cluster_size[sensor][2]->Fill(NomNom.getClusterElementssize(), weight);
 								cluster_significance[sensor][2]->Fill(NomNom.getClusterSignificance(), weight);

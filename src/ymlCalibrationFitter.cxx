@@ -332,6 +332,8 @@ int main ( int argc, char **argv ) {
 	TH2F 				*slope_mapped[24][4];
 	TH2F 				*RMSADC_mapped[24][4];
 	TH2F 				*pearson_mapped[24][4];
+	
+	TH1F				*good_v_bad[24][4];
   
   
   TTree *               calibration;
@@ -767,6 +769,9 @@ int main ( int argc, char **argv ) {
                 tmp << "pearson_vs_channel_k" << setw(2) << setfill('0') << kpix <<  "_b" << bucket;
 				pearson_vs_channel[kpix][bucket] = new TH1F(tmp.str().c_str(), "pearson_vs_channel; channel; pearson correlation", 1024, -0.5, 1023.5);
 				
+				tmp.str("");
+                tmp << "good_v_bad_k" << setw(2) << setfill('0') << kpix << "_b" << bucket;
+                good_v_bad[kpix][bucket] = new TH1F(tmp.str().c_str(), "good_v_bad; Value; Nr. of Entries", 2, -0.5, 1.5);
 				
 				tmp.str("");
                 tmp << "slope_k" << setw(2) << setfill('0') << setw(2) << setfill('0') << kpix << "_b" << bucket;
@@ -1189,6 +1194,8 @@ for (kpix=0; kpix<24; kpix++)
                                 double PCC = (EXY-EX*EY)/(sqrt(EX2-pow(EX,2))*sqrt(EY2-pow(EY,2)));
                                 //if (fabs(PCC) > 1) cout << "Undefined/horrible pearson coefficient = " << PCC << endl;
                                 pearson_hist[kpix][bucket]->Fill(PCC);
+                                if (PCC < 0.9) good_v_bad[kpix][bucket]->Fill(0);
+                                else good_v_bad[kpix][bucket]->Fill(1);
                                 if (fabs(PCC) < 1) pearson_vs_channel[kpix][bucket]->Fill(channel, PCC);
                                 else zero_channels << kpix << " " << channel << endl;
 

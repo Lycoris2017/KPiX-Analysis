@@ -10,6 +10,7 @@ from operator import add
 import sys
 from decimal import Decimal
 from array import array
+import re
 
 ROOT.gROOT.SetBatch(True)
 
@@ -57,9 +58,14 @@ with open(args.GBL_in) as GBLFile:
         if ('label' in line) or ('run' in line):
             continue
         #print line
-        column = line.split( )
-        #print column[13]
-        fitpos[int(column[17])] = float(column[13])
+        fields =  re.split(r',| |[(|)]|\[|\]|\r\n', line) ## splitting fields using regular expression
+        fields = filter(None, fields)
+        if ('New' not in fields):
+            if (int(fields[0]) >= 10)  and (int(fields[0]) <= 15):
+                #print fields[9]
+                #print fields[11]
+                fitpos[int(fields[9])] = float(fields[11])
+
 
 #print IDonTrack
 #//////////////////////////////////////////
@@ -87,6 +93,8 @@ eta_hists.append(ROOT.TH1F("Eta_total", "Eta_total; Eta; Number of Entries", 30,
 eta_hists.append(ROOT.TH1F("Eta_1", "Eta_1; Eta; Number of Entries", 30, -0.5,1.5))
 eta_hists.append(ROOT.TH1F("Eta_2", "Eta_2; Eta; Number of Entries", 30, -0.5,1.5))
 eta_hists.append(ROOT.TH1F("Eta_3+", "Eta_3+; Eta; Number of Entries", 30, -0.5,1.5))
+
+eta_hists_v_pos = ROOT.TH2F("eta_pos", "eta_pos; #eta; sub-cell position (mm)", 30,-0.5,1.5, 51, 0, 51e-3)
 
 skewed_hists = []
 skewed_hists.append(ROOT.TH1F("skewed_total", "skewed_total; Eta; Number of Entries", 30, -0.5,1.5))
@@ -124,6 +132,9 @@ for entry in stripTree:
                     charge_left = charge_left + charge[0]
                 eta = charge_right/(charge_left + charge_right)
                 eta_hists[0].Fill(eta)
+                eta_hists_v_pos.Fill(eta, fitpos.get(entry.ID[i])%50e-3)
+                #print "Subcell pos ", fitpos.get(entry.ID[i])
+                #print "Eta ", eta
                 if (count == 1):
                     eta_hists[1].Fill(eta)
                 elif (count == 2):
@@ -137,8 +148,8 @@ for entry in stripTree:
             stripOnTrackTree.Fill()
 
 
-for j in eta_hists:
-    j.Scale(1.0/j.GetEntries())
+#for j in eta_hists:
+#    j.Scale(1.0/j.GetEntries())
 
 
 

@@ -92,9 +92,9 @@ with open(args.file_in) as inFile:
 		elif (float(fields[11]) > 0):
 			residual_x_1.Fill(dx-cx)
 			residual_y_1.Fill(dy-cy)
-residual_x_total.Fit("gaus")
-residual_x_0.Fit("gaus")
-residual_x_1.Fit("gaus")
+residual_x_total.Fit("gaus", "R", "", -0.4, 0.4)
+residual_x_0.Fit("gaus", "R", "", -0.4, 0.4)
+residual_x_1.Fit("gaus", "R", "", -0.4, 0.4)
 
 residual_y_total.Fit("gaus")
 residual_y_0.Fit("gaus")
