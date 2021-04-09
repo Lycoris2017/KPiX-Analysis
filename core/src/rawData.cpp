@@ -46,8 +46,8 @@ Cycle::Cycle(KpixEvent &event,
 	m_has_adc = false;
 	m_has_fc  = false;
 	m_cyclenumber = event.eventNumber();
-	if (isold) m_ts64 = event.timestamp();
-	else       m_ts64 = event.runtime();
+    if (isold) m_ts64 = event.timestamp();
+    else       m_ts64 = event.runtime();
 	
 	
 	KpixSample *sample;   //
@@ -83,15 +83,15 @@ Cycle::Cycle(KpixEvent &event,
 			ntrig_ext++; 
 			trigger.triggerid = ntrig_ext;
 			
-			if (isold)
-				time = tstamp + double(value * 0.125);
-			else{
-				//tstamp   = sample->getSampleRuntime64(m_ts64);
-				subCount = sample->getSubCount();
-				bunchClk = sample->getBunchCount();
-				time = bunchClk + double(0.125 * subCount);
-				trigger.runtime = sample->getSampleRuntime64(m_ts64);
-			}
+            if (isold)
+                time = tstamp + double(value * 0.125);
+            else{
+                //tstamp   = sample->getSampleRuntime64(m_ts64);
+                subCount = sample->getSubCount();
+                bunchClk = sample->getBunchCount();
+                time = bunchClk + double(0.125 * subCount);
+                trigger.runtime = sample->getSampleRuntime64(m_ts64);
+            }
 			// TBD: Do nothing now, add it to data structure later.
 			trigger.tstamp  = time;
 			m_v_exttrigs.push_back(trigger);

@@ -135,7 +135,6 @@ struct tree_cluster_input
 
 
 
-
 //////////////////////////////////////////
 // Begin of main analysis
 //////////////////////////////////////////
@@ -151,13 +150,13 @@ int main ( int argc, char **argv )
 	cout << "CURRENTLY USING VERSION FOR NEWDAQ FOR OLD DAQ NEED TO EXCHANGE /Run WITH /20 !" << endl;
 	
 	
-	DataRead               dataRead;  //kpix event classes used for analysis of binary date
+    DataRead               dataRead;  //kpix event classes used for analysis of binary data
 	off_t                  fileSize;  //
 	off_t                  filePos;   //
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-	const unsigned int n_buckets = 4;
+    const unsigned int n_buckets = 1;
 	const unsigned int n_kpix = 32;//24;
 //	const unsigned int n_blocks = 32;
 	const unsigned int n_channels = 1024;
@@ -263,7 +262,7 @@ int main ( int argc, char **argv )
 	stringstream			FolderName;
 	
 	ofstream				claus_file;
-    ofstream				marcel_file;
+//    ofstream				marcel_file;
     ofstream				CM_file;
 	ofstream				noise_file;
 	ofstream               xml;
@@ -449,9 +448,9 @@ int main ( int argc, char **argv )
 	//claus_file.open("claus_file_new.txt");
 	claus_file.open(tmp.str());
 	
-    tmp.str("");
-    tmp << argv[1] << "_SoNG" << NameAdd << ".marcel.csv" ;
-    marcel_file.open(tmp.str());
+//    tmp.str("");
+//    tmp << argv[1] << "_SoNG" << NameAdd << ".marcel.csv" ;
+//    marcel_file.open(tmp.str());
 
 
 	//////////////////////////////////////////
@@ -503,7 +502,7 @@ int main ( int argc, char **argv )
                 subCount = sample->getSubCount();
                 int eventNum = sample->getEventNum();
                 index = keyhash(kpix, channel, bucket);
-
+                if (bucket >= n_buckets) continue;
 
 
 				//cout << type <<endl;
@@ -583,6 +582,7 @@ int main ( int argc, char **argv )
 			fprintf(f_skipped_cycles, " index = %d , byte = %6d, train = %6d \n ", acqCount, byte, train);
 		}
 	}
+	maxAcquisitions = acqCount;
 	
 	if (f_skipped_cycles!=NULL)  {
 		fclose( f_skipped_cycles);
@@ -966,6 +966,7 @@ int main ( int argc, char **argv )
 			bunchClk = sample->getBunchCount();
 			subCount = sample->getSubCount();
             index = keyhash(kpix, channel, bucket);
+            if (bucket >= n_buckets) continue;
 //            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
 
             if (type == KpixSample::Temperature)
@@ -983,8 +984,8 @@ int main ( int argc, char **argv )
 //                cout << "test" << endl;
 //                cout << tmp<< endl;
 
-                kpix_temp[kpix]->Fill(tmp);
-                kpix_temp_v_runNumber[kpix]->Fill(event.eventNumber(),tmp);
+                //kpix_temp[kpix]->Fill(tmp);
+                //kpix_temp_v_runNumber[kpix]->Fill(event.eventNumber(),tmp);
             }
 
             if (type == 2)// If event is of type external timestamp
@@ -1060,7 +1061,7 @@ int main ( int argc, char **argv )
 
 	}
 	dataRead.close();
-    marcel_file << "Sensor, Time (BCC), Noise (fC)" << endl;
+//    marcel_file << "Sensor, Time (BCC), Noise (fC)" << endl;
 
     //cout << "DEBUG 1" << endl;
 	 // END OF PREREAD
@@ -1134,10 +1135,10 @@ int main ( int argc, char **argv )
                 }
                 noise_v_Graybits_high[sensor]->Fill(graybitsHigh, time_noise, 1);
 
-                marcel_file << setw(3) << sensor  << ","
-                            << setw(5) << t << ","
-                            << setw(5) << time_noise
-                            << endl;
+//                marcel_file << setw(3) << sensor  << ","
+//                            << setw(5) << t << ","
+//                            << setw(5) << time_noise
+//                            << endl;
 			}	
 		}
 	}
@@ -1375,7 +1376,7 @@ int main ( int argc, char **argv )
                             strip_sensor.clear();
                             strip_ID.clear();
 
-                            if (NomNom.getClusterSignificance2() >= 4.0)
+                            if (NomNom.getClusterSignificance2() >= 6.0)
 							{
 								cluster_position_y[sensor][2]->Fill(yParameterSensor(NomNom.getClusterCoG(), sensor)/1000, weight);
 								cluster_charge[sensor][2]->Fill(NomNom.getClusterCharge(), weight);
@@ -1388,12 +1389,11 @@ int main ( int argc, char **argv )
 
 							if (header == 1){
 								header = 0;
-                                claus_file <<"Event Number,Layer,position,Significance,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
+								claus_file <<"Event Number,Layer,position,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
 							}
 							claus_file << setw(5) << event.eventNumber()  << ","
                                        << setw(1) << sensor2layer(sensor)  << ","
 							           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor)  << ","
-							           << setw(7) << NomNom.getClusterSignificance() << ","
 							           << setw(7) << NomNom.getClusterSignificance2() << ","
 							           << setw(2) << NomNom.getClusterElementssize() << ","
 							           << setw(7) << NomNom.getClusterCharge() << ","
@@ -1485,296 +1485,10 @@ int main ( int argc, char **argv )
 		
 	}
 
-	//// Noise mask generation. ONLY USE WHEN NO MASK IS PUT IN!
-//	noise_file.open("include/testbeam201907_noise_mask.h");
-//	for (int s = 0; s < 6; ++s)
-//	{
-//		int badentries = 0;
-//		noise_file << "unordered_map<uint, uint> noise_sensor_" << s << "()" << endl;
-//		noise_file << "{" << endl;
-//		noise_file << "    unordered_map<uint, uint> m1;" << endl;
-//		for (int strips = 0; strips < 1840; strips++)
-//		{
-//			if (MaximumSoN[s][strips] > 0.08 ) //
-//			{
-//				cout << "Huge number of entries with no adjacent entries in strip " << strips << " with " << MaximumSoN[s][strips] << " entries in Sensor " << s << endl;
-//				badentries ++;
-//				noise_file << "    m1.insert(make_pair(" << strips << ",0));" << endl;
-//			}
-//			else
-//			{
-//				noise_file << "    m1.insert(make_pair(" << strips << ",1));" << endl;
-//			}
-//			//if (Max_SoN[s]->GetBinContent(strips) > 25)
-//			//{
-//				//cout << "Huge number of entries with no adjacent entries in strip in MaxSoN " << strips << " with " << Max_SoN[s]->GetBinContent(strips) << " entries in Sensor " << s << endl;
-//			//}
-//		}
-//		noise_file << "    return m1;" << endl;
-//		noise_file << "}" << endl;
-//		cout << "Number of bad entries in this sensor is " << badentries << endl;
-//	}
-//	noise_file.close();
-
-
-
-//	for (unsigned int sens = 0; sens<n_kpix/2; sens++ )
-//	{
-//		for (unsigned int sens2 = sens+1; sens2<n_kpix/2; sens2++ )
-//		{
-//			if (kpixFound[sens*2] && kpixFound[sens2*2])
-//			{
-////				TH1F* cut_performance = nullptr;
-////				TH1F* cut_entries = nullptr;
-////				TCanvas *canvas2 = nullptr;
-////				TCanvas *canvas3 = nullptr;
-////				tmp.str("");
-////				tmp << "sigma_cut_performance_s" << sens << "_s" << sens2 << "_b0";
-////				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 416, 0, 416);
-////				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
-
-////				tmp.str("");
-////				tmp << "sigma_cut_entries_s" << sens << "_s" << sens2 << "_b0";
-////				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 60, 0, 30);
-////				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
-//				for (int s = 0; s < 30; ++s)
-//				{
-//					double sigma_cut = double(s)/2;
-//					double charge_cut = 2.0;
-//					int size_cut =3;
-//					tmp.str("");
-//					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
-//					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; Entries", 100,-10000, 10000);
-////					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-////					canvas1->cd();
-//					for (unsigned int evt = 0; evt < acqCount; evt++)
-//					{
-//						//cout << "Evt " << evt << endl;
-//						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
-//						{
-//							for (auto const s1 : *all_clusters_pointer[sens][evt])
-//							{
-//								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
-//								{
-//									for (auto const s2 : *all_clusters_pointer[sens2][evt])
-//									{
-//										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
-//										{
-//											double y1 = yParameterSensor(s1.CoG, sens);
-//											double y2 = yParameterSensor(s2.CoG, sens2);
-//											double clstroffset_y  = y1 - y2;
-//											test->Fill(clstroffset_y);
-//										}
-//									}
-//								}
-//							}
-//						}
-//					}
-//					test->Draw("pe");
-
-//					int binmax = test->GetMaximumBin();
-//					double signal = test->Integral(binmax-4, binmax+4);
-//					double entries = test->GetEntries();
-//					double efficiency = 0;
-//					if (entries != 0)
-//						efficiency = signal/entries;
-////					cut_performance->Fill(sigma_cut, efficiency);
-////					cut_entries->Fill(sigma_cut, entries);
-//					cuts_entries[0][sens][sens2]->SetBinContent(s, entries);
-//					cuts_purity[0][sens][sens2]->SetBinContent(s, efficiency);
-//					cuts_performance[0][sens][sens2]->SetBinContent(s, efficiency*entries);
-////					stringstream tmp2;
-////					tmp2.str("");
-////					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-////					canvas1->SaveAs(tmp2.str().c_str());
-//					test = nullptr;
-//					delete test;
-
-
-
-
-//				}
-////				canvas2->cd();
-////				cut_performance->Draw("p");
-////				canvas2->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/sigma_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas2->SaveAs(tmp.str().c_str());
-
-////				canvas3->cd();
-////				cut_entries->Draw("p");
-////				canvas3->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/sigma_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas3->SaveAs(tmp.str().c_str());
-
-
-////				tmp.str("");
-////				tmp << "charge_cut_performance_s" << sens << "_s" << sens2 << "_b0";
-////				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 40, 0, 20);
-////				cut_performance->SetCanExtend(TH1::kAllAxes);
-////				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
-
-////				tmp.str("");
-////				tmp << "charge_cut_entries_s" << sens << "_s" << sens2 << "_b0";
-////				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 40, 0, 20);
-////				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
-
-
-//				for (int c = 0; c < 20; ++c)
-//				{
-//					double charge_cut = double(c)/2;
-//					double sigma_cut = 7.0;
-//					int size_cut = 3;
-
-//					tmp.str("");
-//					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
-//					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; Entries", 100,-10000, 10000);
-////					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-////					canvas1->cd();
-//					for (unsigned int evt = 0; evt < acqCount; evt++)
-//					{
-//						//cout << "Evt " << evt << endl;
-//						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
-//						{
-//							for (auto const s1 : *all_clusters_pointer[sens][evt])
-//							{
-//								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
-//								{
-//									for (auto const s2 : *all_clusters_pointer[sens2][evt])
-//									{
-//										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
-//										{
-//											double y1 = yParameterSensor(s1.CoG, sens);
-//											double y2 = yParameterSensor(s2.CoG, sens2);
-//											double clstroffset_y  = y1 - y2;
-//											test->Fill(clstroffset_y);
-//										}
-//									}
-//								}
-//							}
-//						}
-//					}
-//					test->Draw("pe");
-
-//					int binmax = test->GetMaximumBin();
-//					double signal = test->Integral(binmax-4, binmax+4);
-//					double entries = test->GetEntries();
-//					double efficiency = 0;
-//					if (entries != 0)
-//						efficiency = signal/entries;
-////					cut_performance->Fill(charge_cut, efficiency);
-////					cut_entries->Fill(charge_cut, entries);
-//					cuts_entries[1][sens][sens2]->SetBinContent(c, entries);
-//					cuts_purity[1][sens][sens2]->SetBinContent(c, efficiency);
-//					cuts_performance[1][sens][sens2]->SetBinContent(c, efficiency*entries);
-////					stringstream tmp2;
-////					tmp2.str("");
-////					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-////					canvas1->SaveAs(tmp2.str().c_str());
-//					test = nullptr;
-//					delete test;
-//				}
-////				canvas2->cd();
-////				cut_performance->Draw("p");
-////				canvas2->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/charge_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas2->SaveAs(tmp.str().c_str());
-
-////				canvas3->cd();
-////				cut_entries->Draw("p");
-////				canvas3->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/charge_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas3->SaveAs(tmp.str().c_str());
-
-
-
-
-////				tmp.str("");
-////				tmp << "size_cut_performance_s" << sens << "_s" << sens2 << "_b0";
-////				cut_performance = new TH1F(tmp.str().c_str(), "cut_performance; cuts; efficiency", 416, 0, 416);
-////				cut_performance->SetCanExtend(TH1::kAllAxes);
-////				canvas2 = new TCanvas(tmp.str().c_str(), "cut_performance", 3200, 1800);
-
-////				tmp.str("");
-////				tmp << "size_cut_entries_s" << sens << "_s" << sens2 << "_b0";
-////				cut_entries = new TH1F(tmp.str().c_str(), "cut_entries; cuts; entries", 12, 0, 12);
-////				canvas3 = new TCanvas(tmp.str().c_str(), "cut_entries", 3200, 1800);
-
-//				for (int size_cut = 0; size_cut < 12; ++size_cut)
-//				{
-//					double charge_cut = 2.0;
-//					double sigma_cut = 7.0;
-//					tmp.str("");
-//					tmp << "cluster_offset_y_s" << sens << "_s" << sens2 << "_b0" << "_SigmaCutG_" << sigma_cut << "_ChargeCutG_" << charge_cut << "_SizeCutL_" << size_cut;
-//					TH1F* test = new TH1F(tmp.str().c_str(), "cluster offset test; #mum; Entries", 100,-10000, 10000);
-////					TCanvas *canvas1 = new TCanvas(tmp.str().c_str(), "cluster_offset", 3200, 1800);
-////					canvas1->cd();
-//					for (unsigned int evt = 0; evt < acqCount; evt++)
-//					{
-//						//cout << "Evt " << evt << endl;
-//						if (all_clusters_pointer[sens][evt] != nullptr && all_clusters_pointer[sens2][evt] != nullptr)
-//						{
-//							for (auto const s1 : *all_clusters_pointer[sens][evt])
-//							{
-//								if (s1.Charge >= charge_cut && s1.Significance2 >= sigma_cut && s1.Elements.size() <= size_cut )
-//								{
-//									for (auto const s2 : *all_clusters_pointer[sens2][evt])
-//									{
-//										if (s2.Charge >= charge_cut && s2.Significance2 >= sigma_cut && s2.Elements.size() <= size_cut )
-//										{
-//											double y1 = yParameterSensor(s1.CoG, sens);
-//											double y2 = yParameterSensor(s2.CoG, sens2);
-//											double clstroffset_y  = y1 - y2;
-//											test->Fill(clstroffset_y);
-//										}
-//									}
-//								}
-//							}
-//						}
-//					}
-//					test->Draw("pe");
-
-//					int binmax = test->GetMaximumBin();
-//					double signal = test->Integral(binmax-1, binmax+1);
-//					double entries = test->GetEntries();
-//					double efficiency = 0;
-//					if (entries != 0)
-//						efficiency = signal/entries;
-////					cut_performance->Fill(size_cut, efficiency);
-////					cut_entries->Fill(size_cut, entries);
-//					cuts_entries[2][sens][sens2]->SetBinContent(size_cut, entries);
-//					cuts_purity[2][sens][sens2]->SetBinContent(size_cut, efficiency);
-//					cuts_performance[2][sens][sens2]->SetBinContent(size_cut, efficiency*entries);
-////					stringstream tmp2;
-////					tmp2.str("");
-////					tmp2 << "/home/lycoris-dev/Documents/cut_test/" << tmp.str() << ".png";
-////					canvas1->SaveAs(tmp2.str().c_str());
-//					test = nullptr;
-//					delete test;
-//				}
-////				canvas2->cd();
-////				cut_performance->Draw("p");
-////				canvas2->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/size_cut_performance_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas2->SaveAs(tmp.str().c_str());
-
-////				canvas3->cd();
-////				cut_entries->Draw("p");
-////				canvas3->SetGridx();
-////				tmp.str("");
-////				tmp << "/home/lycoris-dev/Documents/cut_test/size_cut_entries_s" << sens << "_s" << sens2 <<".pdf";
-////				canvas3->SaveAs(tmp.str().c_str());
-//			}
-//		}
-//	}
 
     //cout <<"DEBUG6" << endl;
 	claus_file.close();
-    marcel_file.close();
+//    marcel_file.close();
     CM_file.close();
 	
 	cout << endl;

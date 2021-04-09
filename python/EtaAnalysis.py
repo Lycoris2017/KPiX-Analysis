@@ -39,6 +39,13 @@ parser.add_argument(
     dest='file_out',
     help='specifies the name of the output file'
 )
+parser.add_argument(
+    '-t', '--timepix',
+    dest='timepix',
+    default=False,
+    action='store_true',
+    help='only uses hits that are time matched with TPX3 when called'
+)
 args = parser.parse_args()
 if len(sys.argv) < 2:
     print parser.print_help()
@@ -53,18 +60,48 @@ ROOT.TH1.SetDefaultSumw2()
 print 'Reading GBL File'
 
 fitpos = {}
+t_layer = {}
+pos_layer = {}
+ID_layer = {}
+layerNum = []
 with open(args.GBL_in) as GBLFile:
     for line in GBLFile:
-        if ('label' in line) or ('run' in line):
+        if ('label' in line) or ('run' in line) or "Track" in line:
+            if args.timepix:
+                if len(t_layer) > 1 and 20 in layerNum: #need to have entries in the track and must have timepix entry
+                    for i in range(10,16,1):
+                        if i in layerNum:
+                            t_lycoris = t_layer[i] #first lycoris layer that exists will be time recorded.
+                            break
+                    t_diff = t_lycoris - t_layer[20] #Time matching between timepix and lycoris
+                    if abs(t_diff) < 500:
+                        for i in range(10,16,1):
+                            if i in layerNum:
+                                fitpos[ID_layer[i]] = pos_layer[i]
+            else:
+                for i in range(10,16,1):
+                    if i in layerNum:
+                        fitpos[ID_layer[i]] = pos_layer[i]
+            t_layer = {}
+            pos_layer = {}
+            ID_layer = {}
+            layerNum = []
             continue
         #print line
         fields =  re.split(r',| |[(|)]|\[|\]|\r\n', line) ## splitting fields using regular expression
         fields = filter(None, fields)
-        if ('New' not in fields):
-            if (int(fields[0]) >= 10)  and (int(fields[0]) <= 15):
-                #print fields[9]
-                #print fields[11]
-                fitpos[int(fields[9])] = float(fields[11])
+        if ('Track' not in fields):
+            layer = int(fields[0])
+            time = float(fields[5])
+            ID = float(fields[9])
+            if (layer >= 10) and (layer <= 15):
+                y_local = float(fields[11])
+            else:
+                y_local = -10000
+            pos_layer[layer] = y_local
+            ID_layer[layer] = ID
+            t_layer[layer] = time;
+            layerNum.append(layer)
 
 
 #print IDonTrack
@@ -94,6 +131,10 @@ eta_hists.append(ROOT.TH1F("Eta_1", "Eta_1; Eta; Number of Entries", 30, -0.5,1.
 eta_hists.append(ROOT.TH1F("Eta_2", "Eta_2; Eta; Number of Entries", 30, -0.5,1.5))
 eta_hists.append(ROOT.TH1F("Eta_3+", "Eta_3+; Eta; Number of Entries", 30, -0.5,1.5))
 
+eta_hists.append(ROOT.TH1F("Eta_rdt", "Eta_rdt; Eta; Number of Entries", 30, -0.5,1.5))
+eta_hists.append(ROOT.TH1F("Eta_flt", "Eta_flt; Eta; Number of Entries", 30, -0.5,1.5))
+
+
 eta_hists_v_pos = ROOT.TH2F("eta_pos", "eta_pos; #eta; sub-cell position (mm)", 30,-0.5,1.5, 51, 0, 51e-3)
 
 skewed_hists = []
@@ -111,6 +152,8 @@ stripTree = f.Get("vector_sub_cluster")
 print 'Performing analysis'
 charge_right = 0
 charge_left = 0
+charge_right_self = 0
+charge_left_self = 0
 count = 1
 for entry in stripTree:
     for i in xrange(len(entry.sensor)):
@@ -119,6 +162,7 @@ for entry in stripTree:
             charge[0] = entry.charge[i]
             signi[0] = entry.signi[i]
             pos[0] = entry.pos[i]/1000
+            #print "Position ", pos[0]
             if (ID[0] == entry.ID[i]):
                 count = count + 1
                 if (pos[0]-fitpos.get(entry.ID[i]) > 0):
@@ -131,6 +175,8 @@ for entry in stripTree:
                 else:
                     charge_left = charge_left + charge[0]
                 eta = charge_right/(charge_left + charge_right)
+                #print "charge_right ", charge_right
+                #print "charge_left ", charge_left
                 eta_hists[0].Fill(eta)
                 eta_hists_v_pos.Fill(eta, fitpos.get(entry.ID[i])%50e-3)
                 #print "Subcell pos ", fitpos.get(entry.ID[i])
@@ -141,6 +187,10 @@ for entry in stripTree:
                     eta_hists[2].Fill(eta)
                 else:
                     eta_hists[3].Fill(eta)
+                if (fitpos.get(entry.ID[i])%50e-3 >= 12.5e-3) and (fitpos.get(entry.ID[i])%50e-3 < 37.5e-3):
+                    eta_hists[5].Fill(eta)
+                else:
+                    eta_hists[4].Fill(eta)
                 charge_left = 0
                 charge_right = 0
                 count = 1

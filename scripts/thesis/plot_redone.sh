@@ -117,3 +117,5 @@ sensors=(s4); for i in ${sensors[*]}; do python2.7 python/plot_producer_new.py /
 kpix=(k8 k9); for i in ${kpix[*]}; do python2.7 python/plot_producer_new.py /scratch2/data/testbeam202008/Run_20200807_140958.dat_Run_20200807_140958_SoNG2.0.cluster.root -n "noise_on_kpix_"$i"_b0" -d "colz" --nobox --zrange 0 1 --xrange 0 31 --yrange 0 31 -a redone; done;
 
 python2.7 python/plot_producer_new.py /scratch2/for-lycoris/run-5668/run_5668_SoNG4.0_SizeL5_ChargeL20.0.dat_mom_output_unbiased_noUniqueSroad_LOnly_new_fake_magnet.root -n mom -a redone --xtitle "Residual q/P (1/(GeV/c))" --ytitle "No. of Entries" --fbox 1 --legendLoc 0.84 0.94 --bSize 0.2 0.2 --yrange 0 1300
+
+python2.7 python/plot_producer_new.py /scratch2/for-lycoris/run-5668/res_5668_SoNG4.0_SizeL5_ChargeL20.0.dat_mimosa_segments_GBL_hits_new_no-unique.root  -n "sub_cell_entries" "timed" -d "e same" -a timed_redone --legend All "Cluster Size 1" "Cluster Size 2" "Cluster Size 3+" --yrange 0 3800 --legendLoc 0.63 0.95 --ytitle "No. of Clusters"

@@ -228,6 +228,13 @@ parser.add_argument(
 	action='store_true',
 	help='histogram does not draw fit of the histogram'
 )
+parser.add_argument(
+	'--titlesearch',
+	dest='titlesearch',
+	default=False,
+	action='store_true',
+	help='if set to true will apply search criteria for histogram title instead of object name'
+)
 args = parser.parse_args()
 
 
@@ -260,9 +267,8 @@ object_list = []
 for x in root_file_list:
 	key_root = x.GetListOfKeys()
 	#object_list = object_list + (loopdir_new(key_root, args.name))
-	object_list.append((pf.loopdir_new(key_root, args.name, args.refuse)))
+	object_list.append((pf.loopdir_new(key_root, args.name, args.refuse, args.titlesearch)))
 	
-folder_loc = '/scratch/plots/testbeam202003/'
 ##-----------------	
 ##general output
 #print args.color

@@ -185,10 +185,14 @@ int main ( int argc, char **argv )
 	string                 serial;
 	KpixSample::SampleType type;
     TTree*					pedestal;
+
+    uint64_t				frameruntime;
+    uint64_t				runtime;
 	
     TH1F*					MAD0_v_channel;
     TH1F*					pedestalADC;
     TH1F*					ext_trigs;
+    TH1F*                   T0_check;
 	// Stringstream initialization for histogram naming
 	stringstream           tmp;
 	stringstream           tmp_units;
@@ -278,11 +282,12 @@ int main ( int argc, char **argv )
 	pedestal->Branch("pedestal_MAD", &pedestal_MAD, "pedestal_MAD/D");
 	pedestal->Branch("pedestal_mean", &pedestal_mean, "pedestal_mean/D");	
 	
-    MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; #Entries", 1024, -0.5, 1023.5);
+    MAD0_v_channel = new TH1F("MAD0_v_channel", "MAD0_v_channel; Channel; No. of Entries", 1024, -0.5, 1023.5);
 
-    pedestalADC = new TH1F("pedestalADC", "pedestalADC; ADC; #Entries", 8191, -0.5, 8190.5);
+    pedestalADC = new TH1F("pedestalADC", "pedestalADC; Digital Response (ADC); No. of Entries", 8191, -0.5, 8190.5);
 
-    ext_trigs = new TH1F("ext_trigger_time", "ext trigger time; #T (BCC); Nr. of Entries", 8192, 0, 8192);
+    ext_trigs = new TH1F("ext_trigger_time", "ext trigger time; Time (BCC); No. of Entries", 8192, 0, 8192);
+    T0_check  = new TH1F("t0 check", "t0 check; #T (ns); No. of Entries", 3, -1, 2);
 	range = 0;
 
 
@@ -311,11 +316,14 @@ int main ( int argc, char **argv )
 	
 	cycle_num = 0;
 	ofstream myfile;
+    uint64_t diffTime;
+    uint64_t prev_runtime = 0;
     vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
 
     while ( dataRead.next(&event) && event.eventNumber() <= maxAcquisitions)
 	{
 		cycle_num++;
+        frameruntime = event.runtime();
 //        cout << "KPiX event Number: " << event.eventNumber() << endl;
 		//cout << "DEBUG" << endl;
 		
@@ -340,11 +348,32 @@ int main ( int argc, char **argv )
                 bunchClk = sample->getBunchCount();
                 subCount = sample->getSubCount();
     //            cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
-                if (type == 2)// If event is of type external timestamp
-                {
+                if (type == KpixSample::Timestamp){
                     double time = bunchClk + double(subCount * 0.125);
                     ext_trigs->Fill(time);
+                    runtime = sample->getSampleRuntime64(frameruntime);
+                    //cout << "Runtime output "<< runtime << endl;
+                    if (prev_runtime != 0){
+                        diffTime = runtime - prev_runtime;
+                        if (diffTime > 0){
+                            T0_check->Fill(1);
+                        }
+                        if (diffTime < 0){
+                            T0_check->Fill(-1);
+                        }
+                        else{
+                            T0_check->Fill(0);
+                        }
+                    //cout << "Runtime diff to prev " << runtime - prev_runtime << endl;
+
+                    }
+                    //cout << "FrameRuntime output "<< frameruntime << endl;
+                    prev_runtime = runtime;
+                    if (frameruntime==0)
+                        cerr<< "Warning: frameruntime is ZEROs!"<< endl;
                 }
+
+
 				if ( type == KpixSample::Data ) // If event is of type KPiX data
 				{
 					bucketFound[kpix][channel][bucket] = true;

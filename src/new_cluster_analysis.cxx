@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <string.h>
+#include <iomanip>
 
 #include "rawData.h"
 #include "DataRead.h"
@@ -35,20 +36,20 @@ int main ( int argc, char **argv ) {
 		return 0;
 	}
 	
-	printf("[Info] You choose file %s\n", argv[1]);
+    printf("[Info] You chose file %s\n", argv[1]);
 	rawData db;
-    db.setMaxCycles(25000);
+    db.setMaxCycles(35000);
 	db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
 	//db.loadCalib("/home/lycoris-dev/workspace/kpix-analysis/data/calib_HG_20190710T24.csv");
 
-    db.loadCalibTree(argv[2]);
+    db.loadCalibTree(argv[2]); // reads data from calibration TTree produced by ymlCalibrationFitter
 
 	db.doRmPedCM();
 	//	db.loadGeo("/home/lycoris-dev/workspace/kpix-analysis/data/plane_Geo_default.txt");
-    db.loadGeo("/home/lycoris-dev/KPiX-Analysis/data/plane_Geo_default.txt");
+    db.loadGeo("/home/lycoris-dev/KPiX-Analysis/data/plane_Geo_default.txt"); // KPiX slot to plane assignment
 	uint b = 1;
 	Cycle::CalNoise(b);
 
@@ -73,15 +74,14 @@ int main ( int argc, char **argv ) {
 	unordered_map<uint, uint> noise_mask[6];
 	noise_mask[0] = noise_sensor_0();
 	noise_mask[1] = noise_sensor_1();
-
 	noise_mask[2] = noise_sensor_2();
 	noise_mask[3] = noise_sensor_3();
 	noise_mask[4] = noise_sensor_4();
 	noise_mask[5] = noise_sensor_5();
 	
 	double charge, noise;
-    std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos;
-    std::vector<int> vector_sensor, vector_ID;
+    std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos, vector_noise;
+    std::vector<int> vector_sensor, vector_ID, vector_kpix, vector_channel, vector_strip;
     int kpix, channel, eventnumber;
     int sensor, strip, time;
 	const uint n_kpix = 24;
@@ -95,6 +95,15 @@ int main ( int argc, char **argv ) {
     vectorTree->Branch("time", &time);
     vectorTree->Branch("pos", &vector_pos);
     vectorTree->Branch("ID", &vector_ID);
+
+    TTree* noiseTree = new TTree("noise_tree", "noise tree");
+    noiseTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
+    noiseTree->Branch("noise", &vector_noise);
+    noiseTree->Branch("kpix", &vector_kpix);
+    noiseTree->Branch("strip", &vector_strip);
+    noiseTree->Branch("channel", &vector_channel);
+    noiseTree->Branch("time", &time);
+
     uint ClusterID = 0;
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -129,6 +138,10 @@ int main ( int argc, char **argv ) {
 				cluster_Events_after_cut[sensor].emplace(strip, charge);
 				cluster_Noise_after_cut[sensor].emplace(strip, noise);
 			}
+            vector_kpix.push_back(kpix);
+            vector_channel.push_back(channel);
+            vector_strip.push_back(strip);
+            vector_noise.push_back(noise);
 		}
 
 		// for (sensor =0; sensor< n_kpix/2; sensor++){
@@ -167,16 +180,15 @@ int main ( int argc, char **argv ) {
                 }
                 //! if you are looking at bucket 0:
                 auto trigger0 = ev.m_v_exttrigs.at(0);
-                
-                claus_file << setw(5) << eventnumber  << ","
-                           << setw(1) << sensor  << ","
-                           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor) << ","
-                           << setw(7) << NomNom.getClusterSignificance2() << ","
-                           << setw(2) << NomNom.getClusterElementssize() << ","
-                           << setw(7) << NomNom.getClusterCharge() << ","
-                           << trigger0.runtime << ","
-                           << trigger0.runtime*5 << ","
-                           << trigger0.triggerid <<","
+                claus_file << setw(5) << eventnumber  << ", "
+                           << setw(1) << sensor  << ", "
+                           << setw(7) << yParameterSensor(NomNom.getClusterCoG(), sensor) << ", "
+                           << setw(7) << NomNom.getClusterSignificance2() << ", "
+                           << setw(2) << NomNom.getClusterElementssize() << ", "
+                           << setw(7) << NomNom.getClusterCharge() << ", "
+                           << setw(13) << std::scientific << std::setprecision(13) << trigger0.runtime << ", "
+                           << setw(13) << std::scientific << std::setprecision(13) << (trigger0.runtime)*5.0 << ", "
+                           << setw(13) << trigger0.triggerid <<", "
                            << setw(7) << NomNom.getClusterID()
                            << endl;
                 
@@ -202,12 +214,20 @@ int main ( int argc, char **argv ) {
 			
 		}
         vectorTree->Fill();
+        noiseTree->Fill();
+
         vector_charge.clear();
         vector_sigma.clear();
         vector_size.clear();
         vector_pos.clear();
         vector_sensor.clear();
         vector_ID.clear();
+
+        vector_kpix.clear();
+        vector_channel.clear();
+        vector_strip.clear();
+        vector_noise.clear();
+
 	}
 
 

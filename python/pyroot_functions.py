@@ -7,7 +7,7 @@ import numpy as np
 from decimal import Decimal
 from array import array
 
-def loopdir_new(keys, all_names, refuse_names):  # loop through all subdirectories of the root file and add all fitting object to a list
+def loopdir_new(keys, all_names, refuse_names, title=False):  # loop through all subdirectories of the root file and add all fitting object to a list
 	object_list = []
 	for key_object in keys:
 		if ('TDirectory' in key_object.GetClassName()):
@@ -15,14 +15,26 @@ def loopdir_new(keys, all_names, refuse_names):  # loop through all subdirectori
 		else:
 			if ('everything' in all_names):
 				object_list.append(key_object)
-                        else:
-                                if (None in refuse_names):
-                                        if (all(name in key_object.GetName() for name in all_names)):
-                                                object_list.append(key_object)
-				                key_object.Print()
-			        elif (all(name in key_object.GetName() for name in all_names) and  all(name not in key_object.GetName() for name in refuse_names)):
-				        object_list.append(key_object)
-				        key_object.Print()
+			else:
+				if (title): #if titlesearch is true, will search wtihin histogram title instead of object name
+					obj = key_object.ReadObj()
+					if (None in refuse_names):
+						if (all(name in obj.GetTitle() for name in all_names)):
+							object_list.append(key_object)
+							print obj.GetTitle()
+					elif (all(name in obj.GetTitle() for name in all_names) and  all(name not in obj.GetTitle() for name in refuse_names)):
+						object_list.append(key_object)
+						print obj.GetTitle()
+						key_object.Print()
+				else:
+					if (None in refuse_names):
+						if (all(name in key_object.GetName() for name in all_names)):
+							object_list.append(key_object)
+							print key_object.GetName()
+					elif (all(name in key_object.GetName() for name in all_names) and  all(name not in key_object.GetName() for name in refuse_names)):
+						object_list.append(key_object)
+						print key_object.GetName()
+						key_object.Print()
 	return object_list
 
 def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=False):
@@ -116,8 +128,9 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 		h.SetMarkerStyle(MarkerStyle[0][counter%6])
 		h.SetMarkerSize(MarkerStyle[1][counter%6])
 		h.SetLineWidth(4)
-                fit=h.GetFunction("gaus")
-                fit.SetLineWidth(5)
+		fit=h.GetFunction("gaus")
+		if fit: #if the fitpointer is not NULL
+			fit.SetLineWidth(5)
 		h.Draw(drawOption)
 		if (lines):
 			print "Drawing with connecting lines"
@@ -129,7 +142,7 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 		c1.SetLogy()
 	c1.Modified()
 	c1.Update()
-	saveFile(c1, [""], 0, '/scratch/plots/thesis/', str(name))
+	saveFile(c1, [""], 0, '/scratch/plots/2021/', str(name))
 
 
 def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc='right', order=None):
@@ -191,7 +204,7 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 	c1.Modified()
 	c1.Update()
 
-	saveFile(c1, [""], 0, '/scratch/plots/thesis/', str(name))
+	saveFile(c1, [""], 0, '/scratch/plots/2021/', str(name))
 
 
 def saveFile(c1, filename_list, counter, folder_loc, outName):
@@ -199,10 +212,11 @@ def saveFile(c1, filename_list, counter, folder_loc, outName):
 		run_name = filename_list[0][:-1]
 	else:
 		run_name = filename_list[counter][:-1]
-	c1.SaveAs(folder_loc+"svg/"+run_name+outName+'.svg')
-	c1.SaveAs(folder_loc+"eps/"+run_name+outName+'.eps')
+	#c1.SaveAs(folder_loc+"svg/"+run_name+outName+'.svg')
+	#c1.SaveAs(folder_loc+"eps/"+run_name+outName+'.eps')
 	c1.SaveAs(folder_loc+"png/"+run_name+outName+'.png')
-	c1.SaveAs(folder_loc+"C/"+run_name+outName+'.C')
+	print folder_loc
+	#c1.SaveAs(folder_loc+"C/"+run_name+outName+'.C')
 
 def myROOTStyle(markerScale, sbox, fbox, bSize, legendLoc=[0.4,0.9], nobox=True):
 	mystyle = ROOT.TStyle("mystyle", "My Style")

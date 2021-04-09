@@ -3,7 +3,6 @@
 import numpy as np
 import string
 import argparse
-import argcomplete
 from operator import add
 import sys
 import re
@@ -25,6 +24,7 @@ parser.add_argument("-k",
 args = parser.parse_args()
 
 outfile = open('test_time.dat', 'w')
+
 
 eventCounter = 0
 timeStart = []
@@ -58,13 +58,13 @@ MimosaFrameTime = ROOT.TH1F("MimosaFrameTime",
                             0, 1000)
 minTimeDiff = ROOT.TH1F("minTimeDiff",
                             "minTimeDiff; time (us); No. of Entries",
-                            100,
-                            0, 1000)
+                            200,
+                            -1000, 1000)
 
 for line in iter(open(args.corry)):
 	if ('===' in line) or ('Start:' in line) or ('End:' in line):
 		fields =  re.split(r',| |[(|)]|\[|\]|\r\n|\n', line) ## splitting fields using regular expression
-		fields = filter(None, fields) ## getting rid of empty fields
+		fields = list(filter(None, fields)) ## getting rid of empty fields
 		if ('===' in fields):
 			maxEvt = int(fields[1])
 		elif ('Start:' in fields):
@@ -74,23 +74,23 @@ for line in iter(open(args.corry)):
 			timeEnd.append(float(fields[1]))
 	else:
 		continue
-print "Found ", maxEvt, " Events in TPX3 file"
+print("Found ", maxEvt, " Events in TPX3 file")
 eventCounter = 0
 time = 0
 syncedEvents = 0
 test = 0
 for i in range(len(timeStart)):
-        timeFrame = timeStart[i]-timeEnd[i]
+        timeFrame = abs(timeStart[i]-timeEnd[i])
         MimosaFrameTime.Fill(timeFrame/1000.)
                                 
 
 with open(args.kpix) as inFile:
 	for line in inFile:
 		fields =  re.split(r',| |[(|)]|\[|\]|\r\n|\n', line) ## splitting fields using regular expression
-		fields = filter(None, fields) ## getting rid of empty fields
-		print fields
-		if (syncedEvents == 1 and test == 1):
-			print fields
+		fields = list(filter(None, fields)) ## getting rid of empty fields
+		#print fields
+#		if (syncedEvents == 1 and test == 1):
+#			print fields
 		if ('runtime' in fields):
 			continue
 		if time != float(fields[7]):
@@ -104,7 +104,7 @@ with open(args.kpix) as inFile:
 					tDiff = time-timeStart[eventCounter+i]
 				if time >= timeStart[eventCounter+i] and time <= timeEnd[eventCounter+i]:
 					eventCounter = eventCounter + i
-					sys.stdout.write('\r' + str(eventCounter)+'/'+str(maxEvt))
+					sys.stdout.write('\r' + str(eventCounter)+'/'+str(maxEvt)+" | KpiX Event Number "+fields[0])
 					sys.stdout.flush()
 					syncedEvents += 1
 					syncedTime.Fill(time/1E9)
@@ -117,5 +117,5 @@ with open(args.kpix) as inFile:
 				outfile.write(i+' ')
 			outfile.write(str(eventCounter)+' ')
 			outfile.write('\r\n')
-print '\n', syncedEvents
+print('\n', syncedEvents)
 outHistFile.Write()

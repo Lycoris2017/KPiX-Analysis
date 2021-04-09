@@ -91,6 +91,10 @@ if __name__ == '__main__':
 					dz[int(layer/10)] = 0
 				if layer%10 == 6:
 					drot[int(layer/10)] = 0
+				dx[20] = 0
+				dy[20] = 0
+				dz[20] = 0
+				drot[20] = 0
 
 	print(dx,dy,dz)
 	if (all(value == 0 for value in dx.values()) and all(value == 0 for value in dy.values()) and all(value == 0 for value in dz.values()) and all(value == 0 for value in drot.values())):
@@ -124,6 +128,7 @@ if __name__ == '__main__':
 									z = float(level5.get('positionZ'))
 									rot = float(level5.get('rotationXY'))
 									if 'x' in args.align:
+										print(dx[layer])
 										x = x-dx[layer]
 										level5.set('positionX', str(x)) #setting the new value to the corrected value
 									if 'y' in args.align:

@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <TFile.h>
 #include <TH1F.h>
+#include <TF1.h>
 #include <TH2F.h>
 #include <TCanvas.h>
 #include <TMultiGraph.h>

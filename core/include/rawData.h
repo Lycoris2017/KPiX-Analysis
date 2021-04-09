@@ -22,7 +22,7 @@
 
 namespace Lycoris{
 	struct trigger_t{
-		uint runtime;   //!64bit runtime counter using 200MHz clock
+        uint64_t runtime;   //!64bit runtime counter using 200MHz clock
 		uint tstamp;    //!BCC based 13bit counter using Acq. clock
 		uint triggerid; //!Global trigger ID
 	};
@@ -41,12 +41,12 @@ namespace Lycoris{
 		      bool isold    = false);
 		~Cycle(){};
 		uint m_cyclenumber;
-		uint m_ts64;
+        uint64_t m_ts64;
 		uint m_nbuckets;
 		std::vector<trigger_t> m_v_exttrigs;
 	
 		const uint eventNumber() const{return m_cyclenumber;}
-		const uint runtime() const{return m_ts64;}
+        const uint64_t runtime() const{return m_ts64;}
 
 		//! get timestamp based on channel and bucket
 		uint getDataTime(uint hwid) {
