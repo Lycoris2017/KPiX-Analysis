@@ -21,44 +21,43 @@ def loopdir_new(keys, all_names, refuse_names, title=False):  # loop through all
 					if (None in refuse_names):
 						if (all(name in obj.GetTitle() for name in all_names)):
 							object_list.append(key_object)
-							print obj.GetTitle()
+							print(obj.GetTitle())
 					elif (all(name in obj.GetTitle() for name in all_names) and  all(name not in obj.GetTitle() for name in refuse_names)):
 						object_list.append(key_object)
-						print obj.GetTitle()
+						print(obj.GetTitle())
 						key_object.Print()
 				else:
 					if (None in refuse_names):
 						if (all(name in key_object.GetName() for name in all_names)):
 							object_list.append(key_object)
-							print key_object.GetName()
+							print(key_object.GetName())
 					elif (all(name in key_object.GetName() for name in all_names) and  all(name not in key_object.GetName() for name in refuse_names)):
 						object_list.append(key_object)
-						print key_object.GetName()
+						print(key_object.GetName())
 						key_object.Print()
 	return object_list
 
 def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=False):
-	print "Number of variables ", len(variables)
-	print "Binrange ", bin_range
+	print("Number of variables ", len(variables))
+	print("Binrange ", bin_range)
 	if (len(variables) == 1):
 		histName = name#+"_"+str(keyCounter)
 		histlabels = histName+";"+variables[0]+";Entries"
 		myh = ROOT.TH1F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]))
 		draw = variables[0]+">>"+histName
-                print "DEEEEEEBUG", histName
-                print draw
+		print("Histogram labels ", histlabels)
+		print(draw)
 	elif (len(variables) == 2):
 		histName = name#+"_"+str(keyCounter)
 		histlabels = histName+";"+variables[1]+";"+variables[0]
 		myh = ROOT.TH2F(histName, histlabels, int(bin_range[0]), float(bin_range[1]), float(bin_range[2]), int(bin_range[3]), float(bin_range[4]), float(bin_range[5]))
 		draw = variables[0]+":"+variables[1]+">>"+histName
-		print "Histogram labels ", histlabels
-		print draw
-                print "DEEEEEEBUG", histName
+		print("Histogram labels ", histlabels)
+		print(draw)
 	else:
-		print "Someone or something fucked up in the variables"
+		print("Someone or something fucked up in the variables")
 		sys.exit()
-	print "Conditions ", conditions
+	print("Conditions ", conditions)
 	tree.Draw(draw, conditions)
 	if norm:
 		scaling = 1.0/myh.GetEntries()
@@ -66,12 +65,12 @@ def tree_to_hist(tree, conditions, variables, bin_range, name, keyCounter, norm=
 	return myh
 
 def plot_tree(keys, conditions, variables, bin_range, name):
-	print "Number of objects = ", len(keys)
+	print("Number of objects = ", len(keys))
 	myHistograms = []
 	for keyCounter, key_object in enumerate(keys):
 		if ('TTree' in key_object.GetClassName()):
 			inputTree = key_object.ReadObj()
-			print "Tree Branches ", inputTree.Print()
+			print("Tree Branches ", inputTree.Print())
 			#outhist = ROOT.TH1F("myh", "myh;layers;entries", 6,10,16)
 			myh = tree_to_hist(inputTree, conditions, variables, bin_range, name, keyCounter)
 			myHistograms.append(myh)
@@ -90,7 +89,7 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 		lines = False
 	drawOption = drawOption+"PLC PMC" #to use palette colors
 	if legendName is not None:
-		print "Legendnames ", legendName
+		print("Legendnames ", legendName)
 		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
 		legend.SetNColumns(int(nColumns))
 		legend.SetFillStyle(0)
@@ -108,19 +107,18 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
         
 	for counter, h in enumerate(new_hist_list):
 		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
-                print "DEEEEEEEEEEEEEEEEEBUG", h
-                print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
-		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())
-		print 'Mean Error value = ', '%.3E' % Decimal(h.GetMeanError())
-		print 'RMS Error = ', '%.3E' % Decimal(h.GetRMSError())
-                q = np.array([0.])
-                prob = np.array([0.5])
+		print('Mean value = ', '%.3E' % Decimal(h.GetMean()))
+		print('RMS = ', '%.3E' % Decimal(h.GetRMS()))
+		print('Mean Error value = ', '%.3E' % Decimal(h.GetMeanError()))
+		print('RMS Error = ', '%.3E' % Decimal(h.GetRMSError()))
+		q = np.array([0.])
+		prob = np.array([0.5])
 		median = h.GetQuantiles(1, q, prob)
-	        print "Median value = ", q
-                print ""
+		print("Median value = ", q)
+		print("")
 		if("Graph" not in h.GetName()):
-			print 'Integral =', '%.3E' % Decimal(h.Integral())
-			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
+			print('Integral =', '%.3E' % Decimal(h.Integral()))
+			print('Number of total entries = ', '%.3E' % Decimal(h.GetEntries()))
 		x_axis = h.GetXaxis()
 		y_axis = h.GetYaxis()
 		if new_legendlist is not None:
@@ -133,7 +131,7 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 			fit.SetLineWidth(5)
 		h.Draw(drawOption)
 		if (lines):
-			print "Drawing with connecting lines"
+			print("Drawing with connecting lines")
 			h.Draw("l hist same")
 
 		if legendName is not None:
@@ -157,7 +155,7 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 	if len(hists) > 1:
 		drawOption = drawOption+" PLC PMC" #to use palette colors
 	if legendName is not None:
-		print "Legendnames ", legendName
+		print("Legendnames ", legendName)
 		legend = ROOT.TLegend(legendLoc[0], legendLoc[1]-statBoxH, legendLoc[0]+statBoxW, legendLoc[1])
 		legend.SetFillStyle(0)
 	new_legendlist = []
@@ -176,11 +174,11 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
 		multi_graph.GetYaxis().SetTitle(h.GetYaxis().GetTitle())
 		multi_graph.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
-		print 'Mean value = ', '%.3E' % Decimal(h.GetMean())
-		print 'RMS = ', '%.3E' % Decimal(h.GetRMS())					
+		print('Mean value = ', '%.3E' % Decimal(h.GetMean()))
+		print('RMS = ', '%.3E' % Decimal(h.GetRMS()))
 		if("Graph" not in h.GetName()):
-			print 'Integral =', '%.3E' % Decimal(h.Integral())
-			print 'Number of total entries = ', '%.3E' % Decimal(h.GetEntries())
+			print('Integral =', '%.3E' % Decimal(h.Integral()))
+			print('Number of total entries = ', '%.3E' % Decimal(h.GetEntries()))
 		x_axis = h.GetXaxis()
 		y_axis = h.GetYaxis()
 		if new_legendlist is not None:
@@ -190,7 +188,6 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 		multi_graph.Add(h,"AP")
 	if ylog:
 		c1.SetLogy()
-	print "DEEBUG", drawOption
 	multi_graph.Draw(drawOption)
 	c1.Modified()
 	c1.Update()
@@ -215,7 +212,7 @@ def saveFile(c1, filename_list, counter, folder_loc, outName):
 	#c1.SaveAs(folder_loc+"svg/"+run_name+outName+'.svg')
 	#c1.SaveAs(folder_loc+"eps/"+run_name+outName+'.eps')
 	c1.SaveAs(folder_loc+"png/"+run_name+outName+'.png')
-	print folder_loc
+	print(folder_loc)
 	#c1.SaveAs(folder_loc+"C/"+run_name+outName+'.C')
 
 def myROOTStyle(markerScale, sbox, fbox, bSize, legendLoc=[0.4,0.9], nobox=True):
@@ -286,7 +283,7 @@ def myROOTStyle(markerScale, sbox, fbox, bSize, legendLoc=[0.4,0.9], nobox=True)
 	mystyle.SetTitleOffset(0.8,"z")
 	mystyle.SetTitleOffset(0.75,"x")
 	mystyle.SetStatFont(62)
-        mystyle.SetStatFormat("5.3f")
+	mystyle.SetStatFormat("5.3f")
 	
 
 
@@ -341,11 +338,10 @@ def myROOTStyle(markerScale, sbox, fbox, bSize, legendLoc=[0.4,0.9], nobox=True)
 	#["#08306b", 	"#08519c", 	"#2171b5", 	"#4292c6", "#fd8d3c", "#8c2d04","#d94801","#f16913","#6baed6",	"#9ecae1",	"#c6dbef",	"#deebf7",	"#f7fbff"],
 	#["#0d0887", "#5302a3","#8b0aa5","#b83289","#db5c68","#f48849","#febd2a","#f0f921"]]
 	if (nobox):
-		print "Not printing stats box"
+		print("Not printing stats box")
 		mystyle.SetOptStat(0)
 		mystyle.SetOptFit(0)
 	myMarker = [20, 21, 22, 23, 33, 29] #FullCircle #FullSquare #UpTriangle #DownTriangle #Diamond #Star
 	myMarkerSize = [2.2, 2.0, 2.5, 2.5, 3.2, 3.2]
 	myMarkerSize = [x*markerScale for x in myMarkerSize] #Scaling up the sizes
-
 	return mystyle, myMarker, myMarkerSize
