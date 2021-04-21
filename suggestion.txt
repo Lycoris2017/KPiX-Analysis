@@ -1,7 +1,0 @@
-** Suggestion in improving the analysis code
-By Mengqing <mengqing.wu@desy.de> at 2019 Sep 21
-
-* produce a tree of all the cluster events out of the cluster analysis
-* based on this: play cuts and performance test
-* ! Modulize your code! instead of 2000 lines Main function, get a smarter algorithm.
-

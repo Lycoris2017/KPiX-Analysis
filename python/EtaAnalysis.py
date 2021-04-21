@@ -48,16 +48,16 @@ parser.add_argument(
 )
 args = parser.parse_args()
 if len(sys.argv) < 2:
-    print parser.print_help()
+    print(parser.print_help())
     sys.exit(1)
-print ''
+print('')
 
 ROOT.TH1.SetDefaultSumw2()
 
 #//////////////////////////////////////////
 #// Read GBL file
 #//////////////////////////////////////////
-print 'Reading GBL File'
+print('Reading GBL File')
 
 fitpos = {}
 t_layer = {}
@@ -89,7 +89,7 @@ with open(args.GBL_in) as GBLFile:
             continue
         #print line
         fields =  re.split(r',| |[(|)]|\[|\]|\r\n', line) ## splitting fields using regular expression
-        fields = filter(None, fields)
+        fields = list(filter(None, fields))
         if ('Track' not in fields):
             layer = int(fields[0])
             time = float(fields[5])
@@ -108,6 +108,8 @@ with open(args.GBL_in) as GBLFile:
 #//////////////////////////////////////////
 #// Read ROOT Tree file
 #//////////////////////////////////////////
+
+print('Reading ROOT File')
 
 outHistFile = ROOT.TFile.Open(args.file_out, "RECREATE")
 outHistFile.cd()
@@ -143,25 +145,30 @@ skewed_hists.append(ROOT.TH1F("skewed_1", "skewed_1; Eta; Number of Entries", 30
 skewed_hists.append(ROOT.TH1F("skewed_2", "skewed_2; Eta; Number of Entries", 30, -0.5,1.5))
 skewed_hists.append(ROOT.TH1F("skewed_3+", "skewed_3+; Eta; Number of Entries", 30, -0.5,1.5))
 
+hist_profile = []
+for j in range(0,4,1):
+    histname = "sub_cell_entries_csize"+str(j)
+    hist_profile.append(ROOT.TH1F(histname+"_timed", "sub_cell_entries; distance (#mum); Number of Entries ", 50, 0, 50))
 
-print 'Reading ROOT File'
+
+
 
 f = ROOT.TFile(args.root_in)
-stripTree = f.Get("vector_sub_cluster")
+stripTree = f.Get("vectorClusterStrip")
 
-print 'Performing analysis'
+print('Performing analysis')
 charge_right = 0
 charge_left = 0
 charge_right_self = 0
 charge_left_self = 0
 count = 1
 for entry in stripTree:
-    for i in xrange(len(entry.sensor)):
+    for i in range(len(entry.sensor)):
         if fitpos.get(entry.ID[i], -99) != -99:
             layer[0] = entry.sensor[i]
             charge[0] = entry.charge[i]
             signi[0] = entry.signi[i]
-            pos[0] = entry.pos[i]/1000
+            pos[0] = entry.pos[i]
             #print "Position ", pos[0]
             if (ID[0] == entry.ID[i]):
                 count = count + 1
@@ -178,16 +185,21 @@ for entry in stripTree:
                 #print "charge_right ", charge_right
                 #print "charge_left ", charge_left
                 eta_hists[0].Fill(eta)
-                eta_hists_v_pos.Fill(eta, fitpos.get(entry.ID[i])%50e-3)
+                eta_hists_v_pos.Fill(eta, fitpos.get(entry.ID[i])%50)
                 #print "Subcell pos ", fitpos.get(entry.ID[i])
                 #print "Eta ", eta
                 if (count == 1):
                     eta_hists[1].Fill(eta)
+                    hist_profile[1].Fill((fitpos.get(entry.ID[i])%50e-3)*1000)
+                    hist_profile[0].Fill((fitpos.get(entry.ID[i])%50e-3)*1000)
                 elif (count == 2):
                     eta_hists[2].Fill(eta)
+                    if eta > 0 and eta < 1:
+                        hist_profile[2].Fill((fitpos.get(entry.ID[i])%50e-3)*1000)
+                        hist_profile[0].Fill((fitpos.get(entry.ID[i])%50e-3)*1000)
                 else:
                     eta_hists[3].Fill(eta)
-                if (fitpos.get(entry.ID[i])%50e-3 >= 12.5e-3) and (fitpos.get(entry.ID[i])%50e-3 < 37.5e-3):
+                if ((fitpos.get(entry.ID[i])%50e-3)*1000 >= 12.5) and ((fitpos.get(entry.ID[i])%50e-3)*1000 < 37.5):
                     eta_hists[5].Fill(eta)
                 else:
                     eta_hists[4].Fill(eta)

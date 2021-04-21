@@ -90,7 +90,7 @@ Cycle::Cycle(KpixEvent &event,
                 subCount = sample->getSubCount();
                 bunchClk = sample->getBunchCount();
                 time = bunchClk + double(0.125 * subCount);
-                trigger.runtime = sample->getSampleRuntime64(m_ts64);
+                trigger.runtime, trigger.overflow = sample->getSampleRuntime64(m_ts64, trigger.overflow);
             }
 			// TBD: Do nothing now, add it to data structure later.
 			trigger.tstamp  = time;

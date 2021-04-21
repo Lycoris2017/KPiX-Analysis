@@ -67,9 +67,6 @@ uint64_t KpixEvent::runtime ( ) {
     uint64_t hsb = data_[2];
 
     uint64_t ret =  hsb<<32 | lsb;
-	
-    // printf("Counter: %lu %lu; ret : %lu\n", hsb,lsb,ret); // debug
-	
 	return (ret);
 }
 

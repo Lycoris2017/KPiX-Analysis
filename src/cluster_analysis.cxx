@@ -287,8 +287,6 @@ int main ( int argc, char **argv )
     std::unordered_map<uint, std::pair<double, double>> calibs;
     std::unordered_map<uint, std::pair<double, double>> pedestals;
 
-
-    double                  pearsson_cut = 0.8;
 	
 	int						calibration_check = 0;
 	double 					noise[n_kpix][n_channels] = {0};
@@ -473,7 +471,7 @@ int main ( int argc, char **argv )
 
 
 
-    cout << "DEEEEEEEEEEEBUG 1" << endl;
+	cout << "DEEEEEEEEEBUG 1" << endl;
 
 	vector<double>* vec_corr_charge[n_kpix] = {nullptr}; //delete does not work if I do not initialize all vectors
 	std::map<int, double> common_modes_median[n_kpix];
@@ -500,7 +498,6 @@ int main ( int argc, char **argv )
 				type    = sample->getSampleType();
                 bunchClk = sample->getBunchCount();
                 subCount = sample->getSubCount();
-                int eventNum = sample->getEventNum();
                 index = keyhash(kpix, channel, bucket);
                 if (bucket >= n_buckets) continue;
 
@@ -622,46 +619,46 @@ int main ( int argc, char **argv )
             TDirectory *sensor_folder = rFile->GetDirectory(FolderName.str().c_str());
             sensor_folder->cd();
 
-            for (int s = sensor+1; s < n_kpix/2; ++s)
+            for (uint s = sensor+1; s < n_kpix/2; ++s)
             {
-                if (kpixFound[(s*2)] || kpixFound[(s*2+1)])
-                {
-                    tmp.str("");
-                    tmp << "cluster_offset_seed_y_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_y[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
-                    tmp.str("");
-                    tmp << "cluster_offset_seed_x_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_x[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
-                    tmp.str("");
-                    tmp << "cluster_correlation_seed_sens0" << sensor << "_to_sens" << s << "_b0";
-                    tmp_units.str("");
-                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (mm); Sensor " << s << " | Position (mm)";
-                    cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46.0005, 45.9995, 230,-46.000, 46.000);
+//                if (kpixFound[(s*2)] || kpixFound[(s*2+1)])
+//                {
+//                    tmp.str("");
+//                    tmp << "cluster_offset_seed_y_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_y[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
+//                    tmp.str("");
+//                    tmp << "cluster_offset_seed_x_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_x[0][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
+//                    tmp.str("");
+//                    tmp << "cluster_correlation_seed_sens0" << sensor << "_to_sens" << s << "_b0";
+//                    tmp_units.str("");
+//                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (mm); Sensor " << s << " | Position (mm)";
+//                    cluster_correlation[0][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46.0005, 45.9995, 230,-46.000, 46.000);
 
-                    tmp.str("");
-                    tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_y[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
-                    tmp.str("");
-                    tmp << "cluster_offset_all_x_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_x[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
-                    tmp.str("");
-                    tmp << "cluster_correlation_all_sens" << sensor << "_to_sens" << s << "_b0";
-                    tmp_units.str("");
-                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-                    cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+//                    tmp.str("");
+//                    tmp << "cluster_offset_all_y_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_y[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
+//                    tmp.str("");
+//                    tmp << "cluster_offset_all_x_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_x[1][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
+//                    tmp.str("");
+//                    tmp << "cluster_correlation_all_sens" << sensor << "_to_sens" << s << "_b0";
+//                    tmp_units.str("");
+//                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+//                    cluster_correlation[1][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
 
-                    tmp.str("");
-                    tmp << "cluster_offset_CUTS_y_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_y[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
-                    tmp.str("");
-                    tmp << "cluster_offset_CUTS_x_sens" << sensor << "_to_sens" << s << "_b0";
-                    cluster_offset_x[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
-                    tmp.str("");
-                    tmp << "cluster_correlation_CUTS_sens" << sensor << "_to_sens" << s << "_b0";
-                    tmp_units.str("");
-                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
-                    cluster_correlation[2][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
-                }
+//                    tmp.str("");
+//                    tmp << "cluster_offset_CUTS_y_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_y[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 100, -10000, 10000);
+//                    tmp.str("");
+//                    tmp << "cluster_offset_CUTS_x_sens" << sensor << "_to_sens" << s << "_b0";
+//                    cluster_offset_x[2][sensor][s] = new TH1F(tmp.str().c_str(), "offset; #mum; Entries", 200, -4000, 4000);
+//                    tmp.str("");
+//                    tmp << "cluster_correlation_CUTS_sens" << sensor << "_to_sens" << s << "_b0";
+//                    tmp_units.str("");
+//                    tmp_units << "Strip correlation; Sensor " << sensor <<  " | Position (#mum); Sensor " << s << " | Position (#mum)";
+//                    cluster_correlation[2][sensor][s] = new TH2F(tmp.str().c_str(), tmp_units.str().c_str(), 230,-46000.5, 45999.5, 230,-46000, 46000);
+//                }
 
             }
 
@@ -791,7 +788,7 @@ int main ( int argc, char **argv )
             tmp_units << "noise_v_high_graybit; Gray Bit High; Noise (fC) ";
             noise_v_high_graybit[sensor]  = new TProfile(tmp.str().c_str(), tmp_units.str().c_str(), 14, -0.5, 13.5);
 
-            for (int k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
+            for (uint k = 0; k < 2; k++) //looping through all possible kpix (left and right of each sensor)
             {
                 kpix = (sensor*2)+k;
                 if (kpixFound[kpix])
@@ -878,7 +875,7 @@ int main ( int argc, char **argv )
                     kpix_temp_v_runNumber[kpix] = new TH2F(tmp.str().c_str(), "kpix_temp_v_runNumber; runNumber; Temperature(C)", 10000,0,100000, 123,-24, 52);
 
 
-					for (int channel = 0; channel < 1024; channel++){
+                    for (channel = 0; channel < 1024; channel++){
 						if (channelFound) {
 							FolderName.str("");
                             int strip = 9999;
@@ -971,7 +968,7 @@ int main ( int argc, char **argv )
 
             if (type == KpixSample::Temperature)
             {
-                uint temp = value%256; // supposedly only the first 8 bit are temperature values
+                uint tempADC = value%256; // supposedly only the first 8 bit are temperature values
 //                uint graytemp = time%256;
 //                test = bin(temp, test);
 //                cout << test << endl;
@@ -979,7 +976,7 @@ int main ( int argc, char **argv )
 //                std::string greytstamp = "";
 //                greytstamp = bin(graytemp, greytstamp);
 //                cout << greytest << " : " << greytstamp << endl;
-                double tmp=0.598*(255-temp)-62;
+                double temp=0.598*(255-tempADC)-62;
 //                cout << kpix << endl;
 //                cout << "test" << endl;
 //                cout << tmp<< endl;
@@ -1070,7 +1067,7 @@ int main ( int argc, char **argv )
 	{
 		if (kpixFound[k])
 		{
-			int sensor = k/2;
+            sensor = k/2;
 			for (unsigned int c = 0; c < n_channels; ++c)
 			{
 				if (channelFound[k][c])
@@ -1155,7 +1152,7 @@ int main ( int argc, char **argv )
     std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos, strip_pos, strip_signi, strip_charge;
     std::vector<int> vector_sensor, vector_ID,  strip_sensor, strip_ID;
 
-    clusterTree = new TTree("vector_cluster", "vector cluster tree");
+    clusterTree = new TTree("vectorCluster", "vector cluster tree");
     clusterTree->Branch("sensor", &vector_sensor);
     clusterTree->Branch("charge", &vector_charge);
     clusterTree->Branch("signi", &vector_sigma);
@@ -1163,7 +1160,7 @@ int main ( int argc, char **argv )
     clusterTree->Branch("pos", &vector_pos);
     clusterTree->Branch("ID", &vector_ID);
 
-    stripTree = new TTree("vector_sub_cluster", "vector strip tree");
+    stripTree = new TTree("vectorClusterStrip", "vector strip tree");
     stripTree->Branch("sensor", &strip_sensor);
     stripTree->Branch("charge", &strip_charge);
     stripTree->Branch("signi", &strip_signi);
@@ -1177,6 +1174,7 @@ int main ( int argc, char **argv )
     extData->Branch("TrigNumber", &TriggerNumber);
     extData->Branch("runtime", &runtime, "runtime/l");
     grCount = 0;
+    uint overflow = 0;
     //cout << "DEBUG 3" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
 	{
@@ -1218,7 +1216,7 @@ int main ( int argc, char **argv )
 				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
-				runtime = sample->getSampleRuntime64(frameruntime);
+                runtime, overflow = sample->getSampleRuntime64(frameruntime, overflow);
 				//cout << "Runtime output "<< runtime << endl;
 				if (prev_runtime != 0){
 					diffTime = runtime - prev_runtime;
@@ -1240,6 +1238,9 @@ int main ( int argc, char **argv )
 					    << global_trig_counter ;
 				}
 			}
+//            if (trig_counter > 4){
+//                cout << "Found " << trig_counter << " triggers in the event!" << endl;
+//            }
 			
 			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{

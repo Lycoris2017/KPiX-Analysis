@@ -28,9 +28,9 @@ args = parser.parse_args()
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
-		print parser.print_help()
+		print(parser.print_help())
 		sys.exit(1)
-	print ''
+	print('')
 	outfile = args.file_in[:-4]+'.root'
 	outHistFile = ROOT.TFile.Open(outfile, "RECREATE")
 	outHistFile.cd()
@@ -125,7 +125,7 @@ if __name__ == '__main__':
 							nr_tracks_3p += 1
 						if (n_lycoris > 4):
 							nr_tracks_5p += 1
-						for i in t_l.iterkeys():
+						for i in iter(t_l.keys()):
 							if i >= 10 and i < 20:
 								hist_hits_layer.Fill(i)
 								if (n_lycoris > 2):
@@ -133,7 +133,7 @@ if __name__ == '__main__':
 								if (n_lycoris > 4):
 									hist_hits_layer_5p.Fill(i)
 						for i in range(10,16,1):
-							if i in y_l_loc.iterkeys():
+							if i in iter(y_l_loc.keys()):
 								size_fitpos_correlation_timed.Fill(size_l[i],y_t_loc[i]%0.05)
 								temp_y = y_t_loc[i]%0.05
 								temp_y = temp_y*1000.
@@ -151,7 +151,7 @@ if __name__ == '__main__':
 									hist_charge_timed[size_l[i]].Fill(charge_l[i])
 									hist_profile_thesis_timed[size_l[i]].Fill(temp_y)
 
-						if (10 in y_t_loc.iterkeys()):
+						if (10 in iter(y_t_loc.keys())):
 							hist_residual_timed.Fill(y_t_loc[10] - y_l_loc[10])
 				hits_hits_on_lycoris.Fill(n_lycoris)
 				x_l = {}
@@ -176,7 +176,7 @@ if __name__ == '__main__':
 			else:
 				#fields = line.split( )
 				fields =  re.split(r',| |[(|)]|\[|\]|\r\n', line) ## splitting fields using regular expression
-				fields = filter(None, fields)
+				fields = list(filter(None, fields))
 				#print fields
 				layer = int(fields[0])
 				p = int(fields[1])
@@ -282,9 +282,9 @@ if __name__ == '__main__':
 	if (ROOT.TEfficiency.CheckConsistency(hist_hits_layer, hist_total)):
 		hist_efficiency = ROOT.TEfficiency(hist_hits_layer, hist_total)
 		for i in range(1,7,1):
-			print "Efficiency ", hist_efficiency.GetEfficiency(i)
-			print "Efficiency err up ",hist_efficiency.GetEfficiencyErrorUp(i)
-			print "Efficiency err down ",hist_efficiency.GetEfficiencyErrorLow(i)
+			print("Efficiency ", hist_efficiency.GetEfficiency(i))
+			print("Efficiency err up ",hist_efficiency.GetEfficiencyErrorUp(i))
+			print("Efficiency err down ",hist_efficiency.GetEfficiencyErrorLow(i))
 
 		hist_efficiency.Write()
 	if (nr_tracks > 0):

@@ -192,7 +192,7 @@ class KpixSample {
 	New Data Time stamp structure -- Mengqing
        */
       uint getSampleRuntime32(); // runtime lsb based on 64-bit frame counter
-      uint64_t getSampleRuntime64(uint64_t frameruntime); // you need to input the kpixEvent level runtime;
+      uint64_t getSampleRuntime64(uint64_t frameruntime, uint overflow); // you need to input the kpixEvent level runtime and the 32 bit overflow counter which is incremanted inside;
       uint getBunchCount(); // TimeStamp bunch clock count
       uint getSubCount(); // the 8 sub counts under 1 bunch count
 

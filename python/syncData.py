@@ -3,6 +3,7 @@
 import numpy as np
 import string
 import argparse
+import argcomplete
 from operator import add
 import sys
 import re
@@ -91,6 +92,9 @@ with open(args.kpix) as inFile:
 		#print fields
 #		if (syncedEvents == 1 and test == 1):
 #			print fields
+		if (eventCounter > maxEvt):
+			print ("End of TPX3 data. Stopping")
+			break
 		if ('runtime' in fields):
 			continue
 		if time != float(fields[7]):

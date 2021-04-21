@@ -39,7 +39,7 @@ int main ( int argc, char **argv ) {
     printf("[Info] You chose file %s\n", argv[1]);
 	rawData db;
     db.setMaxCycles(35000);
-	db.setNBuckets(1);
+    db.setNBuckets(1);
 	db.loadFile(argv[1]);
 	
 	cout<< "[dev] How many cycles? "  << db.getNCycles() << std::endl;
@@ -80,13 +80,13 @@ int main ( int argc, char **argv ) {
 	noise_mask[5] = noise_sensor_5();
 	
 	double charge, noise;
-    std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos, vector_noise;
-    std::vector<int> vector_sensor, vector_ID, vector_kpix, vector_channel, vector_strip;
+	std::vector<double> vector_charge, vector_sigma, vector_size, vector_pos, vector_noise, strip_pos, strip_signi, strip_charge;;
+	std::vector<int> vector_sensor, vector_ID, vector_kpix, vector_channel, vector_strip, strip_sensor, strip_ID;
     int kpix, channel, eventnumber;
     int sensor, strip, time;
 	const uint n_kpix = 24;
 
-    TTree* vectorTree = new TTree("vector_cluster", "vector cluster tree");
+    TTree* vectorTree = new TTree("vectorCluster", "vector cluster tree");
     vectorTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
     vectorTree->Branch("sensor", &vector_sensor);
     vectorTree->Branch("charge", &vector_charge);
@@ -96,7 +96,15 @@ int main ( int argc, char **argv ) {
     vectorTree->Branch("pos", &vector_pos);
     vectorTree->Branch("ID", &vector_ID);
 
-    TTree* noiseTree = new TTree("noise_tree", "noise tree");
+    TTree* stripTree = new TTree("vectorClusterStrip", "vector strip tree");
+    stripTree->Branch("sensor", &strip_sensor);
+    stripTree->Branch("charge", &strip_charge);
+    stripTree->Branch("signi", &strip_signi);
+    stripTree->Branch("pos", &strip_pos);
+    stripTree->Branch("ID", &strip_ID);
+
+
+    TTree* noiseTree = new TTree("noiseTree", "noise tree");
     noiseTree->Branch("eventnumber", &eventnumber, "eventnumber/I");
     noiseTree->Branch("noise", &vector_noise);
     noiseTree->Branch("kpix", &vector_kpix);
@@ -104,6 +112,8 @@ int main ( int argc, char **argv ) {
     noiseTree->Branch("channel", &vector_channel);
     noiseTree->Branch("time", &time);
 
+
+    uint64_t prev_runtime = 0;
     uint ClusterID = 0;
 	for (const auto &ev: db.getCycles()){
 		if (!ev.m_has_fc) continue;
@@ -151,7 +161,7 @@ int main ( int argc, char **argv ) {
 		// }
 
 		//!- 2) do clustering sensor by sensor
-		for (sensor =0; sensor< n_kpix/2; sensor++){
+		for (sensor = 0; sensor < n_kpix/2; sensor++){
 			if (cluster_Events_after_cut[sensor].size()==0) continue;
 			clustr Input;
 			Input.Elements = cluster_Events_after_cut[sensor];
@@ -166,12 +176,29 @@ int main ( int argc, char **argv ) {
 				//MaximumSoN[sensor][Input.MaxSoN()]+=weight;
                 NomNom.Eater(Input, Input.MaxSoN(), 9999, 99999, ClusterID);
                 ClusterID++;
+                clustr Cluster = NomNom.getCluster();
 //                cout << "Test" << endl;
                 vector_charge.push_back(NomNom.getClusterCharge());
                 vector_sigma.push_back(NomNom.getClusterSignificance2());
                 vector_size.push_back(NomNom.getClusterElementssize());
                 vector_pos.push_back(yParameterSensor(NomNom.getClusterCoG(), sensor));
                 vector_ID.push_back(NomNom.getClusterID());
+
+                for (auto const& i : Cluster.Elements)
+                {
+                    strip_pos.push_back(yParameterSensor(i.first,sensor));
+                    strip_charge.push_back(i.second);
+                    strip_signi.push_back(i.second/Cluster.Noise.at(i.first));
+                    strip_sensor.push_back(sensor);
+                    strip_ID.push_back(Cluster.ID);
+                }
+
+                stripTree->Fill();
+                strip_pos.clear();
+                strip_charge.clear();
+                strip_signi.clear();
+                strip_sensor.clear();
+                strip_ID.clear();
 
                 // claus_file:
                 if (header == 1){

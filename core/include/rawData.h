@@ -25,6 +25,7 @@ namespace Lycoris{
         uint64_t runtime;   //!64bit runtime counter using 200MHz clock
 		uint tstamp;    //!BCC based 13bit counter using Acq. clock
 		uint triggerid; //!Global trigger ID
+        uint overflow; // overflow counter for when the lower 32 bit counter overflows
 	};
 	
 	constexpr uint G_BUCKET_HASH_UNIT { 30000 };

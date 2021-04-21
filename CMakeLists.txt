@@ -1,4 +1,3 @@
-
 #------------------
 #- Author: Mengqing Wu <mengqing.wu@desy.de>
 #- Generated: September, 2018
@@ -176,9 +175,6 @@ add_executable(printDat ${PROJECT_SOURCE_DIR}/src/printDat.cxx)
 target_link_libraries(printDat ${ROOT_LIBRARIES}  ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES})
 list(APPEND INSTALL_EXE_TARGETS printDat)
 
-add_executable(count ${PROJECT_SOURCE_DIR}/src/count.cxx)
-target_link_libraries(count ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS count)
 
 add_executable(new_analysis ${PROJECT_SOURCE_DIR}/src/new_analysis.cxx)
 target_link_libraries(new_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
@@ -188,9 +184,6 @@ add_executable(new_cluster_analysis ${PROJECT_SOURCE_DIR}/src/new_cluster_analys
 target_link_libraries(new_cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS new_cluster_analysis)
 
-# add_executable(checkTimeVars ${PROJECT_SOURCE_DIR}/src/checkTimeVars.cxx)
-# target_link_libraries(checkTimeVars ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-# list(APPEND INSTALL_EXE_TARGETS checkTimeVars)
 
 # calibration ana:
 
@@ -202,75 +195,22 @@ add_executable(ymlCalibrationFitter ${PROJECT_SOURCE_DIR}/src/ymlCalibrationFitt
 target_link_libraries(ymlCalibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS ymlCalibrationFitter)
 
-add_executable(DuoKpix_CalibFitter ${PROJECT_SOURCE_DIR}/src/DuoKpix_CalibFitter.cxx)
-target_link_libraries(DuoKpix_CalibFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS DuoKpix_CalibFitter)
-
-add_executable(calibrationFitter ${PROJECT_SOURCE_DIR}/src/calibrationFitter.cxx)
-target_link_libraries(calibrationFitter ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS calibrationFitter)
-
 
 # full ana:
 
-add_executable(analysisLite ${PROJECT_SOURCE_DIR}/src/analysisLite.cxx)
-target_link_libraries(analysisLite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS analysisLite)
 
-add_executable(analysis ${PROJECT_SOURCE_DIR}/src/analysis.cxx)
-target_link_libraries(analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS analysis)
 
 add_executable(analysis_rework ${PROJECT_SOURCE_DIR}/src/analysis_rework.cxx)
 target_link_libraries(analysis_rework ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS analysis_rework)
 
-# add_executable(analysis_newdaq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq.cxx)
-# target_link_libraries(analysis_newdaq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-# list(APPEND INSTALL_EXE_TARGETS analysis_newdaq)
-
-#add_executable(splitFile ${PROJECT_SOURCE_DIR}/src/splitFile.cxx)
-#target_link_libraries(splitFile ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS splitFile)
-
-# add_executable(analysis_newdaq_mq ${PROJECT_SOURCE_DIR}/src/analysis_newdaq_mq.cxx)
-# target_link_libraries(analysis_newdaq_mq ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-# list(APPEND INSTALL_EXE_TARGETS analysis_newdaq_mq)
 
 add_executable(cluster_analysis ${PROJECT_SOURCE_DIR}/src/cluster_analysis.cxx)
 target_link_libraries(cluster_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
 list(APPEND INSTALL_EXE_TARGETS cluster_analysis)
 
-# add_executable(noise_analysis ${PROJECT_SOURCE_DIR}/src/noise_analysis.cxx)
-# target_link_libraries(noise_analysis ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-# list(APPEND INSTALL_EXE_TARGETS noise_analysis)
-
-add_executable(cluster_analysis_step2 ${PROJECT_SOURCE_DIR}/src/cluster_analysis_step2.cxx)
-target_link_libraries(cluster_analysis_step2 ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS cluster_analysis_step2)
-
-add_executable(cluster_analysis_Lite ${PROJECT_SOURCE_DIR}/src/cluster_analysis_Lite.cxx)
-target_link_libraries(cluster_analysis_Lite ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS cluster_analysis_Lite)
-
-add_executable(external_trig_debug ${PROJECT_SOURCE_DIR}/src/external_trig_debug.cxx)
-target_link_libraries(external_trig_debug ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS external_trig_debug)
 
 
-#add_executable(analysisExternal ${PROJECT_SOURCE_DIR}/src/analysisExternal.cxx)
-#target_link_libraries(analysisExternal ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS analysisExternal)
-
-add_executable(analysisExternal_tree ${PROJECT_SOURCE_DIR}/src/analysisExternal_tree.cxx)
-target_link_libraries(analysisExternal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-list(APPEND INSTALL_EXE_TARGETS analysisExternal_tree)
-
-
-
-#add_executable(pedestal_old ${PROJECT_SOURCE_DIR}/src/pedestal_old.cxx)
-#target_link_libraries(pedestal_old ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS pedestal_old)
 
 add_executable(pedestal_tree ${PROJECT_SOURCE_DIR}/src/pedestal_tree.cxx)
 target_link_libraries(pedestal_tree ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
@@ -278,9 +218,6 @@ list(APPEND INSTALL_EXE_TARGETS pedestal_tree)
 
 # tree builders:
 
-#add_executable(ntupleTest ${PROJECT_SOURCE_DIR}/src/ntupleTest.cxx)
-#target_link_libraries(ntupleTest ${ROOT_LIBRARIES} ${LYCORIS_LIBRARIES} ${LIBXML2_LIBRARIES} Dict)
-#list(APPEND INSTALL_EXE_TARGETS ntupleTest)
 
 
 
@@ -290,3 +227,4 @@ install(
  TARGETS ${INSTALL_EXE_TARGETS}
  RUNTIME DESTINATION bin
  )
+

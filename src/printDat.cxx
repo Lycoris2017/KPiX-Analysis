@@ -96,7 +96,7 @@ int main ( int argc, char **argv ) {
     
     int DataSampleCount=0, TempSampleCount=0;
     int tenSamples=0;
-    
+    uint overflow = 0;
     for (uint x1=0; x1 < event.count(); x1++) {
       //// Get sample
       sample  = event.sample(x1);
@@ -131,10 +131,9 @@ int main ( int argc, char **argv ) {
 		      tenSamples++;
 	      }
       }
-
       if (type == KpixSample::Timestamp){
 	      if (frameruntime!=0)
-		      sampleruntime = sample->getSampleRuntime64(frameruntime);
+              sampleruntime, overflow = sample->getSampleRuntime64(frameruntime, overflow);
 	      else
 		      cerr<< "Error: frameruntime is ZEROs!"<< endl;
       }
