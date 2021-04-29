@@ -8,6 +8,7 @@ from operator import add
 import sys
 import re
 import ROOT
+import queue
 
 ROOT.gROOT.SetBatch(True)
 
@@ -27,9 +28,7 @@ args = parser.parse_args()
 outfile = open('test_time.dat', 'w')
 
 
-eventCounter = 0
-timeStart = []
-timeEnd = []
+
 
 outHistFile = ROOT.TFile.Open('test_time.root', "RECREATE")
 outHistFile.cd()
@@ -62,6 +61,10 @@ minTimeDiff = ROOT.TH1F("minTimeDiff",
                             200,
                             -1000, 1000)
 
+
+eventCounter = 0
+timeStart = queue.Queue()
+timeEnd = queue.Queue()
 for line in iter(open(args.corry)):
 	if ('===' in line) or ('Start:' in line) or ('End:' in line):
 		fields =  re.split(r',| |[(|)]|\[|\]|\r\n|\n', line) ## splitting fields using regular expression
@@ -69,10 +72,10 @@ for line in iter(open(args.corry)):
 		if ('===' in fields):
 			maxEvt = int(fields[1])
 		elif ('Start:' in fields):
-			timeStart.append(float(fields[1]))
+			timeStart.put(float(fields[1]))
 			eventTimeTpx.Fill(float(fields[1])/1E9)
 		elif 'End:' in fields:
-			timeEnd.append(float(fields[1]))
+			timeEnd.put(float(fields[1]))
 	else:
 		continue
 print("Found ", maxEvt, " Events in TPX3 file")
@@ -103,6 +106,9 @@ with open(args.kpix) as inFile:
 			time = float(fields[7])
 			eventTimeKpix.Fill(time/1E9)
 			tDiff = float("Inf")
+			
+			while(timeStart != queue.Empty && timeEnd != queue.Empty
+			
 			for i in range(len(timeStart[eventCounter:])):
 				if abs(tDiff) > abs(time-timeStart[eventCounter+i]):
 					tDiff = time-timeStart[eventCounter+i]

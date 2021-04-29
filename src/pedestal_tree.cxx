@@ -351,7 +351,7 @@ int main ( int argc, char **argv )
                 if (type == KpixSample::Timestamp){
                     double time = bunchClk + double(subCount * 0.125);
                     ext_trigs->Fill(time);
-                    runtime, overflow = sample->getSampleRuntime64(frameruntime, overflow);
+                    runtime = sample->getSampleRuntime64(frameruntime, overflow);
                     //cout << "Runtime output "<< runtime << endl;
                     if (prev_runtime != 0){
                         diffTime = runtime - prev_runtime;

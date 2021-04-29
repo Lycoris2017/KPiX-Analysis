@@ -156,7 +156,7 @@ int main ( int argc, char **argv )
 	KpixEvent              event;    //
 	KpixSample             *sample;   //
 	
-    const unsigned int n_buckets = 1;
+	const unsigned int n_buckets = 4;
 	const unsigned int n_kpix = 32;//24;
 //	const unsigned int n_blocks = 32;
 	const unsigned int n_channels = 1024;
@@ -216,6 +216,7 @@ int main ( int argc, char **argv )
     TH1F 					*trig_diff[n_kpix];
     TH1F 					*trigger_time[n_kpix];
     TH1F                    *ext_trigs;
+    TH1F                    *ext_trigs2;
 		
 		
 	TH2F					*cluster_correlation[4][n_kpix][n_kpix-1];
@@ -604,10 +605,18 @@ int main ( int argc, char **argv )
     double response_xmin = -10.5;
     double response_xmax = 9.5;
 
-
+    tmp.str("");
+    tmp << "bucket_trigger_diff";
+    TH1F* bucket_trigger_diff = new TH1F(tmp.str().c_str(), "bucket_trigger diff; t (BCC); Entries", 2000, 0, 2000);
+    tmp.str("");
+    tmp << "trigger_diff";
+    TH1F* trigger_diff = new TH1F(tmp.str().c_str(), "trigger diff; t (BCC); Entries", 2000, 0, 2000);
     tmp.str("");
     tmp << "external_trigger_time";
     ext_trigs = new TH1F(tmp.str().c_str(), "ext trigger time; t (BCC); Entries", 8192, 0, 8192);
+    tmp.str("");
+    tmp << "external_trigger_time2";
+    ext_trigs2 = new TH1F(tmp.str().c_str(), "ext trigger time2; t (BCC); Entries", 8192, 0, 8192);
     for (sensor = 0; sensor < n_kpix/2; sensor++) //looping through all possible kpix
     {
         if (kpixFound[(sensor*2)] || kpixFound[(sensor*2+1)])
@@ -942,15 +951,20 @@ int main ( int argc, char **argv )
     rFile->cd();
 
     uint grCount = 0;
+    double prevTime = 0;
+    double time = 0;
     while ( dataRead.next(&event)  &&  event.eventNumber() <= maxAcquisitions) //preread to determine noise value of each channel in each KPiX.
 	{
 		int not_empty= 0;
         std::vector<double> time_ext;
+        uint TBucket0;
+        uint TBucket1;
 
 		for (x=0; x < event.count(); x++)
 		{
 			//cout << "DEBUG: EVENT COUNT " << event.count() << endl;
 			//// Get sample
+
 			sample  = event.sample(x);
 			kpix    = sample->getKpixAddress();
 			channel = sample->getKpixChannel();
@@ -987,17 +1001,22 @@ int main ( int argc, char **argv )
 
             if (type == 2)// If event is of type external timestamp
             {
-                double time = bunchClk + double(subCount * 0.125);
+                prevTime = time;
+                time = bunchClk + double(subCount * 0.125);
                 time_ext.push_back(time);
+                trigger_diff->Fill(time-prevTime);
                 ext_trigs->Fill(time);
+                ext_trigs2->Fill(tstamp);
                 grCount++;
                 //cout << "DEBUG: channel in timestmap = " << channel << endl;
                 //cout << "DEBUG: bucket in timestmap = " << bucket << endl;
             }
 			if ( type == KpixSample::Data ) // If event is of type KPiX data
 			{
+//				cout << "Bucket " << bucket << " Time " << tstamp << endl;
 				if (bucket == 0)
 				{
+                    TBucket0 = tstamp;
                     if (pedestals.at(index).second != 0 && calibs.at(index).first != 0  && calibs.at(index).second > 0.85 ) //ensuring we ignore 0 MAD channels
 					{
 //                         cout << "DEBUG: " << kpix << " " << channel << " " << value << " " << type << endl;
@@ -1045,8 +1064,14 @@ int main ( int argc, char **argv )
 					}
                     //else if (pedestals.at(index).second == 0 && kpix == 0) cout << "1KPIX " << kpix << " Channel " << channel << endl;
 				}
+                if (bucket == 1)
+                {
+                    TBucket1 = tstamp;
+//                    cout <<  tstamp - TBucket0 << endl;
+                }
 			}
 		}
+		bucket_trigger_diff->Fill(TBucket1-TBucket0);
 		filePos  = dataRead.pos();
 		currPct = (uint)(((double)filePos / (double)fileSize) * 100.0);
 		if ( currPct != lastPct ) 
@@ -1216,7 +1241,7 @@ int main ( int argc, char **argv )
 				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
-                runtime, overflow = sample->getSampleRuntime64(frameruntime, overflow);
+                runtime = sample->getSampleRuntime64(frameruntime, overflow);
 				//cout << "Runtime output "<< runtime << endl;
 				if (prev_runtime != 0){
 					diffTime = runtime - prev_runtime;

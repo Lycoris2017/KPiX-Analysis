@@ -76,6 +76,8 @@ include_directories( ${PROJECT_SOURCE_DIR}/include )
 include_directories( ${ROOT_INCLUDE_DIR} )
 include_directories( ${LIBXML2_INCLUDE_DIR} )
 
+## attempt on splitting kpix library from main cmake files:
+add_subdirectory(core)
 
 ##-- KPiX Core Packages to install prior
 if (USE_KPIX)
