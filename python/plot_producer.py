@@ -243,8 +243,8 @@ myMarkerStyle = [myMarker, myMarkerSize]
 
 print("DEBUG3")
 
-#mystyle.cd()
-#ROOT.gROOT.ForceStyle()
+mystyle.cd()
+ROOT.gROOT.ForceStyle()
 #ROOT.gStyle.ls()
 # finish setting root style
 
@@ -370,9 +370,12 @@ if (args.xaxisrange):
 if (args.zaxisrange):
 	for i in myHistograms:
 		i.GetZaxis().SetRangeUser(args.zaxisrange[0], args.zaxisrange[1])
-#for i in myHistograms:
+for i in myHistograms:
+    if("Graph" in i.GetName()):
+        graphs = True
 #        gaussFit = ROOT.TF1("gaussfit", "gaus", 710, 730)
 #        i.Fit(gaussFit,"ER")
+
 if (graphs):
     if (args.nofit):
         for i in myHistograms:

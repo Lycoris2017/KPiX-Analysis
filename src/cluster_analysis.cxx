@@ -1199,7 +1199,6 @@ int main ( int argc, char **argv )
     extData->Branch("TrigNumber", &TriggerNumber);
     extData->Branch("runtime", &runtime, "runtime/l");
     grCount = 0;
-    uint overflow = 0;
     //cout << "DEBUG 3" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
 	{
@@ -1241,7 +1240,7 @@ int main ( int argc, char **argv )
 				global_trig_counter++;
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
-                runtime = sample->getSampleRuntime64(frameruntime, overflow);
+                runtime = sample->getSampleRuntime64(frameruntime);
 				//cout << "Runtime output "<< runtime << endl;
 				if (prev_runtime != 0){
 					diffTime = runtime - prev_runtime;

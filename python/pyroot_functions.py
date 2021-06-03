@@ -160,8 +160,10 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 		legend.SetFillStyle(0)
 	new_legendlist = []
 	new_hist_list = []
-	multi_graph = ROOT.TMultiGraph()
+	multiGraph = ROOT.TMultiGraph()
 	legendname = []
+	yOld = [None, None]
+	xOld = [None, None]
 	if order:
 		for i in order:
 			new_hist_list.append(hists[i])
@@ -172,10 +174,19 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 	cols = ROOT.TColor.GetPalette()
 	for counter, h in enumerate(new_hist_list):
 		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
-		multi_graph.GetYaxis().SetTitle(h.GetYaxis().GetTitle())
-		multi_graph.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
+		multiGraph.GetYaxis().SetTitle(h.GetYaxis().GetTitle())
+		multiGraph.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
 		print('Mean value = ', '%.3E' % Decimal(h.GetMean()))
 		print('RMS = ', '%.3E' % Decimal(h.GetRMS()))
+		xMin = ROOT.TMath.MinElement(h.GetN(),h.GetX())/1.01
+		yMin = ROOT.TMath.MinElement(h.GetN(),h.GetY())/1.01
+		xMax = ROOT.TMath.MaxElement(h.GetN(),h.GetX())*1.01
+		yMax = ROOT.TMath.MaxElement(h.GetN(),h.GetY())*1.01
+		if (None not in yOld):
+			yMin = min(yOld[0],yMin)
+			xMin = min(xOld[0],xMin)
+			yMax = max(yOld[1],yMax)
+			xMax = max(xOld[1],xMax)
 		if("Graph" not in h.GetName()):
 			print('Integral =', '%.3E' % Decimal(h.Integral()))
 			print('Number of total entries = ', '%.3E' % Decimal(h.GetEntries()))
@@ -185,22 +196,29 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 			legEntry = legend.AddEntry(h, new_legendlist[counter])
 		h.SetMarkerStyle(MarkerStyle[0][counter%6])
 		h.SetMarkerSize(MarkerStyle[1][counter%6])
-		multi_graph.Add(h,"AP")
+		multiGraph.Add(h)
+		yOld = [yMin, yMax]
+		xOld = [xMin, xMax]
+        
 	if ylog:
 		c1.SetLogy()
-	multi_graph.Draw(drawOption)
-	c1.Modified()
+	print("HEEEEEEEEEEEEEY ", multiGraph.GetListOfGraphs().GetEntries())
+	multiGraph.Draw(drawOption)
 	c1.Update()
-	for gr in multi_graph:
+	c1.Modified()
+	multiGraph.GetXaxis().SetLimits(xMin,xMax)
+	multiGraph.SetMaximum(yMax)
+	multiGraph.SetMinimum(yMin)
+	for gr in multiGraph:
 		markerColor = gr.GetMarkerColor()
 		gr.GetFunction('pol1').SetLineColor(markerColor)
 		gr.GetFunction('pol1').SetLineStyle(9)
 		gr.GetFunction('pol1').SetLineWidth(3)
 	if legendName is not None:
 		legend.Draw()
+
 	c1.Modified()
 	c1.Update()
-
 	saveFile(c1, [""], 0, '/scratch/plots/2021/', str(name))
 
 

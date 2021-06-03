@@ -36,7 +36,6 @@ namespace Lycoris{
 		// Global channel num = kpix_index*2014+channel;
         Cycle(KpixEvent &event,
               uint &ntrig_ext,
-              uint &overflow,
               uint nbuckets = 1,
               uint begin_ch = 0,
               uint end_ch   = 1023,

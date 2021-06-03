@@ -124,20 +124,15 @@ uint KpixSample::getSampleRuntime32() {
   return(ret);
 }
 
-uint64_t KpixSample::getSampleRuntime64(uint64_t frameruntime, uint &overflow){
+uint64_t KpixSample::getSampleRuntime64(uint64_t frameruntime){
     uint64_t frameRuntime32l = (frameruntime & 0x00000000FFFFFFFF);
     uint64_t frameRuntime32h = (frameruntime & 0xFFFFFFFF00000000);
-//    std::cout << overflow << endl;
-//    std::cout << frameRuntime32h << endl;
+    // // Used to check the overflow input. Not clear if it works correctly...
     if (frameRuntime32l > data_[1]){
-        overflow++;
-        frameRuntime32h = (frameRuntime32h>>32)+overflow;
+        frameRuntime32h = (frameRuntime32h>>32)+1;
         frameRuntime32h = (frameRuntime32h<<32);
     }
-//	uint64_t ret = (frameruntime & 0xFFFFFFFF00000000) | data_[1];
-	uint64_t ret = (frameRuntime32h & 0xFFFFFFFF00000000) | data_[1];
-//    std::cout << (frameRuntime32h & 0xFFFFFFFF00000000) << endl;
-//    std::cout << frameRuntime32h << endl;
+    uint64_t ret = (frameRuntime32h | data_[1]);
     return(ret);
 }
 

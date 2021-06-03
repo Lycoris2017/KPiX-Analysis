@@ -36,7 +36,6 @@ std::unordered_map< uint, double > Cycle::s_ped_mad_adc;
 
 Cycle::Cycle(KpixEvent &event,
              uint &ntrig_ext,
-             uint &overflow,
              uint nbuckets,
              uint begin_ch,
              uint end_ch,
@@ -91,7 +90,7 @@ Cycle::Cycle(KpixEvent &event,
                 subCount = sample->getSubCount();
                 bunchClk = sample->getBunchCount();
                 time = bunchClk + double(0.125 * subCount);
-                trigger.runtime = sample->getSampleRuntime64(m_ts64, overflow);
+                trigger.runtime = sample->getSampleRuntime64(m_ts64);
 //                std::cout << overflow << endl;
             }
 			// TBD: Do nothing now, add it to data structure later.
@@ -256,7 +255,7 @@ void rawData::loadFile(const std::string& fname){
   uint                   ncys=0;
   string                 calState;
   uint                   ntrig_ext=0;
-  uint                   overflow=0;
+
   
   m_v_cycles.clear();
 
@@ -279,7 +278,7 @@ void rawData::loadFile(const std::string& fname){
     ncys++;
     if (m_nmax!=0 && ncys > m_nmax) break;
 
-    Cycle cy(event, ntrig_ext, overflow, m_nbuckets);
+    Cycle cy(event, ntrig_ext, m_nbuckets);
     calState   = dataRead.getYmlStatus("CalState");
     if (calState == "Baseline" || calState == "Idle"){ //Only adding baseline cycles
         Cycle::AddAdcBuf(cy);

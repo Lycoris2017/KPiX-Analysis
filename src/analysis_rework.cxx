@@ -542,7 +542,7 @@ int main ( int argc, char **argv )
 	
 	int global_trig_counter = 0;
 //	std::vector<clustr> all_clusters[n_kpix/2];
-    uint overflow = 0;
+ 
 
 
     //cout << "DEBUG 3" << endl;
@@ -587,7 +587,7 @@ int main ( int argc, char **argv )
 				double time = bunchClk + double(subCount * 0.125);
 				time_ext.push_back(time);
                 ext_trigs->Fill(time);
-                runtime, overflow = sample->getSampleRuntime64(frameruntime, overflow);
+                runtime = sample->getSampleRuntime64(frameruntime);
 				if (frameruntime==0)
 					cerr<< "Warning: frameruntime is ZEROs!"<< endl;
 				

@@ -319,7 +319,7 @@ int main ( int argc, char **argv )
     uint64_t diffTime;
     uint64_t prev_runtime = 0;
     vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
-    uint overflow = 0;
+    
     while ( dataRead.next(&event) && event.eventNumber() <= maxAcquisitions)
 	{
 		cycle_num++;
@@ -351,7 +351,7 @@ int main ( int argc, char **argv )
                 if (type == KpixSample::Timestamp){
                     double time = bunchClk + double(subCount * 0.125);
                     ext_trigs->Fill(time);
-                    runtime = sample->getSampleRuntime64(frameruntime, overflow);
+                    runtime = sample->getSampleRuntime64(frameruntime);
                     //cout << "Runtime output "<< runtime << endl;
                     if (prev_runtime != 0){
                         diffTime = runtime - prev_runtime;
