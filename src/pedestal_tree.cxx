@@ -79,17 +79,17 @@ double median2(vector<double>* v)
 		cout << n << endl;
 		if (n != 0)
 		{
-			cout << "DEBUG X "  << v->at(n) << endl;
+		  //cout << "DEBUG X "  << v->at(n) << endl;
 			if (v->size()%2 == 0)
 			{
 				nth_element(v->begin(), v->begin()+n, v->end());
-				cout << "DEBUG Y" << endl;
+				//		cout << "DEBUG Y" << endl;
 				nth_element(v->begin(), v->begin()+n-1, v->end());
 				return (v->at(n)+v->at(n-1))/2;
 			}
 			else
 			{
-				cout << "DEBUG Z "  << v->at(n) << endl;
+			  //cout << "DEBUG Z "  << v->at(n) << endl;
 				nth_element(v->begin(), v->begin()+n, v->end());
 				return v->at(n);
 			}
@@ -296,20 +296,12 @@ int main ( int argc, char **argv )
 	double weight = 1.0;//acqProcessed;
 	
 	//////////////////////////////////////////
-	// New histogram generation within subfolder structure
-	//////////////////////////////////////////
-
-
-
-	
-	
-	//////////////////////////////////////////
 	// Data read for all events for detailed look into single event structure
 	//////////////////////////////////////////
 	dataRead.open(argv[1]); //open binary file
 	int cycle_num = 0;
 	int cycle_num_ext = -1;
-	dataRead.open(argv[1]); //open file again to start from the beginning
+	
 
 	int extern_trigger_id={0};
 	
@@ -319,16 +311,18 @@ int main ( int argc, char **argv )
     uint64_t diffTime;
     uint64_t prev_runtime = 0;
     vector<double>* pedestal_results[n_kpix][n_channels][n_buckets] = {new std::vector<double>};
-    
+
     while ( dataRead.next(&event) && event.eventNumber() <= maxAcquisitions)
 	{
+	  
 		cycle_num++;
         frameruntime = event.runtime();
 //        cout << "KPiX event Number: " << event.eventNumber() << endl;
 		//cout << "DEBUG" << endl;
 		
-		if ( cycle_num > skip_cycles_front)
-		{
+		
+		
+	
 		
 			uint channel_adc[n_kpix][n_channels];
 			//cout << " NEW EVENT " << endl;
@@ -416,8 +410,9 @@ int main ( int argc, char **argv )
 				cout << "\rReading File: " << currPct << " %      " << flush;
 				lastPct = currPct;
 			}
-		}
+		
 	}
+
 	myfile.close();
 	for (int kpix = 0; kpix < n_kpix ; kpix++)
 	{
