@@ -585,13 +585,6 @@ int main ( int argc, char **argv )
 		}
 	}
 	maxAcquisitions = acqCount;
-	
-	if (f_skipped_cycles!=NULL)  {
-		fclose( f_skipped_cycles);
-		cout << endl;
-		cout << "Wrote skipped cycles to " << outtxt << endl;
-		cout << endl;
-	}
 	//cout << "DEBUG: 3" << endl;
 	//cout << tstamp << endl;
 	dataRead.close();
@@ -1310,13 +1303,13 @@ int main ( int argc, char **argv )
 						  eventSample = x;
 //                            cout << "Time check " << tstamp << endl;
 						  if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
-						  pixelFile <<"Event Number,Layer,position,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
+						  
 						  pixelFile << setw(5) << event.eventNumber()  << "," << setw(1) << sensor2layer(sensor)  << ","  << setw(7) << strip  << ","
                                                                    << setw(7) << true_charge/noise[kpix][channel] << ","
                                                                    << setw(2) << 1 << ","
                                                                    << setw(7) << true_charge*6241.5 << ","
                                        << tmp.str().c_str() << ","
-                                       << setw(7) << "irr"
+							    << setw(7) << "irr" << setw(6) << value << "," << setw(6) <<  ped_sub_ADC << "," << setw(6) << ped_sub_fC << "," << setw(6) << true_charge << "," << setw(6) << true_SoN << setw(6) << common_modes_median[kpix].at(event.eventNumber());
                                                                    << endl;
 
 						}
