@@ -263,6 +263,7 @@ int main ( int argc, char **argv )
 	stringstream			FolderName;
 	
 	ofstream				claus_file;
+	ofstream    pixelFile;
 //    ofstream				marcel_file;
     ofstream				CM_file;
 	ofstream				noise_file;
@@ -446,7 +447,10 @@ int main ( int argc, char **argv )
 	cout << "Write to GBL input file : " << tmp.str() << endl;
 	//claus_file.open("claus_file_new.txt");
 	claus_file.open(tmp.str());
-	
+	tmp.str("");
+	tmp << argv[1] << "_SoNG" << NameAdd << ".Pixel_debug.txt" ;
+	cout << "Write to pixel debug file : " << tmp.str() << endl;
+	pixelFile.open(tmp.str());
 //    tmp.str("");
 //    tmp << argv[1] << "_SoNG" << NameAdd << ".marcel.csv" ;
 //    marcel_file.open(tmp.str());
@@ -1200,6 +1204,7 @@ int main ( int argc, char **argv )
     extData->Branch("runtime", &runtime, "runtime/l");
     grCount = 0;
     //cout << "DEBUG 3" << endl;
+    pixelFile <<"Event Number,Layer,position,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
     while ( dataRead.next(&event) &&  event.eventNumber() <= maxAcquisitions)
 	{
 		int not_empty= 0;
@@ -1300,11 +1305,20 @@ int main ( int argc, char **argv )
                         if ( true_charge > SoNCut*noise[kpix][channel] && strip != 9999)
 //                        if ( true_charge > 3*noise[kpix][channel] && strip != 9999 && noise_mask[sensor].at(strip) == 1)  //only events with charge higher than 3 sigma of the noise are taken and with their charge being lower than 10 fC (to cut out weird channels), in addition no noise masked channels and no disconnected channels.
 						{
-                            cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, true_charge));
-							cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
-                            eventSample = x;
+						  cluster_Events_after_cut[sensor].insert(std::pair<int, double>(strip, true_charge));
+						  cluster_Noise_after_cut[sensor].insert(std::pair<int, double>(strip, noise[kpix][channel]));
+						  eventSample = x;
 //                            cout << "Time check " << tstamp << endl;
-							if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
+						  if (noise[kpix][channel] == 0) cout << "Something is going wrong here" << endl;
+						  pixelFile <<"Event Number,Layer,position,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
+						  pixelFile << setw(5) << event.eventNumber()  << "," << setw(1) << sensor2layer(sensor)  << ","  << setw(7) << strip  << ","
+                                                                   << setw(7) << true_charge/noise[kpix][channel] << ","
+                                                                   << setw(2) << 1 << ","
+                                                                   << setw(7) << true_charge*6241.5 << ","
+                                       << tmp.str().c_str() << ","
+                                       << setw(7) << "irr"
+                                                                   << endl;
+
 						}
                         //cout <<"DEBUG3.3 " << kpix << " " <<  channel << endl;
 						//if (kpix == 0 && (channel == 9 || channel == 105)) cout << "Something is going wrong here" << endl;
@@ -1415,6 +1429,7 @@ int main ( int argc, char **argv )
 							if (header == 1){
 								header = 0;
 								claus_file <<"Event Number,Layer,position,Significance2,Size,Charge,runtime,runtime_ns,trigN,ClusterID" << endl;
+								
 							}
 							claus_file << setw(5) << event.eventNumber()  << ","
                                        << setw(1) << sensor2layer(sensor)  << ","
@@ -1513,6 +1528,7 @@ int main ( int argc, char **argv )
 
     //cout <<"DEBUG6" << endl;
 	claus_file.close();
+	pixelFile.close();
 //    marcel_file.close();
     CM_file.close();
 	
