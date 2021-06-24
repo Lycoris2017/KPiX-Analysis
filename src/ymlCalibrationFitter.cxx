@@ -651,12 +651,8 @@ int main ( int argc, char **argv ) {
   }
   cout << "\rReading File: Done.               " << endl;
   
-  if (f_skipped_cycles!=NULL)  {
-    fclose( f_skipped_cycles);
-    cout << endl;
-    cout << "Wrote skipped cycles to " << outtxt << endl;
-    cout << endl;
-  }
+  cout << "DEBUG -1" << endl;
+  cout << "DEBUG 0 " << endl;
   //////////////////////////////////////////
   // Process Data
   //////////////////////////////////////////
@@ -674,6 +670,8 @@ int main ( int argc, char **argv ) {
   b0CalibHigh = (dataRead.getConfig("cntrlFpga:kpixAsic:CntrlCalibHigh") == "True");
 
   
+  cout << "DEBUG 1" << endl;
+
   // Kpix count;
   for (kpix=0; kpix<24; kpix++) if ( kpixFound[kpix] ) kpixMax=kpix;
   
@@ -866,7 +864,7 @@ int main ( int argc, char **argv ) {
   TDirectory *pedestal_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
   pedestal_folder->cd(); // move into subdirectory
   
-
+  cout << "DEBUG 2" << endl;
   vector<double>* baseline_pedestal[n_kpix][n_channel][n_bucket][n_range] = {new std::vector<double>};
 for (kpix=0; kpix<24; kpix++) 
 {
@@ -1066,7 +1064,7 @@ for (kpix=0; kpix<24; kpix++)
 	//rFile->mkdir(FolderName.str().c_str());
 	//TDirectory *calibration_folder = rFile->GetDirectory(FolderName.str().c_str()); // get path to subdirectory
 	//calibration_folder->cd(); // move into subdirectory
-	
+  cout << "DEBUG 3" << endl;
 
   // Process each kpix device
 for (kpix=0; kpix<24; kpix++)
@@ -1406,6 +1404,7 @@ for (kpix=0; kpix<24; kpix++)
 		}
 	}
 }
+cout << "DEBUG 4" << endl;
   cout << endl;
   cout << "Wrote root plots to " << outRoot << endl;
   cout << endl;
