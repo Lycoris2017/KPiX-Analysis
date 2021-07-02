@@ -1309,8 +1309,8 @@ int main ( int argc, char **argv )
                                                                    << setw(2) << 1 << ","
                                                                    << setw(7) << true_charge*6241.5 << ","
                                        << tmp.str().c_str() << ","
-							    << setw(7) << "irr" << setw(6) << value << "," << setw(6) <<  ped_sub_ADC << "," << setw(6) << ped_sub_fC << "," << setw(6) << true_charge << "," << setw(6) << true_SoN << setw(6) << common_modes_median[kpix].at(event.eventNumber());
-                                                                   << endl;
+							    << setw(7) << "irr" << setw(6) << value << "," << setw(6) <<  ped_sub_ADC << "," << setw(6) << ped_sub_fC << "," << setw(6) << true_charge << "," << setw(6) << true_SoN << setw(6) << common_modes_median[kpix].at(event.eventNumber())<< endl;
+                                                                   
 
 						}
                         //cout <<"DEBUG3.3 " << kpix << " " <<  channel << endl;
