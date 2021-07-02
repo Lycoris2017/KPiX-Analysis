@@ -377,7 +377,7 @@ int main ( int argc, char **argv )
 
 			TTree* pedestal_tree = (TTree*)pedestal_file->Get("pedestal_tree");
 			
-            int kpix_pedestal, channel_pedestal, bucket_pedestal;
+            uint kpix_pedestal, channel_pedestal, bucket_pedestal;
 			double pedestal_median, pedestal_MAD;
 			
 			pedestal_tree->SetBranchAddress("pedestal_median", &pedestal_median);

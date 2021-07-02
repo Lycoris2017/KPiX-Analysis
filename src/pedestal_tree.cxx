@@ -270,7 +270,7 @@ int main ( int argc, char **argv )
 	
 	// Open root file
 	double pedestal_median, pedestal_MAD, pedestal_mean;
-    int kpix_num, channel_num, bucket_num;
+    uint kpix_num, channel_num, bucket_num;
 	rFile = new TFile(outRoot.c_str(),"recreate"); // produce root file
 	rFile->cd(); // move into root folder base
 	 
