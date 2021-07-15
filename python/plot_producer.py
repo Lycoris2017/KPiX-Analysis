@@ -288,7 +288,7 @@ draw_option = args.draw_option
 yMax = None
 yMin = None
 myHistograms = []
-if (len(object_list) is not 0):
+if (len(object_list) != 0):
 	for i in object_list:
 		for j in i:
 			myHistograms.append(j.ReadObj())
@@ -297,7 +297,7 @@ else:
 	print('')
 	print('')
 print(myHistograms)
-if (len(myHistograms) is 0):
+if (len(myHistograms) == 0):
         sys.exit("ERROR: No valid Histograms or Graphs found")
 yRangeScale = 1.2
 if (args.output_name):
@@ -325,10 +325,10 @@ if (args.ztitle):
 	for i in myHistograms:
 		i.GetZaxis().SetTitle(args.ztitle)
 graphs = False
-if (args.rebin is not 1):
+if (args.rebin != 1):
 	for i in myHistograms:
 		i.Rebin(args.rebin)
-if (args.scale is not 1.0):
+if (args.scale != 1.0):
 	for i in myHistograms:
 		i.Scale(args.scale)
 elif (args.normalized):

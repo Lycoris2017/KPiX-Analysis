@@ -82,7 +82,8 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 	statBoxW = 0.1
 	nColumns = 1.
 	statBoxH = 0.05*len(hists)/nColumns
-
+	if order:
+		statBoxH = 0.05*len(order)/nColumns
 	if ("L" in drawOption):
 		lines = True
 	else:
@@ -100,11 +101,11 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 	if order:
 		for i in order:
 			new_hist_list.append(hists[i])
-			new_legendlist.append(legendName[i])
+			#new_legendlist.append(legendName[i])
 	else:
 		new_hist_list = hists
-		new_legendlist = legendName
-        
+		#new_legendlist = legendName
+	new_legendlist = legendName  
 	for counter, h in enumerate(new_hist_list):
 		#print 'Number of total entries = ', '%.2E' % Decimal(h.GetEntries())
 		print('Mean value = ', '%.3E' % Decimal(h.GetMean()))
@@ -140,7 +141,7 @@ def drawSame(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc,
 		c1.SetLogy()
 	c1.Modified()
 	c1.Update()
-	saveFile(c1, [""], 0, '/scratch/plots/2021/', str(name))
+	saveFile(c1, [""], 0, '/home/kraemeru/plots/2021/', str(name))
 
 
 def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc='right', order=None):
@@ -219,7 +220,7 @@ def drawGraph(hists, drawOption, legendName,  MarkerStyle, name, ylog, legendLoc
 
 	c1.Modified()
 	c1.Update()
-	saveFile(c1, [""], 0, '/scratch/plots/2021/', str(name))
+	saveFile(c1, [""], 0, '/home/kraemeru/plots/2021/', str(name))
 
 
 def saveFile(c1, filename_list, counter, folder_loc, outName):
